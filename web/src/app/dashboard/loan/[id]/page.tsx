@@ -27,6 +27,19 @@ const instVariant: Record<string, 'default' | 'success' | 'warning' | 'destructi
   WAIVED: 'secondary',
 };
 
+const FREQ_LABEL: Record<string, string> = {
+  DAILY: 'Diario',
+  WEEKLY: 'Semanal',
+  BIWEEKLY: 'Quincenal',
+  MONTHLY: 'Mensual',
+  CUSTOM: 'Personalizado',
+};
+const METHOD_LABEL: Record<string, string> = {
+  FLAT: 'Interés fijo',
+  DECLINING_BALANCE: 'Saldo decreciente',
+  CUSTOM: 'Personalizado',
+};
+
 export default function LoanDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
@@ -66,6 +79,21 @@ export default function LoanDetailPage() {
         <Stat label="Total a pagar" value={money(loan.totalDue)} />
         <Stat label="Saldo" value={money(loan.balance)} highlight />
       </div>
+
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="text-lg">Términos del crédito</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4 sm:grid-cols-4">
+          <Term label="Interés" value={loan.interestRate != null ? `${Math.round(loan.interestRate * 100)}%` : '—'} />
+          <Term label="Método" value={loan.interestMethod ? METHOD_LABEL[loan.interestMethod] ?? loan.interestMethod : '—'} />
+          <Term
+            label="Cuotas"
+            value={loan.termCount != null ? `${loan.termCount} · ${FREQ_LABEL[loan.frequency ?? ''] ?? loan.frequency ?? ''}` : '—'}
+          />
+          <Term label="Mora por cuota" value={loan.lateFeeValue ? `${Math.round(loan.lateFeeValue * 100)}%` : 'Sin mora'} />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader className="flex-row items-center justify-between">
@@ -115,6 +143,15 @@ export default function LoanDetailPage() {
           </Table>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+function Term({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="text-sm font-semibold">{value}</p>
     </div>
   );
 }

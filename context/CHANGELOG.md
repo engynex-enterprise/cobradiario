@@ -341,3 +341,17 @@ Bitácora de decisiones y cambios estructurales. Formato: fecha · tipo · descr
   Etiquetas (grid + drawer crear/editar con paleta), Chat (burbujas + realtime socket.io).
 - **[verificación]** E2E OK (login→crear tag→enviar mensaje→listar) y aislamiento RLS confirmado en DB
   (otro tenant = 0 filas; bypass = filas visibles). Typecheck backend y web sin errores.
+
+## 2026-07-04 — Términos del crédito al originar (no en producto)
+- **[db]** `Loan.productId` ahora es opcional (migración `loan_inline_terms`). Los términos
+  (cuotas, interés, frecuencia, mora) se definen al crear el crédito y se congelan en `loan.terms`.
+- **[backend]** `CreateLoanInput` acepta `termCount`, `interestRate` (fracción), `interestMethod`,
+  `rateBasis`, `frequency`, `lateFeeType`, `lateFeeValue`. `productId` opcional (plantilla retrocompatible).
+  `LoansService.createLoan` arma los términos del input (o del producto) y genera el plan con el motor.
+- **[backend]** `Loan` expone `termCount`, `interestRate`, `interestMethod`, `frequency`, `lateFeeValue`
+  desde el snapshot.
+- **[app/web]** Formulario "Nuevo crédito" reescrito: monto, cantidad de cuotas + frecuencia,
+  interés %, mora % → **resumen en vivo** (capital, interés % y monto, total con interés, valor de
+  cuota, duración en días/semanas/meses/años).
+- **[verificación]** E2E OK: crédito sin producto (500.000, 20 cuotas diarias, 20%, mora 2%) →
+  interés 100.000, total 600.000, 20 cuotas de 30.000 (25.000 capital + 5.000 interés). Typecheck OK en services/app/web.

@@ -107,9 +107,16 @@ input CreateClientInput {
 input CreateLoanInput {
   clientId: ID!
   firstDueDate: DateTime
+  frequency: Frequency
+  interestMethod: InterestMethod
+  interestRate: Float
+  lateFeeType: LateFeeType
+  lateFeeValue: Float
   principal: Float!
-  productId: ID!
+  productId: ID
+  rateBasis: RateBasis
   routeId: ID
+  termCount: Int
 }
 
 input CreateProductInput {
@@ -246,15 +253,20 @@ type Loan {
   createdAt: DateTime!
   disbursedAt: DateTime
   firstDueDate: DateTime
+  frequency: Frequency
   id: ID!
   installments: [Installment!]
+  interestMethod: InterestMethod
+  interestRate: Float
   interestTotal: Float!
+  lateFeeValue: Float
   paidAmount: Float!
   principal: Float!
-  productId: ID!
+  productId: ID
   routeId: ID
   routeName: String
   status: LoanStatus!
+  termCount: Int
   totalDue: Float!
 }
 

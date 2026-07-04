@@ -15,6 +15,19 @@ const INST_COLOR: Record<string, string> = {
   PENDING: colors.muted,
 };
 
+const FREQ_LABEL: Record<string, string> = {
+  DAILY: 'Diario',
+  WEEKLY: 'Semanal',
+  BIWEEKLY: 'Quincenal',
+  MONTHLY: 'Mensual',
+  CUSTOM: 'Personalizado',
+};
+const METHOD_LABEL: Record<string, string> = {
+  FLAT: 'Interés fijo',
+  DECLINING_BALANCE: 'Saldo decreciente',
+  CUSTOM: 'Personalizado',
+};
+
 function fmtDate(iso: string) {
   return new Intl.DateTimeFormat('es-CO', { day: '2-digit', month: 'short' }).format(new Date(iso));
 }
@@ -77,6 +90,14 @@ export default function LoanDetailScreen() {
         </View>
         <Text style={styles.progressText}>{progress}% pagado</Text>
 
+        <Text style={styles.sectionTitle}>Términos del crédito</Text>
+        <View style={styles.termsCard}>
+          <Term label="Interés" value={loan.interestRate != null ? `${Math.round(loan.interestRate * 100)}%` : '—'} />
+          {loan.interestMethod ? <Term label="Método" value={METHOD_LABEL[loan.interestMethod] ?? loan.interestMethod} /> : null}
+          <Term label="Cuotas" value={loan.termCount != null ? `${loan.termCount} · ${FREQ_LABEL[loan.frequency ?? ''] ?? loan.frequency ?? ''}` : '—'} />
+          <Term label="Mora por cuota" value={loan.lateFeeValue ? `${Math.round(loan.lateFeeValue * 100)}%` : 'Sin mora'} last />
+        </View>
+
         <Text style={styles.sectionTitle}>Plan de cuotas</Text>
         <View style={styles.card}>
           {loan.installments.map((it, i) => (
@@ -129,6 +150,15 @@ export default function LoanDetailScreen() {
   );
 }
 
+function Term({ label, value, last }: { label: string; value: string; last?: boolean }) {
+  return (
+    <View style={[styles.termRow, !last && styles.instBorder]}>
+      <Text style={styles.termLabel}>{label}</Text>
+      <Text style={styles.termValue}>{value}</Text>
+    </View>
+  );
+}
+
 function Cell({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
   return (
     <View style={styles.cell}>
@@ -155,6 +185,10 @@ const styles = StyleSheet.create({
   progressText: { fontSize: 12, color: colors.muted, fontWeight: '700', marginTop: -6 },
   sectionTitle: { fontSize: 17, fontWeight: '800', color: colors.text, marginTop: 4 },
   card: { backgroundColor: colors.card, borderRadius: 16, borderWidth: 2, borderColor: colors.border, paddingHorizontal: 14 },
+  termsCard: { backgroundColor: colors.card, borderRadius: 16, borderWidth: 2, borderColor: colors.border, paddingHorizontal: 14 },
+  termRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12 },
+  termLabel: { fontSize: 13, color: colors.muted, fontWeight: '600' },
+  termValue: { fontSize: 14, fontWeight: '800', color: colors.text },
   instRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12 },
   instBorder: { borderBottomWidth: 1, borderBottomColor: colors.border },
   instDot: { width: 8, height: 8, borderRadius: 4 },

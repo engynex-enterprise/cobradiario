@@ -210,7 +210,7 @@ function mapLoan(loan: LoanWithInstallments): LoanModel {
     code: loan.code ?? undefined,
     status: loan.status,
     clientId: loan.clientId,
-    productId: loan.productId,
+    productId: loan.productId ?? undefined,
     routeId: loan.routeId ?? undefined,
     principal: Number(loan.principal),
     interestTotal: Number(loan.interestTotal),

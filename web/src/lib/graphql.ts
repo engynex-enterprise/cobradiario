@@ -192,13 +192,20 @@ export function fetchReminders() {
 
 export function createLoan(input: {
   clientId: string;
-  productId: string;
   principal: number;
+  termCount: number;
+  interestRate: number; // fracción (0.2 = 20%)
+  interestMethod?: string;
+  rateBasis?: string;
+  frequency?: string;
+  lateFeeType?: string;
+  lateFeeValue?: number;
+  productId?: string;
   routeId?: string;
 }) {
   return gql<{ createLoan: Loan }>(
     `mutation($i: CreateLoanInput!) {
-      createLoan(input: $i) { id status principal totalDue paidAmount balance clientId createdAt }
+      createLoan(input: $i) { id status principal interestTotal totalDue paidAmount balance clientId createdAt }
     }`,
     { i: input },
   );
@@ -231,6 +238,11 @@ export interface Installment {
 
 export interface LoanDetail extends Loan {
   interestTotal: number;
+  termCount?: number;
+  interestRate?: number;
+  interestMethod?: string;
+  frequency?: string;
+  lateFeeValue?: number;
   installments: Installment[];
 }
 
@@ -239,6 +251,7 @@ export function fetchLoanDetail(id: string) {
     `query($id: ID!) {
       loan(id: $id) {
         id status principal interestTotal totalDue paidAmount balance clientId clientName routeName createdAt
+        termCount interestRate interestMethod frequency lateFeeValue
         installments { id sequence status dueDate amount principalPart interestPart lateFee paidAmount }
       }
     }`,

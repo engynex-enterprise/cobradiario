@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreditProduct, Prisma } from '@prisma/client';
 import { generateSchedule, type CreditTerms } from '@cobradiario/credit-engine';
 import { PrismaService } from '../prisma/prisma.service';
@@ -26,21 +26,48 @@ export class LoansService {
     };
   }
 
+  /** Construye los términos a partir de lo definido al crear el crédito. */
+  private termsFromInput(input: CreateLoanInput): CreditTerms {
+    return {
+      interestMethod: (input.interestMethod ?? 'FLAT') as CreditTerms['interestMethod'],
+      interestRate: input.interestRate ?? 0,
+      rateBasis: (input.rateBasis ?? 'PER_LOAN') as CreditTerms['rateBasis'],
+      frequency: (input.frequency ?? 'DAILY') as CreditTerms['frequency'],
+      termCount: input.termCount as number,
+      graceDays: 0,
+      lateFeeType: (input.lateFeeType ?? 'NONE') as CreditTerms['lateFeeType'],
+      lateFeeValue: input.lateFeeValue ?? 0,
+      roundingMode: 'NEAREST',
+      roundTo: 1,
+      config: {},
+    };
+  }
+
   /**
    * Crea un crédito: genera el plan de cuotas con el motor y persiste
    * Loan + Installment[] + LedgerEntry (desembolso) en una transacción.
    * Los términos se congelan como snapshot en loan.terms.
+   *
+   * Los términos se definen al crear el crédito (cuotas, interés, mora). Si se
+   * pasa `productId`, se usa como plantilla (retrocompatibilidad).
    */
   async createLoan(tenantId: string, input: CreateLoanInput): Promise<LoanModel> {
     const db = this.prisma.forTenant(tenantId);
-    const [client, product] = await Promise.all([
-      db.client.findFirst({ where: { id: input.clientId, deletedAt: null } }),
-      db.creditProduct.findFirst({ where: { id: input.productId, deletedAt: null } }),
-    ]);
+    const client = await db.client.findFirst({ where: { id: input.clientId, deletedAt: null } });
     if (!client) throw new NotFoundException('Cliente no encontrado');
-    if (!product) throw new NotFoundException('Producto de crédito no encontrado');
 
-    const terms = this.termsFromProduct(product);
+    let terms: CreditTerms;
+    if (input.productId) {
+      const product = await db.creditProduct.findFirst({ where: { id: input.productId, deletedAt: null } });
+      if (!product) throw new NotFoundException('Producto de crédito no encontrado');
+      terms = this.termsFromProduct(product);
+    } else {
+      if (!input.termCount || input.termCount < 1) {
+        throw new BadRequestException('Debes indicar la cantidad de cuotas');
+      }
+      terms = this.termsFromInput(input);
+    }
+
     const firstDueDate = input.firstDueDate ?? new Date();
     const schedule = generateSchedule({ principal: input.principal, firstDueDate, terms });
 
@@ -122,14 +149,15 @@ type LoanWithRels = Prisma.LoanGetPayload<{
 }> & { installments?: Prisma.InstallmentGetPayload<object>[] };
 
 function toLoanModel(loan: LoanWithRels | Prisma.LoanGetPayload<object>): LoanModel {
-  const l = loan as LoanWithRels;
+  const l = loan as LoanWithRels & { terms?: Partial<CreditTerms> };
+  const terms = (l.terms ?? {}) as Partial<CreditTerms>;
   return {
     id: l.id,
     code: l.code ?? undefined,
     status: l.status,
     clientId: l.clientId,
     clientName: l.client?.fullName,
-    productId: l.productId,
+    productId: l.productId ?? undefined,
     routeId: l.routeId ?? undefined,
     routeName: l.route?.name,
     principal: Number(l.principal),
@@ -137,6 +165,11 @@ function toLoanModel(loan: LoanWithRels | Prisma.LoanGetPayload<object>): LoanMo
     totalDue: Number(l.totalDue),
     paidAmount: Number(l.paidAmount),
     balance: Number(l.balance),
+    termCount: terms.termCount,
+    interestRate: terms.interestRate,
+    interestMethod: terms.interestMethod as LoanModel['interestMethod'],
+    frequency: terms.frequency as LoanModel['frequency'],
+    lateFeeValue: terms.lateFeeValue,
     disbursedAt: l.disbursedAt ?? undefined,
     firstDueDate: l.firstDueDate ?? undefined,
     createdAt: l.createdAt,

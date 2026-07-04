@@ -386,7 +386,7 @@ model Loan {
   status   LoanStatus @default(PENDING_APPROVAL)
 
   clientId  String
-  productId String
+  productId String? // opcional: los términos pueden definirse al crear el crédito
   routeId   String?
 
   principal    Decimal @db.Decimal(18, 2) // monto entregado
@@ -408,7 +408,7 @@ model Loan {
 
   tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   client       Client        @relation(fields: [clientId], references: [id])
-  product      CreditProduct @relation(fields: [productId], references: [id])
+  product      CreditProduct? @relation(fields: [productId], references: [id])
   route        Route?        @relation(fields: [routeId], references: [id])
   installments Installment[]
   payments     Payment[]
