@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { fetchLoanDetail, type LoanDetail } from '@/lib/graphql';
+import { fetchLoanDetail, fetchPayments, type LoanDetail, type Payment } from '@/lib/graphql';
 import { enqueuePayment, flushQueue, pendingCount } from '@/lib/offline-queue';
 import { money } from '@/lib/format';
 import { colors } from '@/lib/theme';
@@ -19,15 +19,21 @@ function fmtDate(iso: string) {
   return new Intl.DateTimeFormat('es-CO', { day: '2-digit', month: 'short' }).format(new Date(iso));
 }
 
+function fmtDateFull(iso: string) {
+  return new Intl.DateTimeFormat('es-CO', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(iso));
+}
+
 export default function LoanDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const [loan, setLoan] = useState<LoanDetail | null>(null);
+  const [payments, setPayments] = useState<Payment[]>([]);
   const [abono, setAbono] = useState(false);
 
   const load = useCallback(() => {
     if (!id) return;
     fetchLoanDetail(id).then((d) => setLoan(d.loan)).catch(() => {});
+    fetchPayments(id).then((d) => setPayments(d.payments)).catch(() => {});
   }, [id]);
   useEffect(() => load(), [load]);
 
@@ -88,6 +94,26 @@ export default function LoanDetailScreen() {
             </View>
           ))}
         </View>
+
+        <Text style={styles.sectionTitle}>Historial de pagos</Text>
+        {payments.length === 0 ? (
+          <Text style={styles.noPayments}>Aún no hay abonos registrados.</Text>
+        ) : (
+          <View style={styles.card}>
+            {payments.map((p, i) => (
+              <View key={p.id} style={[styles.payRow, i < payments.length - 1 && styles.instBorder]}>
+                <View style={styles.payIcon}>
+                  <Ionicons name="arrow-down" size={16} color={colors.success} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.payAmount}>{money(p.amount)}</Text>
+                  <Text style={styles.instMeta}>{fmtDateFull(p.paidAt)}{p.note ? ` · ${p.note}` : ''}</Text>
+                </View>
+                <Text style={styles.payMethod}>{p.method}</Text>
+              </View>
+            ))}
+          </View>
+        )}
       </ScrollView>
 
       {loan.status !== 'PAID' && (
@@ -136,6 +162,11 @@ const styles = StyleSheet.create({
   instAmount: { fontSize: 15, fontWeight: '800', color: colors.text },
   instMeta: { fontSize: 12, color: colors.muted },
   instStatus: { fontSize: 10, fontWeight: '800' },
+  noPayments: { color: colors.muted, fontSize: 13, paddingHorizontal: 2 },
+  payRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12 },
+  payIcon: { width: 30, height: 30, borderRadius: 15, backgroundColor: '#e9f9e0', alignItems: 'center', justifyContent: 'center' },
+  payAmount: { fontSize: 15, fontWeight: '800', color: colors.text },
+  payMethod: { fontSize: 10, fontWeight: '800', color: colors.muted },
   footer: {
     position: 'absolute', left: 0, right: 0, bottom: 0, padding: 16, paddingBottom: 28,
     backgroundColor: colors.card, borderTopWidth: 2, borderTopColor: colors.border,

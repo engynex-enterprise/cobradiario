@@ -21,6 +21,15 @@ export default function Clientes() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <View style={styles.headerRow}>
+        <View>
+          <Text style={styles.title}>Clientes</Text>
+          <Text style={styles.count}>{clients.length} {clients.length === 1 ? 'cliente' : 'clientes'}</Text>
+        </View>
+        <TouchableOpacity style={styles.addBtn} activeOpacity={0.85} onPress={() => router.push('/(app)/nuevo-cliente' as never)}>
+          <Ionicons name="add" size={24} color="#fff" />
+        </TouchableOpacity>
+      </View>
       <View style={styles.searchWrap}>
         <TextInput
           style={styles.search}
@@ -56,6 +65,13 @@ export default function Clientes() {
 }
 
 const styles = StyleSheet.create({
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 16 },
+  title: { fontSize: 22, fontWeight: '800', color: colors.text },
+  count: { fontSize: 13, color: colors.muted, marginTop: 1 },
+  addBtn: {
+    width: 44, height: 44, borderRadius: 14, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center',
+    borderBottomWidth: 4, borderBottomColor: colors.primaryDark,
+  },
   searchWrap: { padding: 16, paddingBottom: 0 },
   search: {
     backgroundColor: colors.card, borderWidth: 2, borderColor: colors.border, borderRadius: 12,

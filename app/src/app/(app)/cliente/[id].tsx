@@ -49,6 +49,15 @@ export default function ClienteDetail() {
         </View>
       </View>
 
+      <TouchableOpacity
+        style={styles.newLoanBtn}
+        activeOpacity={0.85}
+        onPress={() => router.push(`/(app)/nuevo-credito?clientId=${id}` as never)}
+      >
+        <Ionicons name="add-circle-outline" size={20} color="#fff" />
+        <Text style={styles.newLoanText}>Crear crédito</Text>
+      </TouchableOpacity>
+
       <Text style={styles.sectionTitle}>Créditos</Text>
       {loans.length === 0 ? (
         <Text style={styles.empty}>Este cliente no tiene créditos.</Text>
@@ -82,6 +91,12 @@ const styles = StyleSheet.create({
   stat: { flex: 1, backgroundColor: colors.card, borderRadius: 16, borderWidth: 2, borderColor: colors.border, padding: 14 },
   statLabel: { fontSize: 11, color: colors.muted, fontWeight: '700' },
   statValue: { fontSize: 18, fontWeight: '800', color: colors.text, marginTop: 2 },
+  newLoanBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    backgroundColor: colors.primary, borderRadius: 16, paddingVertical: 14,
+    borderBottomWidth: 4, borderBottomColor: colors.primaryDark, marginTop: 4,
+  },
+  newLoanText: { color: '#fff', fontWeight: '800', fontSize: 15, textTransform: 'uppercase', letterSpacing: 0.5 },
   sectionTitle: { fontSize: 17, fontWeight: '800', color: colors.text, marginTop: 4 },
   empty: { color: colors.muted, textAlign: 'center', marginTop: 12 },
   card: {

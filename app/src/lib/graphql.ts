@@ -71,6 +71,87 @@ export function fetchClients() {
   return gql<{ clients: Client[] }>(`{ clients { id fullName documentId phone city } }`);
 }
 
+export function createClient(input: {
+  fullName: string;
+  documentId?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+}) {
+  return gql<{ createClient: Client }>(
+    `mutation($i: CreateClientInput!) {
+      createClient(input: $i) { id fullName documentId phone city }
+    }`,
+    { i: input },
+  );
+}
+
+export interface CreditProduct {
+  id: string;
+  name: string;
+  interestMethod: string;
+  interestRate: number;
+  termCount: number;
+  frequency: string;
+}
+export function fetchCreditProducts() {
+  return gql<{ creditProducts: CreditProduct[] }>(
+    `{ creditProducts { id name interestMethod interestRate termCount frequency } }`,
+  );
+}
+
+export function createLoan(input: {
+  clientId: string;
+  productId: string;
+  principal: number;
+  routeId?: string;
+  firstDueDate?: string;
+}) {
+  return gql<{ createLoan: Loan }>(
+    `mutation($i: CreateLoanInput!) {
+      createLoan(input: $i) { id status principal totalDue paidAmount balance clientId }
+    }`,
+    { i: input },
+  );
+}
+
+export interface Payment {
+  id: string;
+  amount: number;
+  method: string;
+  status: string;
+  paidAt: string;
+  note?: string;
+}
+export function fetchPayments(loanId: string) {
+  return gql<{ payments: Payment[] }>(
+    `query($id: ID!) { payments(loanId: $id) { id amount method status paidAt note } }`,
+    { id: loanId },
+  );
+}
+
+export interface CollectorBalance {
+  collectorId: string;
+  collectorName?: string;
+  collected: number;
+  payments: number;
+}
+export interface Balances {
+  totalPrincipal: number;
+  totalDue: number;
+  totalPaid: number;
+  outstanding: number;
+  byCollector: CollectorBalance[];
+}
+export function fetchBalances() {
+  return gql<{ balances: Balances }>(
+    `{ balances {
+      totalPrincipal totalDue totalPaid outstanding
+      byCollector { collectorId collectorName collected payments }
+    } }`,
+  );
+}
+
 export interface Installment {
   id: string;
   sequence: number;

@@ -91,7 +91,9 @@ const NAV: NavGroup[] = [
   {
     section: 'Análisis',
     icon: BarChart3,
-    items: [{ href: '/dashboard/reportes', label: 'Reportes', icon: BarChart3 }],
+    items: [
+      { href: '/dashboard/reportes', label: 'Resumen', icon: BarChart3 },
+    ],
   },
   {
     section: 'Cuenta',
