@@ -105,7 +105,7 @@ export default function Inicio() {
       data={due}
       keyExtractor={(i) => i.id}
       ListHeaderComponent={Header}
-      contentContainerStyle={{ padding: 16, gap: 10, paddingBottom: 32 }}
+      contentContainerStyle={{ padding: 16, gap: 10, paddingBottom: 110 }}
       refreshControl={<RefreshControl refreshing={false} onRefresh={refresh} tintColor={colors.primary} />}
       ListEmptyComponent={
         <View style={styles.emptyCard}>

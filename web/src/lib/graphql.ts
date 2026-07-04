@@ -413,6 +413,56 @@ export function fetchBalances() {
   );
 }
 
+// --- Resumen financiero ---
+export interface FinancialSummary {
+  abonos: number;
+  prestamos: number;
+  totalCollected: number;
+  collectedCapital: number;
+  collectedInterest: number;
+  collectedLateFee: number;
+  byMethod: { method: string; amount: number }[];
+  disbursedPrincipal: number;
+  disbursedInterest: number;
+  disbursedTotal: number;
+  expensesTotal: number;
+  netProfit: number;
+}
+export function fetchFinancialSummary(from?: string, to?: string) {
+  return gql<{ financialSummary: FinancialSummary }>(
+    `query($from: DateTime, $to: DateTime) {
+      financialSummary(from: $from, to: $to) {
+        abonos prestamos totalCollected collectedCapital collectedInterest collectedLateFee
+        byMethod { method amount }
+        disbursedPrincipal disbursedInterest disbursedTotal expensesTotal netProfit
+      }
+    }`,
+    { from, to },
+  );
+}
+
+// --- Gastos ---
+export interface Expense {
+  id: string;
+  authorName: string;
+  category: string;
+  amount: number;
+  note?: string;
+  createdAt: string;
+}
+export function fetchExpenses(from?: string, to?: string) {
+  return gql<{ expenses: Expense[] }>(
+    `query($from: DateTime, $to: DateTime) { expenses(from: $from, to: $to) { id authorName category amount note createdAt } }`,
+    { from, to },
+  );
+}
+export function createExpense(input: { category: string; amount: number; note?: string }) {
+  return gql<{ createExpense: Expense }>(
+    `mutation($i: CreateExpenseInput!) { createExpense(input: $i) { id authorName category amount note createdAt } }`,
+    { i: input },
+  );
+}
+
 // --- Etiquetas ---
 export interface Tag {
   id: string;

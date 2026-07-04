@@ -10,7 +10,7 @@ export default function Ajustes() {
   const soon = (t: string) => Alert.alert(t, 'Esta configuración estará disponible muy pronto.');
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ padding: 16, gap: 18, paddingBottom: 40 }}>
+    <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ padding: 16, gap: 18, paddingBottom: 110 }}>
       <Text style={styles.h1}>Ajustes</Text>
 
       <Group title="Configuración del crédito">

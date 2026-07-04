@@ -451,3 +451,31 @@ Bitácora de decisiones y cambios estructurales. Formato: fecha · tipo · descr
   `insets.bottom` a los botones flotantes y footers (ya no quedan bajo el home indicator).
   Afecta: cliente/[id], loan/[id], gastos, cierre, nuevo-cliente, nuevo-credito, cobro, perfil,
   resumen-financiero y notificaciones (esta última recibió header con back).
+
+## 2026-07-04 — Barra flotante + Gastos en la web
+- **[app]** Barra de pestañas inferior ahora **flotante** (márgenes laterales, redondeada 24, sombra,
+  respeta el home indicator) — los íconos ya no quedan cortados ni pegados a los bordes. Las 5 pantallas
+  de tabs reciben paddingBottom para no quedar tapadas.
+- **[web]** graphql: `fetchFinancialSummary`, `fetchExpenses`, `createExpense`.
+- **[web]** Página **Gastos** real (reemplaza el placeholder de movimientos): KPIs (gastos, ganancia neta,
+  recaudado del día), tabla con búsqueda/orden y drawer "Nuevo gasto" — usa el mismo modelo `Expense` que la app.
+- **[run]** Web dev server en http://localhost:3000 (backend en :4000).
+
+## 2026-07-04 — Fix permisos cliente + navbar activo + Nuevo cliente
+- **[backend]** `createClient` ahora permite COLLECTOR (corrige "no tienes permisos" al crear cliente).
+- **[app]** Navbar flotante: más separado de los bordes (margen 22) y **tab activo con pill verde**
+  (`tabBarActiveBackgroundColor`), ítems redondeados.
+- **[app]** Vista **Nuevo cliente** rediseñada: hero verde con avatar de inicial en vivo, campos con ícono
+  agrupados en tarjeta, botón chunky. Respeta safe-area.
+- **[verificación]** Cobrador crea cliente OK. Typecheck app/services OK.
+
+## 2026-07-04 — Web: tema y layout Altipal (orus-pos)
+- **[web]** globals.css reemplazado por el **tema Altipal** de orus-pos: azul #004f9f, radius 0,
+  paleta clara/oscura navy, sombras Material (shadow-soft/-md/-lg/-header), canvas #eef1f6. Se retiró el
+  tema Duolingo verde de la web (la app móvil sigue Duolingo).
+- **[web]** Fuente **Montserrat** (manual de marca Altipal).
+- **[web]** `dashboard-shell` rehecho al layout de orus-pos: header (logo + colapsar + buscador ⌘K +
+  notificaciones + tema) y **sidebar único colapsable** con grupos expandibles (Cartera, Finanzas, Gestión,
+  Comunicación) + Inicio/Reportes como enlaces + menú de usuario al pie (perfil/reportes/cerrar sesión).
+  Nav horizontal en móvil. Componentes (card/modal/drawer/select) heredan radius 0 + azul.
+- **[run]** Web en http://localhost:3000 (login 200, dashboard 200).

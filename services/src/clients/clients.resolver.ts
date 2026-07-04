@@ -15,7 +15,7 @@ export class ClientsResolver {
     return this.clients.list(user.tenantId);
   }
 
-  @Roles(UserRole.OWNER, UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.OWNER, UserRole.ADMIN, UserRole.MANAGER, UserRole.COLLECTOR)
   @Mutation(() => ClientModel)
   createClient(
     @CurrentUser() user: AuthContext,

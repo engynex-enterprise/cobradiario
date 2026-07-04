@@ -19,7 +19,7 @@ export default function BalancesScreen() {
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: colors.bg }}
-      contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 32 }}
+      contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 110 }}
       refreshControl={<RefreshControl refreshing={false} onRefresh={load} tintColor={colors.primary} />}
     >
       <Text style={styles.h1}>Balances</Text>

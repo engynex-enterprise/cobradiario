@@ -42,7 +42,7 @@ export default function Clientes() {
       <FlatList
         data={filtered}
         keyExtractor={(c) => c.id}
-        contentContainerStyle={{ padding: 16, gap: 10, paddingBottom: 32 }}
+        contentContainerStyle={{ padding: 16, gap: 10, paddingBottom: 110 }}
         refreshControl={<RefreshControl refreshing={false} onRefresh={load} tintColor={colors.primary} />}
         ListEmptyComponent={<Text style={styles.empty}>Sin clientes.</Text>}
         renderItem={({ item }) => (
