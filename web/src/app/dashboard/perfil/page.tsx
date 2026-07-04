@@ -7,6 +7,7 @@ import { useAuth } from '@/components/auth-provider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { PageHeader } from '@/components/page-header';
 import { Moon, Sun, LogOut, UserRound, Building2 } from 'lucide-react';
 
 export default function PerfilPage() {
@@ -18,7 +19,10 @@ export default function PerfilPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 p-4 sm:p-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Perfil</h1>
+      <PageHeader
+        title="Perfil"
+        description="Tu cuenta, la organización a la que perteneces y las preferencias de apariencia (tema claro/oscuro). Desde aquí también puedes cerrar sesión."
+      />
 
       <Card>
         <CardHeader>

@@ -28,6 +28,10 @@ import {
   UserRound,
   Landmark,
   LogOut,
+  LayoutGrid,
+  Wallet,
+  Settings,
+  MessagesSquare,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -36,10 +40,16 @@ interface NavItem {
   label: string;
   icon: LucideIcon;
 }
+interface NavGroup {
+  section: string;
+  icon: LucideIcon;
+  items: NavItem[];
+}
 
-const NAV: { section: string; items: NavItem[] }[] = [
+const NAV: NavGroup[] = [
   {
     section: 'Principal',
+    icon: LayoutGrid,
     items: [
       { href: '/dashboard', label: 'Inicio', icon: Home },
       { href: '/dashboard/clientes', label: 'Clientes', icon: Users },
@@ -50,6 +60,7 @@ const NAV: { section: string; items: NavItem[] }[] = [
   },
   {
     section: 'Finanzas',
+    icon: Wallet,
     items: [
       { href: '/dashboard/movimientos', label: 'Movimientos', icon: ArrowLeftRight },
       { href: '/dashboard/gastos', label: 'Gastos', icon: Receipt },
@@ -60,6 +71,7 @@ const NAV: { section: string; items: NavItem[] }[] = [
   },
   {
     section: 'Gestión',
+    icon: Settings,
     items: [
       { href: '/dashboard/rutas', label: 'Rutas', icon: Route },
       { href: '/dashboard/equipo', label: 'Equipo', icon: Network },
@@ -69,6 +81,7 @@ const NAV: { section: string; items: NavItem[] }[] = [
   },
   {
     section: 'Comunicación',
+    icon: MessagesSquare,
     items: [
       { href: '/dashboard/recordatorios', label: 'Recordatorios', icon: BellRing },
       { href: '/dashboard/notificaciones', label: 'Notificaciones', icon: Bell },
@@ -77,21 +90,28 @@ const NAV: { section: string; items: NavItem[] }[] = [
   },
   {
     section: 'Análisis',
+    icon: BarChart3,
     items: [{ href: '/dashboard/reportes', label: 'Reportes', icon: BarChart3 }],
   },
   {
     section: 'Cuenta',
+    icon: UserRound,
     items: [{ href: '/dashboard/perfil', label: 'Perfil', icon: UserRound }],
   },
 ];
 
 const FLAT = NAV.flatMap((g) => g.items);
 
-function isActive(pathname: string, href: string) {
+function itemActive(pathname: string, href: string) {
   if (href === '/dashboard') return pathname === '/dashboard';
   if (href === '/dashboard/prestamos')
     return pathname.startsWith('/dashboard/prestamos') || pathname.startsWith('/dashboard/loan');
   return pathname === href || pathname.startsWith(href + '/');
+}
+
+function activeGroupIndex(pathname: string) {
+  const idx = NAV.findIndex((g) => g.items.some((it) => itemActive(pathname, it.href)));
+  return idx === -1 ? 0 : idx;
 }
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
@@ -105,8 +125,12 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
   if (loading || !user) return null;
 
+  const groupIdx = activeGroupIndex(pathname);
+  const group = NAV[groupIdx];
+
   return (
     <div className="flex h-screen flex-col overflow-hidden">
+      {/* Header */}
       <header className="shadow-header flex h-16 shrink-0 items-center gap-2 border-b-2 border-border bg-card px-4">
         <Link href="/dashboard" className="flex items-center gap-2.5">
           <span className="flex size-9 items-center justify-center bg-primary text-primary-foreground">
@@ -127,7 +151,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               router.replace('/login');
             }}
             title="Cerrar sesión"
-            className="flex size-10 items-center justify-center text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+            className="flex size-9 items-center justify-center text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
           >
             <LogOut className="size-5" />
           </button>
@@ -135,45 +159,67 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       </header>
 
       <div className="flex min-h-0 flex-1">
-        <aside className="hidden w-60 shrink-0 flex-col border-r-2 border-border bg-sidebar md:flex">
-          <nav className="flex-1 space-y-4 overflow-y-auto p-3">
-            {NAV.map((group) => (
-              <div key={group.section} className="space-y-1">
-                <p className="px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                  {group.section}
-                </p>
-                {group.items.map((item) => {
-                  const active = isActive(pathname, item.href);
-                  const Icon = item.icon;
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={cn(
-                        'flex items-center gap-3 border-2 px-3 py-2 text-[13px] font-bold uppercase tracking-wide transition-colors',
-                        active
-                          ? 'border-sky-300 bg-accent text-accent-foreground'
-                          : 'border-transparent text-sidebar-foreground hover:bg-muted hover:text-foreground',
-                      )}
-                    >
-                      <Icon className="size-[18px] shrink-0" />
-                      <span className="truncate">{item.label}</span>
-                    </Link>
-                  );
-                })}
-              </div>
-            ))}
+        {/* Riel de secciones (primer sidebar) */}
+        <nav className="hidden w-16 shrink-0 flex-col items-center gap-1 border-r-2 border-border bg-sidebar py-3 md:flex">
+          {NAV.map((g, i) => {
+            const Icon = g.icon;
+            const active = i === groupIdx;
+            return (
+              <Link
+                key={g.section}
+                href={g.items[0].href}
+                title={g.section}
+                className={cn(
+                  'flex size-11 flex-col items-center justify-center border-2 transition-colors',
+                  active
+                    ? 'border-sky-300 bg-accent text-accent-foreground'
+                    : 'border-transparent text-sidebar-foreground hover:bg-muted hover:text-foreground',
+                )}
+              >
+                <Icon className="size-5" />
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Sub-navegación de la sección (segundo sidebar) */}
+        <aside className="hidden w-56 shrink-0 flex-col border-r-2 border-border bg-sidebar md:flex">
+          <div className="border-b-2 border-sidebar-border px-4 py-3">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Sección</p>
+            <p className="text-sm font-extrabold text-foreground">{group.section}</p>
+          </div>
+          <nav className="flex-1 space-y-1 overflow-y-auto p-3">
+            {group.items.map((item) => {
+              const active = itemActive(pathname, item.href);
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    'flex items-center gap-3 border-2 px-3 py-2 text-[13px] font-bold uppercase tracking-wide transition-colors',
+                    active
+                      ? 'border-sky-300 bg-accent text-accent-foreground'
+                      : 'border-transparent text-sidebar-foreground hover:bg-muted hover:text-foreground',
+                  )}
+                >
+                  <Icon className="size-[18px] shrink-0" />
+                  <span className="truncate">{item.label}</span>
+                </Link>
+              );
+            })}
           </nav>
           <div className="border-t-2 border-sidebar-border p-3 text-xs text-muted-foreground">
-            <p className="font-semibold text-foreground">Plataforma de cobro diario</p>
+            <p className="font-semibold text-foreground">Cobro Diario</p>
             <p>v0.1 · multi-tenant</p>
           </div>
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col">
+          {/* Nav horizontal en móvil */}
           <nav className="flex gap-1 overflow-x-auto border-b-2 border-border bg-card px-2 py-1.5 md:hidden">
             {FLAT.map((item) => {
-              const active = isActive(pathname, item.href);
+              const active = itemActive(pathname, item.href);
               return (
                 <Link
                   key={item.href}

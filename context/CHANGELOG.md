@@ -251,6 +251,18 @@ Bitácora de decisiones y cambios estructurales. Formato: fecha · tipo · descr
 - **[verificación]** ops queries probadas contra el servidor; typecheck api+web OK; las 19
   secciones del panel sirven 200.
 
+## 2026-07-04 — Fidelidad de estilo orus + doble sidebar + descripciones por módulo
+
+- **[web]** Componentes calcados de orus-pos (base-nova): **Button** (compacto h-8, esquinas del
+  token, `destructive` tenue, presión al click), **Card** (hairline `ring-1 ring-foreground/10`
+  sin sombra pesada), **Dialog/popup** (borde 2px, overlay suave con blur).
+- **[web]** **Doble sidebar** estilo orus: riel de secciones (iconos) + segundo sidebar con los
+  ítems de la sección activa (cabecera con nombre de sección). Header 2px, mismos tokens/colores.
+- **[web]** `PageHeader` con **texto explicativo en cada módulo** (qué es y para qué sirve):
+  Inicio, Clientes, Préstamos, Pagos, Cobro del día, Movimientos, Gastos, Rutas, Equipo,
+  Productos, Recordatorios, Notificaciones, Reportes, Perfil.
+- **[verificación]** typecheck web OK; 19 secciones sirven 200; sin errores en dev.
+
 <!-- Plantilla para próximas entradas:
 ## AAAA-MM-DD — Título
 - **[tipo]** descripción   (tipo ∈ decisión/infra/db/backend/app/web/seguridad/pendiente/fix)

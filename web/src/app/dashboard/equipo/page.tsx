@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { PageHeader } from '@/components/page-header';
 import { createTeamMember, fetchTeam, type TeamMember } from '@/lib/graphql';
 import { UserPlus } from 'lucide-react';
 
@@ -23,7 +24,10 @@ export default function EquipoPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-4 sm:p-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Equipo</h1>
+      <PageHeader
+        title="Equipo"
+        description="Usuarios de tu organización y sus roles (dueño, administrador, supervisor, cobrador). Crea cobradores para asignarlos a rutas y que registren abonos desde la app."
+      />
 
       <Card>
         <CardHeader>

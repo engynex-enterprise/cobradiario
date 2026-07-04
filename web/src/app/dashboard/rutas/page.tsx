@@ -14,6 +14,7 @@ import {
   type Route,
   type TeamMember,
 } from '@/lib/graphql';
+import { PageHeader } from '@/components/page-header';
 import { MapPin, Plus } from 'lucide-react';
 
 export default function RutasPage() {
@@ -62,7 +63,10 @@ export default function RutasPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Rutas</h1>
+      <PageHeader
+        title="Rutas"
+        description="Zonas de cobro que agrupan créditos y se asignan a uno o varios cobradores. Sirven para organizar el trabajo en campo y filtrar la cartera por ruta."
+      />
 
       <Card>
         <CardHeader>

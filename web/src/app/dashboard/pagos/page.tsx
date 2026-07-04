@@ -12,6 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { PageHeader } from '@/components/page-header';
 import { fetchRecentPayments, type PaymentFeedItem } from '@/lib/graphql';
 import { getSocket } from '@/lib/socket';
 import { formatDate, money } from '@/lib/utils';
@@ -47,7 +48,10 @@ export default function PagosPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Pagos</h1>
+      <PageHeader
+        title="Pagos"
+        description="Historial de abonos recibidos en todos los créditos: monto, método, cobrador y fecha. Cada abono se descuenta del saldo del crédito y alimenta la caja del cobrador."
+      />
       <Card>
         <CardHeader className="flex-row items-center justify-between">
           <CardTitle className="text-lg">Últimos abonos</CardTitle>

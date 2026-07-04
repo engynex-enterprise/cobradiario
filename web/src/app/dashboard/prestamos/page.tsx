@@ -16,6 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { PageHeader } from '@/components/page-header';
 import { fetchLoans, fetchRoutes, type Loan, type Route } from '@/lib/graphql';
 import { getSocket } from '@/lib/socket';
 import { money } from '@/lib/utils';
@@ -68,12 +69,15 @@ export default function PrestamosPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Préstamos</h1>
-        <Badge variant={live ? 'success' : 'secondary'} className="gap-1">
-          <Radio className="h-3 w-3" /> {live ? 'En vivo' : 'Desconectado'}
-        </Badge>
-      </div>
+      <PageHeader
+        title="Préstamos"
+        description="La cartera de créditos: cada préstamo con su cliente, ruta, total a pagar, abonado y saldo. Crea nuevos créditos, búscalos y registra abonos. Se actualiza en tiempo real."
+        actions={
+          <Badge variant={live ? 'success' : 'secondary'} className="gap-1">
+            <Radio className="h-3 w-3" /> {live ? 'En vivo' : 'Desconectado'}
+          </Badge>
+        }
+      />
 
       <Card>
         <CardHeader className="flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">

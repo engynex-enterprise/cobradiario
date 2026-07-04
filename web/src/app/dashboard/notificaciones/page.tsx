@@ -60,11 +60,17 @@ export default function NotificacionesPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-4 sm:p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
-          Notificaciones
-          {unreadCount > 0 && <Badge>{unreadCount}</Badge>}
-        </h1>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
+            Notificaciones
+            {unreadCount > 0 && <Badge>{unreadCount}</Badge>}
+          </h1>
+          <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+            Avisos del sistema en tiempo real: créditos que caen en mora, cuotas por vencer y eventos
+            de tu operación. Márcalas como leídas cuando las revises.
+          </p>
+        </div>
         {unreadCount > 0 && (
           <Button variant="outline" size="sm" onClick={markAll}>
             <CheckCheck className="h-4 w-4" /> Marcar todas
