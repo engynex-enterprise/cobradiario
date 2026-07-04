@@ -14,6 +14,7 @@ export class InstallmentModel {
   @Field(() => Float) amount!: number;
   @Field(() => Float) principalPart!: number;
   @Field(() => Float) interestPart!: number;
+  @Field(() => Float) chargePart!: number;
   @Field(() => Float) lateFee!: number;
   @Field(() => Float) paidAmount!: number;
 }
@@ -40,6 +41,7 @@ export class LoanModel {
   @Field(() => InterestMethod, { nullable: true }) interestMethod?: InterestMethod;
   @Field(() => Frequency, { nullable: true }) frequency?: Frequency;
   @Field(() => Float, { nullable: true }) lateFeeValue?: number;
+  @Field(() => Float, { nullable: true }) chargesTotal?: number;
 
   @Field({ nullable: true }) disbursedAt?: Date;
   @Field({ nullable: true }) firstDueDate?: Date;

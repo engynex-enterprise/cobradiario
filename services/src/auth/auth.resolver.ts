@@ -1,6 +1,6 @@
 import { Args, Context, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { AuthService } from './auth.service';
-import { LoginInput, RefreshInput, RegisterInput } from './dto/auth.inputs';
+import { LoginInput, RefreshInput, RegisterInput, UpdateProfileInput } from './dto/auth.inputs';
 import { AuthPayload, AuthUser } from './dto/auth.models';
 import { CurrentUser, Public } from '../common/decorators';
 import { AuthContext } from '../common/types';
@@ -33,14 +33,13 @@ export class AuthResolver {
   }
 
   @Query(() => AuthUser, { name: 'me' })
-  me(@CurrentUser() user: AuthContext): AuthUser {
-    return {
-      id: user.userId,
-      tenantId: user.tenantId,
-      email: user.email,
-      fullName: '',
-      role: user.role,
-    };
+  me(@CurrentUser() user: AuthContext): Promise<AuthUser> {
+    return this.auth.profile(user.userId);
+  }
+
+  @Mutation(() => AuthUser, { name: 'updateProfile' })
+  updateProfile(@CurrentUser() user: AuthContext, @Args('input') input: UpdateProfileInput): Promise<AuthUser> {
+    return this.auth.updateProfile(user.userId, input);
   }
 }
 

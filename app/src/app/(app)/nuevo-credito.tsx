@@ -39,6 +39,11 @@ export default function NuevoCredito() {
   const [moraPct, setMoraPct] = useState(0);
   const [freq, setFreq] = useState<Freq>('DAILY');
 
+  // Cargos adicionales
+  const [charges, setCharges] = useState<{ concept: string; amount: number }[]>([]);
+  const [chgConcept, setChgConcept] = useState('');
+  const [chgAmount, setChgAmount] = useState(0);
+
   // Cálculo bidireccional: el campo editado por último "manda".
   const [driver, setDriver] = useState<'count' | 'amount'>('count');
   const [termCountInput, setTermCountInput] = useState(20);
@@ -53,7 +58,8 @@ export default function NuevoCredito() {
   useEffect(() => load(), [load]);
 
   const interestTotal = Math.round(principal * (interestPct / 100));
-  const totalDue = principal + interestTotal;
+  const chargesTotal = charges.reduce((s, c) => s + c.amount, 0);
+  const totalDue = principal + interestTotal + chargesTotal;
 
   // Deriva cuotas ↔ valor según el "driver".
   const { termCount, cuota } = useMemo(() => {
@@ -90,6 +96,7 @@ export default function NuevoCredito() {
         frequency: freq,
         lateFeeType: moraPct > 0 ? 'PERCENT_OF_INSTALLMENT' : 'NONE',
         lateFeeValue: moraPct > 0 ? moraPct / 100 : 0,
+        charges: charges.length ? charges : undefined,
       });
       router.replace(`/(app)/loan/${loan.id}` as never);
     } catch (e) {
@@ -215,12 +222,50 @@ export default function NuevoCredito() {
           <Text style={styles.pctHint}>de la cuota atrasada</Text>
         </View>
 
+        {/* 6. Cargos adicionales */}
+        <Text style={styles.label}>6. Cargos adicionales (opcional)</Text>
+        {charges.map((c, i) => (
+          <View key={i} style={styles.chargeRow}>
+            <Ionicons name="pricetag-outline" size={16} color={colors.accentText} />
+            <Text style={styles.chargeConcept}>{c.concept}</Text>
+            <Text style={styles.chargeAmount}>{money(c.amount)}</Text>
+            <TouchableOpacity onPress={() => setCharges((xs) => xs.filter((_, j) => j !== i))}>
+              <Ionicons name="close-circle" size={20} color={colors.danger} />
+            </TouchableOpacity>
+          </View>
+        ))}
+        <View style={styles.chargeAdd}>
+          <TextInput
+            style={styles.chargeInput}
+            placeholder="Concepto (ej. Seguro)"
+            placeholderTextColor={colors.muted}
+            value={chgConcept}
+            onChangeText={setChgConcept}
+          />
+          <TextInput
+            style={styles.chargeAmt}
+            keyboardType="number-pad"
+            placeholder="$ 0"
+            placeholderTextColor={colors.muted}
+            value={chgAmount > 0 ? nf.format(chgAmount) : ''}
+            onChangeText={(t) => setChgAmount(Number(t.replace(/[^\d]/g, '')) || 0)}
+          />
+          <TouchableOpacity
+            style={[styles.chargeBtn, (!chgConcept.trim() || chgAmount <= 0) && { opacity: 0.4 }]}
+            disabled={!chgConcept.trim() || chgAmount <= 0}
+            onPress={() => { setCharges((xs) => [...xs, { concept: chgConcept.trim(), amount: chgAmount }]); setChgConcept(''); setChgAmount(0); }}
+          >
+            <Ionicons name="add" size={22} color="#fff" />
+          </TouchableOpacity>
+        </View>
+
         {/* Resumen */}
         <View style={styles.summary}>
           <Text style={styles.summaryTitle}>Resumen del crédito</Text>
           <SumRow label="Capital a prestar" value={money(principal)} />
           <SumRow label={`Interés (${interestPct}%)`} value={money(interestTotal)} />
-          <SumRow label="Total con interés" value={money(totalDue)} strong />
+          {chargesTotal > 0 ? <SumRow label="Cargos adicionales" value={money(chargesTotal)} /> : null}
+          <SumRow label="Total del crédito" value={money(totalDue)} strong />
           <View style={styles.divider} />
           <SumRow label={`Valor de cuota (${termCount})`} value={money(cuota)} />
           <SumRow label="Duración" value={durationLabel(termCount, freq)} small />
@@ -279,6 +324,13 @@ const styles = StyleSheet.create({
   pctInput: { fontSize: 20, fontWeight: '800', color: colors.text, paddingVertical: 12, minWidth: 60 },
   pctSign: { fontSize: 18, fontWeight: '800', color: colors.muted },
   pctHint: { fontSize: 12, color: colors.muted, marginLeft: 'auto' },
+  chargeRow: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.border, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10 },
+  chargeConcept: { flex: 1, fontSize: 14, fontWeight: '700', color: colors.text },
+  chargeAmount: { fontSize: 14, fontWeight: '800', color: colors.text },
+  chargeAdd: { flexDirection: 'row', gap: 8, alignItems: 'center' },
+  chargeInput: { flex: 1, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.border, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 11, fontSize: 14, color: colors.text },
+  chargeAmt: { width: 96, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.border, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 11, fontSize: 14, fontWeight: '700', color: colors.text },
+  chargeBtn: { width: 44, height: 44, borderRadius: 12, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', borderBottomWidth: 3, borderBottomColor: colors.primaryDark },
   summary: { backgroundColor: colors.card, borderRadius: 16, borderWidth: 2, borderColor: colors.primary, padding: 16, gap: 9, marginTop: 4 },
   summaryTitle: { fontSize: 15, fontWeight: '800', color: colors.text, marginBottom: 2 },
   sumRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },

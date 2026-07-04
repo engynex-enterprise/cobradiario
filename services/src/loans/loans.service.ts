@@ -72,6 +72,14 @@ export class LoansService {
     const schedule = generateSchedule({ principal: input.principal, firstDueDate, terms });
     const code = genLoanCode();
 
+    // Cargos adicionales: se distribuyen entre las cuotas (la última absorbe el redondeo)
+    // manteniendo el invariante cuota = capital + interés + cargo. Suman al total y saldo.
+    const charges = (input.charges ?? []).filter((c) => c.amount > 0);
+    const chargesTotal = round2(charges.reduce((s, c) => s + c.amount, 0));
+    const n = schedule.installments.length;
+    const chargePer = n > 0 ? round2(chargesTotal / n) : 0;
+    const termsSnapshot = { ...terms, charges, chargesTotal } as unknown as Prisma.InputJsonValue;
+
     const loan = await this.prisma.$transaction(async (tx) => {
       await this.prisma.setTenantGuc(tx, tenantId); // RLS dentro de la transacción
       const created = await tx.loan.create({
@@ -84,25 +92,32 @@ export class LoansService {
           status: 'ACTIVE',
           principal: schedule.principal,
           interestTotal: schedule.interestTotal,
-          totalDue: schedule.totalDue,
+          totalDue: round2(schedule.totalDue + chargesTotal),
           paidAmount: 0,
-          balance: schedule.totalDue,
-          terms: terms as unknown as Prisma.InputJsonValue,
+          balance: round2(schedule.totalDue + chargesTotal),
+          terms: termsSnapshot,
           disbursedAt: new Date(),
           firstDueDate,
         },
       });
 
+      let accumCharge = 0;
       await tx.installment.createMany({
-        data: schedule.installments.map((it) => ({
-          tenantId,
-          loanId: created.id,
-          sequence: it.sequence,
-          dueDate: it.dueDate,
-          amount: it.amount,
-          principalPart: it.principalPart,
-          interestPart: it.interestPart,
-        })),
+        data: schedule.installments.map((it, i) => {
+          const isLast = i === n - 1;
+          const chargePart = isLast ? round2(chargesTotal - accumCharge) : chargePer;
+          accumCharge = round2(accumCharge + chargePart);
+          return {
+            tenantId,
+            loanId: created.id,
+            sequence: it.sequence,
+            dueDate: it.dueDate,
+            amount: round2(it.amount + chargePart),
+            principalPart: it.principalPart,
+            interestPart: it.interestPart,
+            chargePart,
+          };
+        }),
       });
 
       // Ledger: desembolso (egreso de caja del prestamista).
@@ -145,6 +160,10 @@ export class LoansService {
   }
 }
 
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
 /** Código legible del crédito: YYMMDD-XXX (fecha + sufijo base36). */
 function genLoanCode(): string {
   const d = new Date();
@@ -185,6 +204,7 @@ function toLoanModel(loan: LoanWithRels | Prisma.LoanGetPayload<object>): LoanMo
     interestMethod: terms.interestMethod as LoanModel['interestMethod'],
     frequency: terms.frequency as LoanModel['frequency'],
     lateFeeValue: terms.lateFeeValue,
+    chargesTotal: (terms as { chargesTotal?: number }).chargesTotal,
     disbursedAt: l.disbursedAt ?? undefined,
     firstDueDate: l.firstDueDate ?? undefined,
     createdAt: l.createdAt,
@@ -203,6 +223,7 @@ export function toInstallmentModel(
     amount: Number(it.amount),
     principalPart: Number(it.principalPart),
     interestPart: Number(it.interestPart),
+    chargePart: Number(it.chargePart),
     lateFee: Number(it.lateFee),
     paidAmount: Number(it.paidAmount),
   };

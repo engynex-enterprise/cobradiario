@@ -14,9 +14,8 @@ export default function Ajustes() {
       <Text style={styles.h1}>Ajustes</Text>
 
       <Group title="Configuración del crédito">
-        <Row icon="pricetag-outline" color="#22c55e" label="Interés y presets" onPress={() => soon('Interés y presets')} />
-        <Row icon="time-outline" color="#f97316" label="Mora y días de gracia" onPress={() => soon('Mora')} />
-        <Row icon="cube-outline" color="#9333ea" label="Productos de crédito" onPress={() => soon('Productos de crédito')} last />
+        <Row icon="pricetag-outline" color="#22c55e" label="Interés y presets" onPress={() => router.push('/(app)/productos')} />
+        <Row icon="cube-outline" color="#9333ea" label="Productos de crédito" onPress={() => router.push('/(app)/productos')} last />
       </Group>
 
       <Group title="Empresa">
@@ -34,6 +33,7 @@ export default function Ajustes() {
       <Group title="Operación">
         <Row icon="calendar-number-outline" color="#3b82f6" label="Cobro del día" onPress={() => router.push('/(app)/cobro')} />
         <Row icon="receipt-outline" color="#ef4444" label="Gastos" onPress={() => router.push('/(app)/gastos')} />
+        <Row icon="swap-vertical-outline" color="#9333ea" label="Bases" onPress={() => router.push('/(app)/bases')} />
         <Row icon="notifications-outline" color="#e0910a" label="Notificaciones" onPress={() => router.push('/(app)/notificaciones')} last />
       </Group>
 

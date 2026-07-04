@@ -53,3 +53,18 @@ export class RefreshInput {
   @IsString()
   refreshToken!: string;
 }
+
+@InputType()
+export class UpdateProfileInput {
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  fullName?: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  phone?: string;
+}

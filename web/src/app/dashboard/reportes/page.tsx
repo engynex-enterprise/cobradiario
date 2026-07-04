@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import {
   Bar,
@@ -13,17 +12,16 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { fetchDashboardStats, type DashboardStats } from '@/lib/graphql';
 import { money } from '@/lib/utils';
 import { PageHeader } from '@/components/page-header';
-import { ArrowLeft, Wallet, TrendingUp, Landmark, AlertTriangle } from 'lucide-react';
+import { BarChart3, Wallet, TrendingUp, Landmark, AlertTriangle } from 'lucide-react';
 
-// Azul de marca Altipal (chart-1). Validado ≥3:1 sobre superficie clara (skill dataviz).
-const ACCENT = '#004f9f';
-const INK_MUTED = '#5a7088';
-const GRID = '#e2eaf3';
+// Verde Duolingo (primary) para las series de datos.
+const ACCENT = '#58cc02';
+const INK_MUTED = '#777777';
+const GRID = '#e5e5e5';
 
 const compact = (n: number) =>
   new Intl.NumberFormat('es-CO', { notation: 'compact', maximumFractionDigits: 1 }).format(n);
@@ -32,7 +30,6 @@ const dayLabel = (iso: string) =>
   new Intl.DateTimeFormat('es-CO', { day: '2-digit', month: 'short' }).format(new Date(iso + 'T00:00:00Z'));
 
 export default function ReportesPage() {
-  const router = useRouter();
   const [stats, setStats] = useState<DashboardStats | null>(null);
 
   useEffect(() => {
@@ -50,15 +47,11 @@ export default function ReportesPage() {
 
   return (
     <div className="mx-auto max-w-5xl p-4 sm:p-6">
-      <Button variant="ghost" size="sm" className="mb-4" onClick={() => router.push('/dashboard')}>
-        <ArrowLeft className="h-4 w-4" /> Volver
-      </Button>
-      <div className="mb-6">
-        <PageHeader
-          title="Reportes"
-          description="Indicadores de tu operación: cartera pendiente, recaudo del día, créditos activos y en mora, cartera por estado y recaudo de los últimos 7 días."
-        />
-      </div>
+      <PageHeader
+        icon={BarChart3}
+        title="Reportes"
+        description="Cartera pendiente, recaudo del día, créditos activos y en mora, cartera por estado y recaudo de 7 días."
+      />
 
       <section className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi icon={<Wallet className="h-4 w-4" />} label="Cartera pendiente" value={money(stats.totalPortfolio)} />

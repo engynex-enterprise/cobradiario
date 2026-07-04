@@ -61,7 +61,7 @@ export default function ResumenFinanciero() {
         <View style={styles.card}>
           <LineRow icon="wallet-outline" label="Capital" value={money(data?.collectedCapital ?? 0)} />
           <LineRow icon="trending-up-outline" label="Interés" value={money(data?.collectedInterest ?? 0)} />
-          <LineRow icon="receipt-outline" label="Cargos" value={money(0)} />
+          <LineRow icon="receipt-outline" label="Cargos" value={money(data?.collectedCharges ?? 0)} />
           <LineRow icon="time-outline" label="Mora" value={money(data?.collectedLateFee ?? 0)} />
           <LineRow icon="pricetag-outline" label="Descuentos" value={money(0)} accent={colors.accentText} />
           <View style={styles.divider} />
@@ -92,8 +92,8 @@ export default function ResumenFinanciero() {
         <View style={styles.card}>
           <LineRow icon="sparkles-outline" label="Ganancia neta" value={money(gananciaNeta)} strong iconColor={colors.success} />
           <LineRow icon="receipt-outline" label="Gastos" value={`-${money(data?.expensesTotal ?? 0)}`} accent={colors.danger} />
-          <LineRow icon="log-in-outline" label="Bases recibidas" value={money(0)} />
-          <LineRow icon="log-out-outline" label="Bases entregadas" value={money(0)} />
+          <LineRow icon="log-in-outline" label="Bases recibidas" value={money(data?.basesReceived ?? 0)} />
+          <LineRow icon="log-out-outline" label="Bases entregadas" value={money(data?.basesDelivered ?? 0)} />
           <LineRow icon="cash-outline" label="Préstamos realizados" value={money(data?.disbursedPrincipal ?? 0)} />
           <View style={styles.divider} />
           <LineRow icon="arrow-forward-circle-outline" label="Dinero a entregar" value={money(dineroEntregar)} strong iconColor={colors.accentText} valueColor={colors.accentText} />

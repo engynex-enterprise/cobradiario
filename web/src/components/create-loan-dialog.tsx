@@ -49,6 +49,9 @@ export function CreateLoanDialog({ onCreated, clientId: fixedClient }: { onCreat
   const [interestPct, setInterestPct] = useState(20);
   const [moraPct, setMoraPct] = useState(0);
   const [freq, setFreq] = useState<Freq>('DAILY');
+  const [charges, setCharges] = useState<{ concept: string; amount: number }[]>([]);
+  const [chgConcept, setChgConcept] = useState('');
+  const [chgAmount, setChgAmount] = useState(0);
 
   // Bidireccional: el último campo editado manda.
   const [driver, setDriver] = useState<'count' | 'amount'>('count');
@@ -70,7 +73,8 @@ export function CreateLoanDialog({ onCreated, clientId: fixedClient }: { onCreat
   }, [open, fixedClient]);
 
   const interestTotal = Math.round(principal * (interestPct / 100));
-  const totalDue = principal + interestTotal;
+  const chargesTotal = charges.reduce((s, c) => s + c.amount, 0);
+  const totalDue = principal + interestTotal + chargesTotal;
 
   const { termCount, cuota } = useMemo(() => {
     if (driver === 'count') {
@@ -109,6 +113,7 @@ export function CreateLoanDialog({ onCreated, clientId: fixedClient }: { onCreat
         frequency: freq,
         lateFeeType: moraPct > 0 ? 'PERCENT_OF_INSTALLMENT' : 'NONE',
         lateFeeValue: moraPct > 0 ? moraPct / 100 : 0,
+        charges: charges.length ? charges : undefined,
         routeId: routeId !== 'none' ? routeId : undefined,
       });
       toast.success('Crédito creado');
@@ -240,11 +245,31 @@ export function CreateLoanDialog({ onCreated, clientId: fixedClient }: { onCreat
             </Select>
           </div>
 
+          {/* Cargos adicionales */}
+          <div className="space-y-2">
+            <Label>Cargos adicionales (opcional)</Label>
+            {charges.map((c, i) => (
+              <div key={i} className="flex items-center gap-2 rounded-md border-2 border-border px-3 py-2 text-sm">
+                <span className="flex-1 font-medium">{c.concept}</span>
+                <span className="font-semibold">{money(c.amount)}</span>
+                <button type="button" onClick={() => setCharges((xs) => xs.filter((_, j) => j !== i))} className="text-destructive">✕</button>
+              </div>
+            ))}
+            <div className="flex items-end gap-2">
+              <Input placeholder="Concepto (ej. Seguro)" value={chgConcept} onChange={(e) => setChgConcept(e.target.value)} />
+              <div className="w-32"><CurrencyInput value={chgAmount} onValueChange={setChgAmount} /></div>
+              <Button type="button" variant="secondary" disabled={!chgConcept.trim() || chgAmount <= 0} onClick={() => { setCharges((xs) => [...xs, { concept: chgConcept.trim(), amount: chgAmount }]); setChgConcept(''); setChgAmount(0); }}>
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
           <div className="space-y-2 rounded-xl border-2 border-primary/60 bg-primary/5 p-4">
             <p className="text-sm font-bold">Resumen del crédito</p>
             <SumRow label="Capital a prestar" value={money(principal)} />
             <SumRow label={`Interés (${interestPct}%)`} value={money(interestTotal)} />
-            <SumRow label="Total con interés" value={money(totalDue)} strong />
+            {chargesTotal > 0 ? <SumRow label="Cargos adicionales" value={money(chargesTotal)} /> : null}
+            <SumRow label="Total del crédito" value={money(totalDue)} strong />
             <div className="my-1 border-t border-border" />
             <SumRow label={`Valor de cuota (${termCount})`} value={money(cuota)} />
             <SumRow label="Duración" value={durationLabel(termCount, freq)} muted />

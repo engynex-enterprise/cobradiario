@@ -17,6 +17,9 @@ export class AuthUser {
   @Field()
   fullName!: string;
 
+  @Field({ nullable: true })
+  phone?: string;
+
   @Field(() => UserRole)
   role!: UserRole;
 }

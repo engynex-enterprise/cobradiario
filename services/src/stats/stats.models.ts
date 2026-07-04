@@ -46,6 +46,7 @@ export class FinancialSummary {
   @Field(() => Float) totalCollected!: number;
   @Field(() => Float) collectedCapital!: number;
   @Field(() => Float) collectedInterest!: number;
+  @Field(() => Float) collectedCharges!: number; // cargos adicionales
   @Field(() => Float) collectedLateFee!: number; // mora
 
   // Medios de pago
@@ -59,6 +60,10 @@ export class FinancialSummary {
   // Gastos y resultado
   @Field(() => Float) expensesTotal!: number;
   @Field(() => Float) netProfit!: number; // (interés + mora cobrados) − gastos
+
+  // Bases (efectivo del cobrador)
+  @Field(() => Float) basesReceived!: number;
+  @Field(() => Float) basesDelivered!: number;
 }
 
 @ObjectType()

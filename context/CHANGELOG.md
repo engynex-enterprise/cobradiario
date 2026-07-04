@@ -487,3 +487,42 @@ Bitácora de decisiones y cambios estructurales. Formato: fecha · tipo · descr
 - **[web]** globals.css revertido a Duolingo (tokens + tratamientos card/botón/input/dialog/sheet/select/
   popover/badge). Fuente Nunito. Shell con esquinas redondeadas (rounded-2xl) en logo, botones, enlaces,
   grupos, buscador y menú de usuario.
+
+## 2026-07-04 — Bases (efectivo del cobrador)
+- **[db]** Modelo `BaseMovement` (type RECEIVED/DELIVERED, monto, nota) + migración con RLS.
+- **[backend]** `BasesModule` (query `baseMovements`, mutation `createBaseMovement`). `financialSummary`
+  agrega `basesReceived` y `basesDelivered`.
+- **[app]** Pantalla Bases (hero con recibido/entregado, lista, modal recibida/entregada). Acceso desde Ajustes.
+  Resumen Financiero muestra bases reales.
+- **[web]** Página Bases real (KPIs + tabla + drawer). 
+- **[verificación]** E2E: base recibida $200.000 reflejada en financialSummary. Typecheck app/web/services OK.
+
+## 2026-07-04 — Web: sub-header sticky (section-header orus-pos)
+- **[web]** `PageHeader` rehecho al estilo `SectionHeader` de orus-pos: sub-header **sticky** de fondo
+  blanco, full-bleed dentro del contenedor, con ícono opcional, título extrabold + descripción, acciones y
+  **pestañas opcionales** (con indicador inferior). Balances/Reportes ajustados (quitado "Volver"
+  redundante, ícono añadido). Gráficos de Reportes ahora en verde Duolingo.
+
+## 2026-07-04 — Config de productos/presets (app)
+- **[app]** Pantalla Productos/presets (lista + modal: nombre, frecuencia, cuotas, interés %, mora %) usando
+  `createCreditProduct`. Ajustes → "Interés y presets"/"Productos de crédito" abren esta pantalla.
+  Los presets creados aparecen en el selector de Nuevo crédito. E2E OK.
+
+## 2026-07-04 — Editar perfil (real)
+- **[backend]** `me` ahora consulta la BD (antes devolvía fullName vacío); `AuthUser` expone `phone`.
+  Nueva mutation `updateProfile(fullName, phone)`.
+- **[app]** Perfil con modal **Editar perfil** funcional (nombre + teléfono) que persiste y actualiza el
+  contexto/AsyncStorage local (`updateUser`). Muestra Teléfono.
+- **[verificación]** E2E: me trae nombre real; updateProfile guardó teléfono 3151234567. Typecheck app/services OK.
+
+## 2026-07-04 — Cargos del crédito
+- **[db]** `Installment.chargePart` (migración segura, default 0).
+- **[backend]** `CreateLoanInput.charges [{concept, amount}]`. `createLoan` distribuye los cargos en las
+  cuotas (última absorbe el redondeo) manteniendo cuota = capital + interés + cargo; suman a totalDue/balance.
+  `Loan` expone `chargesTotal`; `Installment` expone `chargePart`. `financialSummary` agrega
+  `collectedCharges` (prorrateado por allocation, incluyendo cargos).
+- **[app/web]** Formulario Nuevo crédito con sección **Cargos adicionales** (concepto + valor, agregar/quitar),
+  reflejados en el resumen y en el total. Resumen Financiero muestra "Cargos" reales. Info del crédito
+  muestra cargos.
+- **[verificación]** E2E: 500.000 + 20% + cargos 15.000 → total 615.000, 20 cuotas de 30.750 (25.000+5.000+750)
+  suman exacto. Typecheck services/app/web OK.

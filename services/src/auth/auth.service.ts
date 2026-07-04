@@ -143,6 +143,32 @@ export class AuthService {
     return true;
   }
 
+  /** Perfil completo del usuario autenticado (desde BD). */
+  async profile(userId: string): Promise<{ id: string; tenantId: string; email: string; fullName: string; phone?: string; role: UserRole }> {
+    const user = await this.prisma.system().user.findFirst({
+      where: { id: userId },
+      include: { memberships: { where: { status: 'ACTIVE' }, orderBy: { createdAt: 'asc' } } },
+    });
+    if (!user) throw new UnauthorizedException('Usuario no disponible');
+    return {
+      id: user.id,
+      tenantId: user.tenantId,
+      email: user.email,
+      fullName: user.fullName,
+      phone: user.phone ?? undefined,
+      role: user.memberships[0]?.role ?? UserRole.VIEWER,
+    };
+  }
+
+  /** Actualiza nombre/teléfono del usuario. */
+  async updateProfile(userId: string, input: { fullName?: string; phone?: string }) {
+    const data: { fullName?: string; phone?: string } = {};
+    if (input.fullName !== undefined) data.fullName = input.fullName.trim();
+    if (input.phone !== undefined) data.phone = input.phone.trim() || null as unknown as string;
+    await this.prisma.system().user.update({ where: { id: userId }, data });
+    return this.profile(userId);
+  }
+
   // ------------------------------------------------------------------ helpers
   private async issueTokens(
     user: { id: string; tenantId: string; email: string; fullName: string },

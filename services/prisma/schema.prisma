@@ -191,6 +191,7 @@ model Tenant {
   messages       Message[]
   managements    CollectionManagement[]
   expenses       Expense[]
+  baseMovements  BaseMovement[]
 
   @@index([status])
   @@map("tenants")
@@ -435,6 +436,7 @@ model Installment {
   amount        Decimal  @db.Decimal(18, 2) // total de la cuota
   principalPart Decimal  @default(0) @db.Decimal(18, 2)
   interestPart  Decimal  @default(0) @db.Decimal(18, 2)
+  chargePart    Decimal  @default(0) @db.Decimal(18, 2) // parte de cargos adicionales
   lateFee       Decimal  @default(0) @db.Decimal(18, 2)
   paidAmount    Decimal  @default(0) @db.Decimal(18, 2)
   paidAt        DateTime?
@@ -677,6 +679,31 @@ model Tag {
   @@unique([tenantId, name])
   @@index([tenantId])
   @@map("tags")
+}
+
+// Base: efectivo que el cobrador recibe (para prestar/cambio) o entrega (devuelve) en su jornada.
+model BaseMovement {
+  id         String   @id @default(cuid())
+  tenantId   String
+  userId     String
+  authorName String
+  routeId    String?
+
+  type   BaseType
+  amount Decimal  @db.Decimal(18, 2)
+  note   String?
+
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, createdAt])
+  @@map("base_movements")
+}
+
+enum BaseType {
+  RECEIVED // base recibida por el cobrador
+  DELIVERED // base entregada / devuelta
 }
 
 // Gasto operativo del negocio (no ligado a un crédito): oficina, transporte, sueldos…

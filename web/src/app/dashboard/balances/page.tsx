@@ -1,17 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PageHeader } from '@/components/page-header';
 import { fetchBalances, type Balances } from '@/lib/graphql';
 import { money } from '@/lib/utils';
-import { ArrowLeft, Banknote, HandCoins, PiggyBank, Wallet } from 'lucide-react';
+import { Banknote, HandCoins, PiggyBank, Scale, Wallet } from 'lucide-react';
 
 export default function BalancesPage() {
-  const router = useRouter();
   const [data, setData] = useState<Balances | null>(null);
 
   useEffect(() => {
@@ -28,15 +25,11 @@ export default function BalancesPage() {
 
   return (
     <div className="mx-auto max-w-5xl p-4 sm:p-6">
-      <Button variant="ghost" size="sm" className="mb-4" onClick={() => router.push('/dashboard')}>
-        <ArrowLeft className="h-4 w-4" /> Volver
-      </Button>
-      <div className="mb-6">
-        <PageHeader
-          title="Balances"
-          description="Consolidado financiero de tu operación: capital colocado, total a cobrar, recaudado histórico y saldo pendiente. Abajo, el recaudo acumulado por cada cobrador."
-        />
-      </div>
+      <PageHeader
+        icon={Scale}
+        title="Balances"
+        description="Consolidado financiero: capital colocado, total a cobrar, recaudado y saldo pendiente."
+      />
 
       <section className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi icon={<Banknote className="h-4 w-4" />} label="Capital colocado" value={money(data.totalPrincipal)} />

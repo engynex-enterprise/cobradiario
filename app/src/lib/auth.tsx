@@ -9,6 +9,7 @@ interface AuthCtx {
   ready: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  updateUser: (patch: Partial<AuthUser>) => Promise<void>;
 }
 
 const Ctx = createContext<AuthCtx | null>(null);
@@ -49,7 +50,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   }
 
-  return <Ctx.Provider value={{ user, ready, signIn, signOut }}>{children}</Ctx.Provider>;
+  async function updateUser(patch: Partial<AuthUser>) {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const next = { ...prev, ...patch };
+      AsyncStorage.setItem(USER_KEY, JSON.stringify(next)).catch(() => {});
+      return next;
+    });
+  }
+
+  return <Ctx.Provider value={{ user, ready, signIn, signOut, updateUser }}>{children}</Ctx.Provider>;
 }
 
 export function useAuth() {

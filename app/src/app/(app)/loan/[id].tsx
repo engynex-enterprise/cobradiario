@@ -240,6 +240,7 @@ export default function LoanDetailScreen() {
               <InfoRow label="Cuotas vencidas" value={String(overdueCount)} />
               <InfoRow label="Interés" value={loan.interestRate != null ? `${Math.round(loan.interestRate * 100)} %` : '—'} />
               <InfoRow label="Valor total intereses" value={money(loan.interestTotal)} />
+              {loan.chargesTotal ? <InfoRow label="Cargos adicionales" value={money(loan.chargesTotal)} /> : null}
               <InfoRow label="Cuotas pagadas" value={`${paidCount}/${loan.termCount ?? 0}`} />
               <InfoRow label="Frecuencia de pago" value={FREQ_LABEL[loan.frequency ?? ''] ?? '—'} />
               <InfoRow label="Valor cuota" value={money(cuota)} />

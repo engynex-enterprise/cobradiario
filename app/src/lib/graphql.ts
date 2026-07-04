@@ -6,6 +6,16 @@ export interface AuthUser {
   fullName: string;
   role: string;
   tenantId: string;
+  phone?: string;
+}
+
+export function updateProfile(input: { fullName?: string; phone?: string }) {
+  return gql<{ updateProfile: AuthUser }>(
+    `mutation($i: UpdateProfileInput!) {
+      updateProfile(input: $i) { id email fullName role tenantId phone }
+    }`,
+    { i: input },
+  );
 }
 
 export interface Loan {
@@ -108,6 +118,22 @@ export function fetchCreditProducts() {
     `{ creditProducts { id name interestMethod interestRate termCount frequency lateFeeType lateFeeValue } }`,
   );
 }
+export function createCreditProduct(input: {
+  name: string;
+  interestRate: number; // fracción
+  termCount: number;
+  frequency?: string;
+  interestMethod?: string;
+  lateFeeType?: string;
+  lateFeeValue?: number;
+}) {
+  return gql<{ createCreditProduct: CreditProduct }>(
+    `mutation($i: CreateProductInput!) {
+      createCreditProduct(input: $i) { id name interestMethod interestRate termCount frequency lateFeeType lateFeeValue }
+    }`,
+    { i: input },
+  );
+}
 
 export function createLoan(input: {
   clientId: string;
@@ -119,6 +145,7 @@ export function createLoan(input: {
   frequency?: string;
   lateFeeType?: string;
   lateFeeValue?: number;
+  charges?: { concept: string; amount: number }[];
   productId?: string;
   routeId?: string;
   firstDueDate?: string;
@@ -212,6 +239,7 @@ export interface FinancialSummary {
   totalCollected: number;
   collectedCapital: number;
   collectedInterest: number;
+  collectedCharges: number;
   collectedLateFee: number;
   byMethod: { method: string; amount: number }[];
   disbursedPrincipal: number;
@@ -219,17 +247,41 @@ export interface FinancialSummary {
   disbursedTotal: number;
   expensesTotal: number;
   netProfit: number;
+  basesReceived: number;
+  basesDelivered: number;
 }
 export function fetchFinancialSummary(from?: string, to?: string) {
   return gql<{ financialSummary: FinancialSummary }>(
     `query($from: DateTime, $to: DateTime) {
       financialSummary(from: $from, to: $to) {
-        abonos prestamos totalCollected collectedCapital collectedInterest collectedLateFee
+        abonos prestamos totalCollected collectedCapital collectedInterest collectedCharges collectedLateFee
         byMethod { method amount }
         disbursedPrincipal disbursedInterest disbursedTotal expensesTotal netProfit
+        basesReceived basesDelivered
       }
     }`,
     { from, to },
+  );
+}
+
+export interface BaseMovement {
+  id: string;
+  authorName: string;
+  type: string;
+  amount: number;
+  note?: string;
+  createdAt: string;
+}
+export function fetchBaseMovements(from?: string, to?: string) {
+  return gql<{ baseMovements: BaseMovement[] }>(
+    `query($from: DateTime, $to: DateTime) { baseMovements(from: $from, to: $to) { id authorName type amount note createdAt } }`,
+    { from, to },
+  );
+}
+export function createBaseMovement(input: { type: string; amount: number; note?: string }) {
+  return gql<{ createBaseMovement: BaseMovement }>(
+    `mutation($i: CreateBaseMovementInput!) { createBaseMovement(input: $i) { id authorName type amount note createdAt } }`,
+    { i: input },
   );
 }
 
@@ -266,6 +318,7 @@ export interface Installment {
   amount: number;
   principalPart: number;
   interestPart: number;
+  chargePart: number;
   lateFee: number;
   paidAmount: number;
 }
@@ -279,6 +332,7 @@ export interface LoanDetail extends Loan {
   interestMethod?: string;
   frequency?: string;
   lateFeeValue?: number;
+  chargesTotal?: number;
   disbursedAt?: string;
   firstDueDate?: string;
   installments: Installment[];
@@ -288,8 +342,8 @@ export function fetchLoanDetail(id: string) {
     `query($id: ID!) {
       loan(id: $id) {
         id code status principal interestTotal totalDue paidAmount balance clientId clientName routeName
-        termCount interestRate interestMethod frequency lateFeeValue disbursedAt firstDueDate
-        installments { id sequence status dueDate amount principalPart interestPart lateFee paidAmount }
+        termCount interestRate interestMethod frequency lateFeeValue chargesTotal disbursedAt firstDueDate
+        installments { id sequence status dueDate amount principalPart interestPart chargePart lateFee paidAmount }
       }
     }`,
     { id },

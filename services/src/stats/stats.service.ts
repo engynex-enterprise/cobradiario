@@ -104,7 +104,7 @@ export class StatsService {
     const db = this.prisma.forTenant(tenantId);
     const range = { gte: from, lt: to };
 
-    const [abonos, prestamos, byMethodRaw, disbursedAgg, allocations, expensesAgg] = await Promise.all([
+    const [abonos, prestamos, byMethodRaw, disbursedAgg, allocations, expensesAgg, basesRaw] = await Promise.all([
       db.payment.count({ where: { status: 'COMPLETED', paidAt: range } }),
       db.loan.count({ where: { createdAt: range, deletedAt: null } }),
       db.payment.groupBy({
@@ -118,14 +118,16 @@ export class StatsService {
       }),
       db.paymentAllocation.findMany({
         where: { payment: { is: { status: 'COMPLETED', paidAt: range } } },
-        include: { installment: { select: { principalPart: true, interestPart: true, lateFee: true } } },
+        include: { installment: { select: { principalPart: true, interestPart: true, chargePart: true, lateFee: true } } },
       }),
       db.expense.aggregate({ where: { createdAt: range }, _sum: { amount: true } }),
+      db.baseMovement.groupBy({ by: ['type'], where: { createdAt: range }, _sum: { amount: true } }),
     ]);
 
     // Prorratea cada allocation entre capital/interés/mora según la composición de su cuota.
     let collectedCapital = 0;
     let collectedInterest = 0;
+    let collectedCharges = 0;
     let collectedLateFee = 0;
     let totalCollected = 0;
     for (const a of allocations) {
@@ -133,14 +135,16 @@ export class StatsService {
       totalCollected += amt;
       const p = Number(a.installment.principalPart);
       const i = Number(a.installment.interestPart);
+      const ch = Number(a.installment.chargePart);
       const l = Number(a.installment.lateFee);
-      const tot = p + i + l;
+      const tot = p + i + ch + l;
       if (tot <= 0) {
         collectedCapital += amt; // sin composición conocida → todo a capital
         continue;
       }
       collectedCapital += (amt * p) / tot;
       collectedInterest += (amt * i) / tot;
+      collectedCharges += (amt * ch) / tot;
       collectedLateFee += (amt * l) / tot;
     }
 
@@ -151,6 +155,8 @@ export class StatsService {
     // Total cobrado real por pagos (por si hay pagos sin allocation aún).
     const paymentsTotal = byMethod.reduce((s, m) => s + m.amount, 0);
     const expensesTotal = Number(expensesAgg._sum.amount ?? 0);
+    const basesReceived = Number(basesRaw.find((b) => b.type === 'RECEIVED')?._sum.amount ?? 0);
+    const basesDelivered = Number(basesRaw.find((b) => b.type === 'DELIVERED')?._sum.amount ?? 0);
 
     return {
       abonos,
@@ -158,6 +164,7 @@ export class StatsService {
       totalCollected: round2(Math.max(totalCollected, paymentsTotal)),
       collectedCapital: round2(collectedCapital),
       collectedInterest: round2(collectedInterest),
+      collectedCharges: round2(collectedCharges),
       collectedLateFee: round2(collectedLateFee),
       byMethod,
       disbursedPrincipal: round2(Number(disbursedAgg._sum.principal ?? 0)),
@@ -165,6 +172,8 @@ export class StatsService {
       disbursedTotal: round2(Number(disbursedAgg._sum.totalDue ?? 0)),
       expensesTotal: round2(expensesTotal),
       netProfit: round2(collectedInterest + collectedLateFee - expensesTotal),
+      basesReceived: round2(basesReceived),
+      basesDelivered: round2(basesDelivered),
     };
   }
 }

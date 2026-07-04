@@ -1,8 +1,21 @@
 import { Field, Float, ID, InputType, Int } from '@nestjs/graphql';
 import { Frequency, InterestMethod, LateFeeType, RateBasis } from '@prisma/client';
-import { IsEnum, IsInt, IsOptional, IsPositive, IsString, Max, Min } from 'class-validator';
+import { IsArray, IsEnum, IsInt, IsOptional, IsPositive, IsString, Max, MaxLength, Min, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
 
 // Los enums ya se registran en products (products.models/inputs); aquí solo se referencian.
+
+@InputType()
+export class LoanChargeInput {
+  @Field()
+  @IsString()
+  @MaxLength(60)
+  concept!: string;
+
+  @Field(() => Float)
+  @IsPositive()
+  amount!: number;
+}
 
 @InputType()
 export class CreateLoanInput {
@@ -68,6 +81,14 @@ export class CreateLoanInput {
   @IsOptional()
   @Min(0)
   lateFeeValue?: number;
+
+  /** Cargos adicionales (seguro, papelería…) que se suman al total del crédito. */
+  @Field(() => [LoanChargeInput], { nullable: true })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => LoanChargeInput)
+  charges?: LoanChargeInput[];
 
   /** Fecha de la primera cuota. Si se omite, se usa el día de hoy. */
   @Field({ nullable: true })

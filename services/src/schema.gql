@@ -23,6 +23,7 @@ type AuthUser {
   email: String!
   fullName: String!
   id: String!
+  phone: String
   role: UserRole!
   tenantId: String!
 }
@@ -33,6 +34,20 @@ type Balances {
   totalDue: Float!
   totalPaid: Float!
   totalPrincipal: Float!
+}
+
+type BaseMovement {
+  amount: Float!
+  authorName: String!
+  createdAt: DateTime!
+  id: ID!
+  note: String
+  type: BaseType!
+}
+
+enum BaseType {
+  DELIVERED
+  RECEIVED
 }
 
 type CashBox {
@@ -111,6 +126,12 @@ type CollectorBalance {
   payments: Int!
 }
 
+input CreateBaseMovementInput {
+  amount: Float!
+  note: String
+  type: BaseType!
+}
+
 input CreateClientInput {
   address: String
   city: String
@@ -127,6 +148,7 @@ input CreateExpenseInput {
 }
 
 input CreateLoanInput {
+  charges: [LoanChargeInput!]
   clientId: ID!
   firstDueDate: DateTime
   frequency: Frequency
@@ -250,8 +272,11 @@ type Expense {
 
 type FinancialSummary {
   abonos: Int!
+  basesDelivered: Float!
+  basesReceived: Float!
   byMethod: [MethodAmount!]!
   collectedCapital: Float!
+  collectedCharges: Float!
   collectedInterest: Float!
   collectedLateFee: Float!
   disbursedInterest: Float!
@@ -273,6 +298,7 @@ enum Frequency {
 
 type Installment {
   amount: Float!
+  chargePart: Float!
   dueDate: DateTime!
   id: ID!
   interestPart: Float!
@@ -307,6 +333,7 @@ enum LateFeeType {
 
 type Loan {
   balance: Float!
+  chargesTotal: Float
   clientId: ID!
   clientName: String
   code: String
@@ -328,6 +355,11 @@ type Loan {
   status: LoanStatus!
   termCount: Int
   totalDue: Float!
+}
+
+input LoanChargeInput {
+  amount: Float!
+  concept: String!
 }
 
 enum LoanStatus {
@@ -375,6 +407,7 @@ type Mutation {
   addCashMovement(input: AddCashMovementInput!): CashBox!
   assignCollector(input: AssignCollectorInput!): Route!
   closeCashBox(input: CloseCashBoxInput!): CashBox!
+  createBaseMovement(input: CreateBaseMovementInput!): BaseMovement!
   createClient(input: CreateClientInput!): Client!
   createCreditProduct(input: CreateProductInput!): CreditProduct!
   createExpense(input: CreateExpenseInput!): Expense!
@@ -395,6 +428,7 @@ type Mutation {
   runDueReminders(withinDays: Int! = 1): EnqueuedJob!
   runOverdueSweep: EnqueuedJob!
   sendMessage(input: SendMessageInput!): Message!
+  updateProfile(input: UpdateProfileInput!): AuthUser!
   updateTag(input: UpdateTagInput!): Tag
 }
 
@@ -470,6 +504,7 @@ enum PaymentStatus {
 
 type Query {
   balances: Balances!
+  baseMovements(from: DateTime, to: DateTime): [BaseMovement!]!
   cashMovements(type: CashMovementType): [CashMovementFeedItem!]!
   clients: [Client!]!
   creditProducts: [CreditProduct!]!
@@ -585,6 +620,11 @@ type TeamMember {
 enum TenantType {
   INDIVIDUAL
   ORGANIZATION
+}
+
+input UpdateProfileInput {
+  fullName: String
+  phone: String
 }
 
 input UpdateTagInput {
