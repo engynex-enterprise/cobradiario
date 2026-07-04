@@ -372,3 +372,85 @@ export function fetchDashboardStats() {
     } }`,
   );
 }
+
+// --- Balances ---
+export interface CollectorBalance {
+  collectorId: string;
+  collectorName?: string;
+  collected: number;
+  payments: number;
+}
+
+export interface Balances {
+  totalPrincipal: number;
+  totalDue: number;
+  totalPaid: number;
+  outstanding: number;
+  byCollector: CollectorBalance[];
+}
+
+export function fetchBalances() {
+  return gql<{ balances: Balances }>(
+    `{ balances {
+      totalPrincipal totalDue totalPaid outstanding
+      byCollector { collectorId collectorName collected payments }
+    } }`,
+  );
+}
+
+// --- Etiquetas ---
+export interface Tag {
+  id: string;
+  name: string;
+  color: string;
+  createdAt: string;
+}
+
+const TAG_FIELDS = `id name color createdAt`;
+
+export function fetchTags() {
+  return gql<{ tags: Tag[] }>(`{ tags { ${TAG_FIELDS} } }`);
+}
+
+export function createTag(input: { name: string; color?: string }) {
+  return gql<{ createTag: Tag }>(
+    `mutation($i: CreateTagInput!) { createTag(input: $i) { ${TAG_FIELDS} } }`,
+    { i: input },
+  );
+}
+
+export function updateTag(input: { id: string; name?: string; color?: string }) {
+  return gql<{ updateTag: Tag }>(
+    `mutation($i: UpdateTagInput!) { updateTag(input: $i) { ${TAG_FIELDS} } }`,
+    { i: input },
+  );
+}
+
+export function deleteTag(id: string) {
+  return gql<{ deleteTag: boolean }>(`mutation($id: ID!) { deleteTag(id: $id) }`, { id });
+}
+
+// --- Chat ---
+export interface Message {
+  id: string;
+  userId: string;
+  authorName: string;
+  body: string;
+  createdAt: string;
+}
+
+const MESSAGE_FIELDS = `id userId authorName body createdAt`;
+
+export function fetchMessages(limit = 50, before?: string) {
+  return gql<{ messages: Message[] }>(
+    `query($q: MessagesQueryInput) { messages(query: $q) { ${MESSAGE_FIELDS} } }`,
+    { q: { limit, before } },
+  );
+}
+
+export function sendMessage(body: string) {
+  return gql<{ sendMessage: Message }>(
+    `mutation($i: SendMessageInput!) { sendMessage(input: $i) { ${MESSAGE_FIELDS} } }`,
+    { i: { body } },
+  );
+}

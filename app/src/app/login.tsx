@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/lib/auth';
+import { colors } from '@/lib/theme';
 
 export default function Login() {
   const { signIn } = useAuth();
@@ -78,29 +79,32 @@ export default function Login() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f4f7fb', justifyContent: 'center', padding: 20 },
-  card: { backgroundColor: '#fff', borderRadius: 16, padding: 24, gap: 6 },
+  container: { flex: 1, backgroundColor: colors.bg, justifyContent: 'center', padding: 20 },
+  card: { backgroundColor: colors.card, borderRadius: 16, borderWidth: 2, borderColor: colors.border, padding: 24, gap: 6 },
   logo: { fontSize: 40, textAlign: 'center' },
-  title: { fontSize: 24, fontWeight: '700', textAlign: 'center', color: '#0a2540' },
-  subtitle: { fontSize: 14, color: '#64748b', textAlign: 'center', marginBottom: 12 },
-  label: { fontSize: 13, fontWeight: '600', color: '#334155', marginTop: 8 },
+  title: { fontSize: 24, fontWeight: '800', textAlign: 'center', color: colors.text },
+  subtitle: { fontSize: 14, color: colors.muted, textAlign: 'center', marginBottom: 12 },
+  label: { fontSize: 13, fontWeight: '700', color: colors.text, marginTop: 8 },
   input: {
-    borderWidth: 1,
-    borderColor: '#cbd5e1',
-    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: colors.border,
+    borderRadius: 16,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 16,
-    backgroundColor: '#fff',
+    backgroundColor: colors.card,
+    color: colors.text,
   },
   button: {
-    backgroundColor: '#004f9f',
-    borderRadius: 10,
+    backgroundColor: colors.primary,
+    borderRadius: 16,
     paddingVertical: 14,
     alignItems: 'center',
     marginTop: 16,
+    borderBottomWidth: 4,
+    borderBottomColor: colors.primaryDark,
   },
   buttonDisabled: { opacity: 0.6 },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  hint: { fontSize: 12, color: '#94a3b8', textAlign: 'center', marginTop: 12 },
+  buttonText: { color: '#fff', fontSize: 16, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
+  hint: { fontSize: 12, color: colors.muted, textAlign: 'center', marginTop: 12 },
 });

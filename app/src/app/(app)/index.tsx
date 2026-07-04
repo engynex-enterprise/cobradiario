@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   FlatList,
   RefreshControl,
@@ -9,27 +8,30 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useAuth } from '@/lib/auth';
-import { fetchLoans, type Loan } from '@/lib/graphql';
+import { useRouter } from 'expo-router';
+import { fetchDashboardStats, fetchLoans, type DashboardStats, type Loan } from '@/lib/graphql';
 import { enqueuePayment, flushQueue, pendingCount } from '@/lib/offline-queue';
 import { getSocket } from '@/lib/socket';
 import { money } from '@/lib/format';
+import { colors } from '@/lib/theme';
+import { AbonoModal } from '@/components/abono-modal';
 
-export default function RutaDelDia() {
-  const { user, signOut } = useAuth();
+export default function Inicio() {
+  const router = useRouter();
   const [loans, setLoans] = useState<Loan[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
   const [pending, setPending] = useState(0);
   const [live, setLive] = useState(false);
+  const [abonoLoan, setAbonoLoan] = useState<Loan | null>(null);
 
   const refresh = useCallback(async () => {
     try {
-      const { loans } = await fetchLoans();
-      setLoans(loans);
+      const [l, s] = await Promise.all([fetchLoans(), fetchDashboardStats()]);
+      setLoans(l.loans);
+      setStats(s.dashboardStats);
     } catch {
-      // Sin conexión: se conserva la última cartera cargada.
+      /* offline: conserva lo cargado */
     } finally {
-      setLoading(false);
       setPending(await pendingCount());
     }
   }, []);
@@ -48,7 +50,6 @@ export default function RutaDelDia() {
     syncQueue();
   }, [refresh, syncQueue]);
 
-  // Realtime: refresca al recibir un abono (propio o de otro cobrador del tenant).
   useEffect(() => {
     const socket = getSocket();
     if (!socket) return;
@@ -66,106 +67,102 @@ export default function RutaDelDia() {
     };
   }, [refresh]);
 
-  function onAbonar(loan: Loan) {
-    Alert.prompt?.(
-      'Registrar abono',
-      `Saldo: ${money(loan.balance)}\nMonto a abonar:`,
-      async (text) => {
-        const amount = Number(text);
-        if (!amount || amount <= 0) return;
-        // Se encola SIEMPRE (offline-first) y se intenta drenar de inmediato.
-        await enqueuePayment({ loanId: loan.id, amount });
-        setPending(await pendingCount());
-        await syncQueue();
-      },
-      'plain-text',
-      '',
-      'number-pad',
-    );
+  async function confirmAbono(amount: number) {
+    const loan = abonoLoan;
+    setAbonoLoan(null);
+    if (!loan || amount <= 0) return;
+    await enqueuePayment({ loanId: loan.id, amount });
+    setPending(await pendingCount());
+    await syncQueue();
   }
 
-  if (loading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#004f9f" />
+  const Header = (
+    <View style={styles.headerWrap}>
+      <View style={styles.kpiRow}>
+        <Kpi label="Cartera pendiente" value={stats ? money(stats.totalPortfolio) : '—'} />
+        <Kpi label="Recaudado hoy" value={stats ? money(stats.collectedToday) : '—'} accent={colors.success} />
       </View>
-    );
-  }
+      <View style={styles.kpiRow}>
+        <Kpi label="Créditos activos" value={stats ? String(stats.activeLoans) : '—'} />
+        <Kpi label="Cuotas en mora" value={stats ? String(stats.overdueInstallments) : '—'} accent={colors.danger} />
+      </View>
+      <View style={styles.sectionRow}>
+        <Text style={styles.sectionTitle}>Cartera</Text>
+        <View style={styles.liveChip}>
+          <View style={[styles.dot, { backgroundColor: live ? colors.success : colors.disabled }]} />
+          <Text style={styles.liveText}>{live ? 'En vivo' : 'Sin conexión'}{pending > 0 ? ` · ${pending} por sincronizar` : ''}</Text>
+        </View>
+      </View>
+    </View>
+  );
 
   return (
-    <View style={styles.container}>
-      <View style={styles.statusBar}>
-        <Text style={styles.statusText}>
-          {live ? '🟢 En vivo' : '⚪ Sin conexión en vivo'}
-          {pending > 0 ? `  ·  ${pending} por sincronizar` : ''}
-        </Text>
-        <TouchableOpacity onPress={signOut}>
-          <Text style={styles.logout}>Salir</Text>
-        </TouchableOpacity>
-      </View>
-
-      <FlatList
-        data={loans}
-        keyExtractor={(l) => l.id}
-        contentContainerStyle={{ padding: 16, gap: 12 }}
-        refreshControl={<RefreshControl refreshing={false} onRefresh={refresh} />}
-        ListEmptyComponent={<Text style={styles.empty}>No hay créditos en tu ruta.</Text>}
-        renderItem={({ item }) => (
-          <View style={styles.card}>
-            <View style={styles.cardRow}>
-              <Text style={styles.badge}>{item.status}</Text>
-              <Text style={styles.balance}>{money(item.balance)}</Text>
-            </View>
-            <Text style={styles.detail}>
-              Capital {money(item.principal)} · Pagado {money(item.paidAmount)}
-            </Text>
-            <TouchableOpacity
-              style={[styles.payBtn, item.status === 'PAID' && styles.payBtnDisabled]}
-              disabled={item.status === 'PAID'}
-              onPress={() => onAbonar(item)}
-            >
-              <Text style={styles.payBtnText}>
-                {item.status === 'PAID' ? 'Pagado' : 'Registrar abono'}
-              </Text>
-            </TouchableOpacity>
+    <>
+    <FlatList
+      style={{ backgroundColor: colors.bg }}
+      data={loans}
+      keyExtractor={(l) => l.id}
+      ListHeaderComponent={Header}
+      contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 32 }}
+      refreshControl={<RefreshControl refreshing={false} onRefresh={refresh} tintColor={colors.primary} />}
+      ListEmptyComponent={<Text style={styles.empty}>No hay créditos en tu ruta.</Text>}
+      renderItem={({ item }) => (
+        <TouchableOpacity style={styles.card} activeOpacity={0.8} onPress={() => router.push(`/(app)/loan/${item.id}` as never)}>
+          <View style={styles.cardRow}>
+            <Text style={styles.badge}>{item.status}</Text>
+            <Text style={styles.balance}>{money(item.balance)}</Text>
           </View>
-        )}
-      />
+          <Text style={styles.detail}>
+            Capital {money(item.principal)} · Pagado {money(item.paidAmount)}
+          </Text>
+          <TouchableOpacity
+            style={[styles.payBtn, item.status === 'PAID' && styles.payBtnDisabled]}
+            disabled={item.status === 'PAID'}
+            onPress={() => setAbonoLoan(item)}
+          >
+            <Text style={styles.payBtnText}>{item.status === 'PAID' ? 'Pagado' : 'Registrar abono'}</Text>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      )}
+    />
+    <AbonoModal loan={abonoLoan} visible={!!abonoLoan} onClose={() => setAbonoLoan(null)} onConfirm={confirmAbono} />
+    </>
+  );
+}
+
+function Kpi({ label, value, accent }: { label: string; value: string; accent?: string }) {
+  return (
+    <View style={styles.kpi}>
+      <Text style={styles.kpiLabel}>{label}</Text>
+      <Text style={[styles.kpiValue, accent ? { color: accent } : null]}>{value}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f4f7fb' },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  statusBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: '#e6f3ff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#cfe4ff',
-  },
-  statusText: { fontSize: 13, color: '#004f9f', fontWeight: '600' },
-  logout: { fontSize: 13, color: '#dc2626', fontWeight: '600' },
-  empty: { textAlign: 'center', color: '#94a3b8', marginTop: 40 },
-  card: { backgroundColor: '#fff', borderRadius: 14, padding: 16, gap: 8 },
+  headerWrap: { gap: 12, marginBottom: 4 },
+  kpiRow: { flexDirection: 'row', gap: 12 },
+  kpi: { flex: 1, backgroundColor: colors.card, borderRadius: 16, borderWidth: 2, borderColor: colors.border, padding: 14 },
+  kpiLabel: { fontSize: 11, color: colors.muted, fontWeight: '700' },
+  kpiValue: { fontSize: 18, fontWeight: '800', color: colors.text, marginTop: 2 },
+  sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
+  sectionTitle: { fontSize: 18, fontWeight: '800', color: colors.text },
+  liveChip: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  dot: { width: 8, height: 8, borderRadius: 4 },
+  liveText: { fontSize: 11, color: colors.muted, fontWeight: '600' },
+  empty: { textAlign: 'center', color: colors.muted, marginTop: 40 },
+  card: { backgroundColor: colors.card, borderRadius: 16, borderWidth: 2, borderColor: colors.border, padding: 16, gap: 8 },
   cardRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   badge: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#3730a3',
-    backgroundColor: '#e0e7ff',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 999,
-    overflow: 'hidden',
+    fontSize: 11, fontWeight: '800', color: colors.accentText, backgroundColor: colors.accent,
+    paddingHorizontal: 10, paddingVertical: 3, borderRadius: 999, overflow: 'hidden',
   },
-  balance: { fontSize: 20, fontWeight: '800', color: '#0a2540' },
-  detail: { fontSize: 13, color: '#64748b' },
-  payBtn: { backgroundColor: '#004f9f', borderRadius: 10, paddingVertical: 12, alignItems: 'center', marginTop: 4 },
-  payBtnDisabled: { backgroundColor: '#cbd5e1' },
-  payBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  balance: { fontSize: 20, fontWeight: '800', color: colors.text },
+  detail: { fontSize: 13, color: colors.muted },
+  payBtn: {
+    backgroundColor: colors.primary, borderRadius: 16, paddingVertical: 13, alignItems: 'center',
+    marginTop: 4, borderBottomWidth: 4, borderBottomColor: colors.primaryDark,
+  },
+  payBtnDisabled: { backgroundColor: colors.disabled, borderBottomColor: '#c8c8c8' },
+  payBtnText: { color: '#fff', fontWeight: '800', fontSize: 15, textTransform: 'uppercase', letterSpacing: 0.5 },
 });

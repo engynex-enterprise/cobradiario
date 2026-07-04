@@ -187,6 +187,8 @@ model Tenant {
   reminders      Reminder[]
   ledgerEntries  LedgerEntry[]
   auditLogs      AuditLog[]
+  tags           Tag[]
+  messages       Message[]
 
   @@index([status])
   @@map("tenants")
@@ -216,6 +218,7 @@ model User {
   notifications      Notification[]
   deviceTokens       DeviceToken[]
   auditLogs          AuditLog[]
+  messages           Message[]
 
   @@unique([tenantId, email])
   @@index([tenantId, isActive])
@@ -656,4 +659,35 @@ model AuditLog {
   @@index([tenantId, entity, entityId])
   @@index([tenantId, createdAt])
   @@map("audit_logs")
+}
+
+// Etiquetas del tenant para clasificar (buen pagador, moroso, zona…).
+model Tag {
+  id        String   @id @default(cuid())
+  tenantId  String
+  name      String
+  color     String   @default("#58cc02")
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@map("tags")
+}
+
+// Chat interno del tenant (administradores ↔ cobradores).
+model Message {
+  id         String   @id @default(cuid())
+  tenantId   String
+  userId     String
+  authorName String
+  body       String
+  createdAt  DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@index([tenantId, createdAt])
+  @@map("messages")
 }

@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:4000/health)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:8082)",
+      "Bash(xcrun simctl *)",
+      "Bash(pnpm start:dev)",
+      "Bash(npx expo *)",
+      "Bash(curl -s -o /dev/null http://localhost:4000/health)",
+      "Bash(curl -s -o /dev/null http://localhost:8082)",
+      "Bash(curl -s http://localhost:4000/health)",
+      "Bash(lsof -ti:8082)",
+      "Bash(xargs kill -9)",
+      "Bash(awk '{print $2, $11, $12, $13}')",
+      "Bash(pkill -f \"console-ninja\")",
+      "Bash(perl -i -pe 's/onРress/onPressItem/g' \"src/app/\\(app\\)/notificaciones.tsx\")",
+      "Bash(pnpm typecheck *)"
+    ]
+  }
+}

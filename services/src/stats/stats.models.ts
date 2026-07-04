@@ -14,6 +14,23 @@ export class DailyCollection {
 }
 
 @ObjectType()
+export class CollectorBalance {
+  @Field() collectorId!: string;
+  @Field({ nullable: true }) collectorName?: string;
+  @Field(() => Float) collected!: number;
+  @Field(() => Int) payments!: number;
+}
+
+@ObjectType()
+export class Balances {
+  @Field(() => Float) totalPrincipal!: number; // capital colocado
+  @Field(() => Float) totalDue!: number; // total a cobrar
+  @Field(() => Float) totalPaid!: number; // recaudado histórico
+  @Field(() => Float) outstanding!: number; // saldo por cobrar
+  @Field(() => [CollectorBalance]) byCollector!: CollectorBalance[];
+}
+
+@ObjectType()
 export class DashboardStats {
   @Field(() => Float) totalPortfolio!: number; // saldo pendiente de créditos activos
   @Field(() => Float) collectedToday!: number;

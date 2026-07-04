@@ -27,6 +27,14 @@ type AuthUser {
   tenantId: String!
 }
 
+type Balances {
+  byCollector: [CollectorBalance!]!
+  outstanding: Float!
+  totalDue: Float!
+  totalPaid: Float!
+  totalPrincipal: Float!
+}
+
 type CashBox {
   closedAt: DateTime
   closingBalance: Float
@@ -81,6 +89,13 @@ input CloseCashBoxInput {
   countedBalance: Float!
 }
 
+type CollectorBalance {
+  collected: Float!
+  collectorId: String!
+  collectorName: String
+  payments: Int!
+}
+
 input CreateClientInput {
   address: String
   city: String
@@ -115,6 +130,11 @@ input CreateRouteInput {
   code: String
   name: String!
   zone: String
+}
+
+input CreateTagInput {
+  color: String
+  name: String!
 }
 
 input CreateTeamMemberInput {
@@ -252,6 +272,19 @@ input LoginInput {
   password: String!
 }
 
+type Message {
+  authorName: String!
+  body: String!
+  createdAt: DateTime!
+  id: ID!
+  userId: ID!
+}
+
+input MessagesQueryInput {
+  before: ID
+  limit: Int = 50
+}
+
 type Mutation {
   addCashMovement(input: AddCashMovementInput!): CashBox!
   assignCollector(input: AssignCollectorInput!): Route!
@@ -260,7 +293,9 @@ type Mutation {
   createCreditProduct(input: CreateProductInput!): CreditProduct!
   createLoan(input: CreateLoanInput!): Loan!
   createRoute(input: CreateRouteInput!): Route!
+  createTag(input: CreateTagInput!): Tag!
   createTeamMember(input: CreateTeamMemberInput!): TeamMember!
+  deleteTag(id: ID!): Boolean!
   login(input: LoginInput!): AuthPayload!
   logout(input: RefreshInput!): Boolean!
   markNotificationRead(id: ID!): Boolean!
@@ -271,6 +306,8 @@ type Mutation {
   registerPayment(input: RegisterPaymentInput!): RegisterPaymentResult!
   runDueReminders(withinDays: Int! = 1): EnqueuedJob!
   runOverdueSweep: EnqueuedJob!
+  sendMessage(input: SendMessageInput!): Message!
+  updateTag(input: UpdateTagInput!): Tag
 }
 
 type Notification {
@@ -344,6 +381,7 @@ enum PaymentStatus {
 }
 
 type Query {
+  balances: Balances!
   cashMovements(type: CashMovementType): [CashMovementFeedItem!]!
   clients: [Client!]!
   creditProducts: [CreditProduct!]!
@@ -352,12 +390,14 @@ type Query {
   loan(id: ID!): Loan!
   loans(routeId: ID): [Loan!]!
   me: AuthUser!
+  messages(query: MessagesQueryInput): [Message!]!
   myNotifications: [Notification!]!
   myOpenCashBox: CashBox
   payments(loanId: ID!): [Payment!]!
   recentPayments: [PaymentFeedItem!]!
   reminders: [ReminderItem!]!
   routes: [Route!]!
+  tags: [Tag!]!
   teamMembers: [TeamMember!]!
 }
 
@@ -426,10 +466,21 @@ type RouteCollectorInfo {
   userId: ID!
 }
 
+input SendMessageInput {
+  body: String!
+}
+
 type StatusCount {
   balance: Float!
   count: Int!
   status: String!
+}
+
+type Tag {
+  color: String!
+  createdAt: DateTime!
+  id: ID!
+  name: String!
 }
 
 type TeamMember {
@@ -443,6 +494,12 @@ type TeamMember {
 enum TenantType {
   INDIVIDUAL
   ORGANIZATION
+}
+
+input UpdateTagInput {
+  color: String
+  id: ID!
+  name: String
 }
 
 enum UserRole {

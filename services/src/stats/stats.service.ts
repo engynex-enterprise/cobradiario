@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { DashboardStats } from './stats.models';
+import { Balances, DashboardStats } from './stats.models';
 
 @Injectable()
 export class StatsService {
@@ -52,6 +52,46 @@ export class StatsService {
         balance: round2(Number(s._sum.balance ?? 0)),
       })),
       collectionLast7Days: [...buckets.entries()].map(([date, amount]) => ({ date, amount })),
+    };
+  }
+
+  async balances(tenantId: string): Promise<Balances> {
+    const db = this.prisma.forTenant(tenantId);
+
+    const agg = await db.loan.aggregate({
+      where: { deletedAt: null },
+      _sum: { principal: true, totalDue: true, paidAmount: true, balance: true },
+    });
+
+    const grouped = await db.payment.groupBy({
+      by: ['collectorId'],
+      where: { status: 'COMPLETED' },
+      _sum: { amount: true },
+      _count: true,
+    });
+
+    const collectorIds = grouped.map((g) => g.collectorId).filter((x): x is string => !!x);
+    const users = collectorIds.length
+      ? await db.user.findMany({ where: { id: { in: collectorIds } }, select: { id: true, fullName: true } })
+      : [];
+    const nameById = new Map(users.map((u) => [u.id, u.fullName]));
+
+    const byCollector = grouped
+      .filter((g) => g.collectorId)
+      .map((g) => ({
+        collectorId: g.collectorId as string,
+        collectorName: nameById.get(g.collectorId as string),
+        collected: round2(Number(g._sum.amount ?? 0)),
+        payments: g._count,
+      }))
+      .sort((a, b) => b.collected - a.collected);
+
+    return {
+      totalPrincipal: round2(Number(agg._sum.principal ?? 0)),
+      totalDue: round2(Number(agg._sum.totalDue ?? 0)),
+      totalPaid: round2(Number(agg._sum.paidAmount ?? 0)),
+      outstanding: round2(Number(agg._sum.balance ?? 0)),
+      byCollector,
     };
   }
 }

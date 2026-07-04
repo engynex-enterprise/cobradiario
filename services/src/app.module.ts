@@ -22,6 +22,8 @@ import { RoutesModule } from './routes/routes.module';
 import { TeamModule } from './team/team.module';
 import { StatsModule } from './stats/stats.module';
 import { OpsModule } from './ops/ops.module';
+import { TagsModule } from './tags/tags.module';
+import { ChatModule } from './chat/chat.module';
 import { GqlAuthGuard } from './common/guards/gql-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { GqlThrottlerGuard } from './common/guards/gql-throttler.guard';
@@ -85,6 +87,8 @@ import { GqlThrottlerGuard } from './common/guards/gql-throttler.guard';
     TeamModule,
     StatsModule,
     OpsModule,
+    TagsModule,
+    ChatModule,
   ],
   providers: [
     // Orden importa: autenticación → autorización por rol → rate limit.

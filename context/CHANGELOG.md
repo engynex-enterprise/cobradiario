@@ -296,7 +296,48 @@ Bitácora de decisiones y cambios estructurales. Formato: fecha · tipo · descr
   Perfil y los placeholders (Balances/Bases/Etiquetas/Chat vía `ComingSoon`).
 - **[verificación]** typecheck web OK; las 19 secciones sirven 200.
 
+## 2026-07-04 — App móvil: tab bar + dashboard + topbar (avatar/totales)
+
+- **[app]** Navegación con **tab bar inferior** (expo-router Tabs + `@react-navigation/bottom-tabs`,
+  iconos `@expo/vector-icons`): **Inicio · Clientes · Alertas · Menú** (+ Perfil/Ajustes ocultos).
+- **[app]** **TopBar**: avatar arriba-izq que abre menú (Perfil/Ajustes/Cerrar sesión); arriba-der
+  **Recaudado hoy vs Por cobrar** (de `dashboardStats`, refresco por socket).
+- **[app]** **Inicio = dashboard**: KPIs (cartera, recaudado hoy, activos, mora) + cartera con
+  "Registrar abono" (offline-first). Nuevas pantallas: Clientes (buscador), Notificaciones
+  (marcar leído + realtime), Menú, Perfil, Ajustes.
+- **[app]** Datos: `fetchDashboardStats`, `fetchClients`, `fetchNotifications`, `markNotificationRead`.
+- **[fix]** Quitado `GestureHandlerRootView` del layout (evita crash de worklets/reanimated en
+  Expo Go SDK 57; la app no usa gestos).
+- **[dev]** Expo se corre en `--no-dev` para esquivar la instrumentación de Console Ninja que
+  crasheaba Hermes (`consoleCreateTask`). Fix definitivo: desactivar Console Ninja + recargar IDE.
+- **[verificación]** typecheck app OK; corriendo en simulador iOS 18.5 (iPhone 16): tab bar,
+  topbar con totales y dashboard renderizados con datos reales.
+
+## 2026-07-04 — App móvil: tema Duolingo + modal de abono con moneda
+
+- **[app]** Tema **Duolingo** (igual que la web): verde `#58cc02`, esquinas 16px, **botones 3D
+  chunky** (base inferior + mayúsculas), bordes 2px en tarjetas/KPIs/inputs. Paleta central en
+  `lib/theme.ts`; login, dashboard, clientes, notificaciones, menú, perfil y ajustes actualizados.
+- **[app]** Reemplazado `Alert.prompt` por **`AbonoModal`**: bottom-sheet con saldo, **input de
+  moneda formateado** (`$ 1.250.000`), montos rápidos (5k/10k/20k/50k/Total) y botón 3D. Mantiene
+  el flujo offline-first (encola + sincroniza).
+- **[verificación]** typecheck app OK; corriendo en simulador iOS con look Duolingo y datos reales.
+
 <!-- Plantilla para próximas entradas:
 ## AAAA-MM-DD — Título
 - **[tipo]** descripción   (tipo ∈ decisión/infra/db/backend/app/web/seguridad/pendiente/fix)
 -->
+
+## 2026-07-04 — Balances, Etiquetas y Chat
+- **[db]** Nuevos modelos `Tag` (etiquetas por tenant, `@@unique([tenantId,name])`) y `Message`
+  (chat interno del tenant). Migración `20260704174528_tags_messages` con ENABLE/FORCE RLS +
+  policy `tenant_isolation` + grants a `app_user` (mismo patrón que la migración RLS base).
+- **[backend]** `StatsModule.balances`: consolidado financiero (capital, total a cobrar, recaudado,
+  saldo) + recaudo por cobrador (`payment.groupBy(collectorId)`).
+- **[backend]** `TagsModule`: CRUD (`tags`, `createTag`/`updateTag`/`deleteTag`; mutaciones OWNER/ADMIN).
+- **[backend]** `ChatModule`: `messages` (cursor `before`), `sendMessage` con fan-out realtime
+  `message.created` vía `EventsGateway.emitToTenant`.
+- **[web]** Páginas reales (reemplazan ComingSoon): Balances (KPIs + barras de avance y por cobrador),
+  Etiquetas (grid + drawer crear/editar con paleta), Chat (burbujas + realtime socket.io).
+- **[verificación]** E2E OK (login→crear tag→enviar mensaje→listar) y aislamiento RLS confirmado en DB
+  (otro tenant = 0 filas; bypass = filas visibles). Typecheck backend y web sin errores.
