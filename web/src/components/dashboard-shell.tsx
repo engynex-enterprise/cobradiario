@@ -96,7 +96,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       <header className="shadow-header flex h-16 shrink-0 items-center gap-2 border-b border-border bg-card px-4">
         <div className="flex min-w-0 flex-1 items-center gap-2">
           <Link href="/dashboard" className="flex items-center gap-2.5 pl-1 pr-2">
-            <span className="flex size-8 items-center justify-center bg-primary text-primary-foreground">
+            <span className="flex size-9 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
               <Landmark className="size-5" />
             </span>
             <span className="text-lg font-extrabold tracking-tight text-foreground">Cobro Diario</span>
@@ -104,17 +104,17 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           <button
             onClick={() => setCollapsed((c) => !c)}
             title="Contraer menú"
-            className="hidden size-10 items-center justify-center text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground md:flex"
+            className="hidden size-11 items-center justify-center rounded-2xl text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground md:flex"
           >
-            {collapsed ? <PanelLeftOpen className="size-5" /> : <PanelLeftClose className="size-5" />}
+            {collapsed ? <PanelLeftOpen className="size-6" /> : <PanelLeftClose className="size-6" />}
           </button>
         </div>
         <div className="flex flex-[2] justify-center">
           <GlobalSearch />
         </div>
         <div className="flex flex-1 items-center justify-end gap-1.5">
-          <button title="Notificaciones" onClick={() => router.push('/dashboard/notificaciones')} className="flex size-10 items-center justify-center text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground">
-            <Bell className="size-5" />
+          <button title="Notificaciones" onClick={() => router.push('/dashboard/notificaciones')} className="flex size-11 items-center justify-center rounded-2xl text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground">
+            <Bell className="size-6" />
           </button>
           <ThemeToggle />
         </div>
@@ -160,12 +160,12 @@ function SidebarLink({ href, label, icon: Icon, active, collapsed }: { href: str
       href={href}
       title={label}
       className={cn(
-        'relative flex items-center gap-3 border py-2.5 text-[13px] font-bold uppercase tracking-wide transition-colors',
+        'relative flex items-center gap-3 rounded-2xl border-2 py-2.5 text-[13px] font-extrabold uppercase tracking-wide transition-colors',
         collapsed ? 'justify-center px-0' : 'px-3',
         active ? 'border-sky-300 bg-accent text-accent-foreground' : 'border-transparent text-foreground/70 hover:bg-muted hover:text-foreground',
       )}
     >
-      <Icon className="size-5 shrink-0" />
+      <Icon className="size-6 shrink-0" />
       {!collapsed && <span className="flex-1 truncate">{label}</span>}
     </Link>
   );
@@ -179,8 +179,8 @@ function SidebarGroup({ group, pathname, collapsed }: { group: NavGroup; pathnam
 
   if (collapsed) {
     return (
-      <Link href={group.children[0]?.href ?? '#'} title={group.label} className={cn('flex items-center justify-center border border-transparent py-2.5 transition-colors hover:bg-muted', hasActive ? 'text-accent-foreground' : 'text-foreground/70 hover:text-foreground')}>
-        <Icon className="size-5" />
+      <Link href={group.children[0]?.href ?? '#'} title={group.label} className={cn('flex items-center justify-center rounded-2xl border-2 border-transparent py-2.5 transition-colors hover:bg-muted', hasActive ? 'text-accent-foreground' : 'text-foreground/70 hover:text-foreground')}>
+        <Icon className="size-6" />
       </Link>
     );
   }
@@ -189,19 +189,19 @@ function SidebarGroup({ group, pathname, collapsed }: { group: NavGroup; pathnam
     <div>
       <button
         onClick={() => setOpen((o) => !o)}
-        className={cn('flex w-full items-center gap-3 border border-transparent px-3 py-2.5 text-[13px] font-bold uppercase tracking-wide transition-colors', hasActive ? 'text-accent-foreground' : 'text-foreground/70 hover:bg-muted hover:text-foreground')}
+        className={cn('flex w-full items-center gap-3 rounded-2xl border-2 border-transparent px-3 py-2.5 text-[13px] font-extrabold uppercase tracking-wide transition-colors', hasActive ? 'text-accent-foreground' : 'text-foreground/70 hover:bg-muted hover:text-foreground')}
       >
-        <Icon className="size-5 shrink-0" />
+        <Icon className="size-6 shrink-0" />
         <span className="flex-1 truncate text-left">{group.label}</span>
-        <ChevronDown className={cn('size-4 shrink-0 opacity-60 transition-transform', open && 'rotate-180')} />
+        <ChevronDown className={cn('size-5 shrink-0 opacity-60 transition-transform', open && 'rotate-180')} />
       </button>
       {open && (
-        <ul className="my-1 ml-6 space-y-0.5 border-l border-border pl-3">
+        <ul className="my-1 ml-7 space-y-0.5 border-l-2 border-border pl-3">
           {group.children.map((c) => {
             const active = linkActive(pathname, c.href);
             return (
               <li key={c.href}>
-                <Link href={c.href} className={cn('block px-3 py-2 text-[13px] font-semibold transition-colors', active ? 'bg-accent text-accent-foreground' : 'text-foreground/60 hover:bg-muted hover:text-foreground')}>
+                <Link href={c.href} className={cn('block rounded-xl px-3 py-2 text-[13px] font-bold transition-colors', active ? 'bg-accent text-accent-foreground' : 'text-foreground/60 hover:bg-muted hover:text-foreground')}>
                   {c.label}
                 </Link>
               </li>
@@ -227,8 +227,8 @@ function UserMenu({ name, email, role, collapsed, onLogout }: { name: string; em
 
   return (
     <div ref={ref} className="relative">
-      <button onClick={() => setOpen((o) => !o)} title={name} className={cn('flex w-full items-center gap-2.5 text-left outline-none transition-colors hover:bg-sidebar-accent', collapsed ? 'justify-center p-1.5' : 'p-2')}>
-        <span className="flex size-9 shrink-0 items-center justify-center bg-primary text-xs font-bold text-primary-foreground">{initials || '?'}</span>
+      <button onClick={() => setOpen((o) => !o)} title={name} className={cn('flex w-full items-center gap-2.5 rounded-2xl text-left outline-none transition-colors hover:bg-sidebar-accent', collapsed ? 'justify-center p-1.5' : 'p-2')}>
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary text-xs font-bold text-primary-foreground">{initials || '?'}</span>
         {!collapsed && (
           <>
             <div className="min-w-0 flex-1">
@@ -240,22 +240,22 @@ function UserMenu({ name, email, role, collapsed, onLogout }: { name: string; em
         )}
       </button>
       {open && (
-        <div className="absolute bottom-full left-0 z-50 mb-2 w-64 border border-border bg-popover text-popover-foreground shadow-soft-lg">
-          <div className="flex items-center gap-3 border-b border-border px-3 py-3">
-            <span className="flex size-10 items-center justify-center bg-primary text-sm font-bold text-primary-foreground">{initials || '?'}</span>
+        <div className="absolute bottom-full left-0 z-50 mb-2 w-64 rounded-2xl border-2 border-border bg-popover text-popover-foreground shadow-soft-lg">
+          <div className="flex items-center gap-3 border-b-2 border-border px-3 py-3">
+            <span className="flex size-10 items-center justify-center rounded-xl bg-primary text-sm font-bold text-primary-foreground">{initials || '?'}</span>
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold">{name || 'Usuario'}</p>
               <p className="truncate text-xs capitalize text-muted-foreground">{role?.toLowerCase()}</p>
             </div>
           </div>
           <div className="p-1.5">
-            <Link href="/dashboard/perfil" onClick={() => setOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground">
+            <Link href="/dashboard/perfil" onClick={() => setOpen(false)} className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-bold transition-colors hover:bg-accent hover:text-accent-foreground">
               <UserRound className="size-4" /> Mi perfil
             </Link>
-            <Link href="/dashboard/reportes" onClick={() => setOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground">
+            <Link href="/dashboard/reportes" onClick={() => setOpen(false)} className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-bold transition-colors hover:bg-accent hover:text-accent-foreground">
               <BarChart3 className="size-4" /> Reportes
             </Link>
-            <button onClick={() => { setOpen(false); onLogout(); }} className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm font-medium text-destructive transition-colors hover:bg-destructive/10">
+            <button onClick={() => { setOpen(false); onLogout(); }} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm font-bold text-destructive transition-colors hover:bg-destructive/10">
               <LogOut className="size-4" /> Cerrar sesión
             </button>
           </div>
@@ -293,15 +293,15 @@ function GlobalSearch() {
 
   return (
     <>
-      <button onClick={() => { setQ(''); setActive(0); setOpen(true); }} className="flex h-10 w-full max-w-xl items-center gap-2 border border-border bg-background px-3.5 text-sm font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:bg-accent">
+      <button onClick={() => { setQ(''); setActive(0); setOpen(true); }} className="flex h-11 w-full max-w-xl items-center gap-2 rounded-2xl border-2 border-border bg-background px-3.5 text-sm font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:bg-accent">
         <Search className="size-4" />
         <span className="flex-1 text-left">Buscar módulos…</span>
-        <kbd className="hidden border border-border bg-muted px-1.5 py-0.5 text-[10px] font-bold sm:inline">⌘K</kbd>
+        <kbd className="hidden rounded-md border-2 border-border bg-muted px-1.5 py-0.5 text-[10px] font-bold sm:inline">⌘K</kbd>
       </button>
       {open && (
         <div className="fixed inset-0 z-[70] flex items-start justify-center bg-black/40 p-4 pt-[12vh]" onClick={() => setOpen(false)}>
-          <div className="w-full max-w-lg overflow-hidden border border-border bg-popover text-popover-foreground shadow-soft-lg" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center gap-2 border-b border-border px-4">
+          <div className="w-full max-w-lg overflow-hidden rounded-2xl border-2 border-border bg-popover text-popover-foreground shadow-soft-lg" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-2 border-b-2 border-border px-4">
               <Search className="size-4 text-muted-foreground" />
               <input
                 ref={inputRef}
@@ -323,7 +323,7 @@ function GlobalSearch() {
                 results.map((r, i) => {
                   const Icon = r.icon;
                   return (
-                    <button key={r.href} onMouseEnter={() => setActive(i)} onClick={() => go(r.href)} className={cn('flex w-full items-center gap-3 px-3 py-2 text-left text-sm transition-colors', i === active ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/60')}>
+                    <button key={r.href} onMouseEnter={() => setActive(i)} onClick={() => go(r.href)} className={cn('flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-semibold transition-colors', i === active ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/60')}>
                       <Icon className="size-4 shrink-0" />
                       {r.label}
                     </button>

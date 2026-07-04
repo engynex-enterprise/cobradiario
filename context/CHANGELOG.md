@@ -479,3 +479,11 @@ Bitácora de decisiones y cambios estructurales. Formato: fecha · tipo · descr
   Comunicación) + Inicio/Reportes como enlaces + menú de usuario al pie (perfil/reportes/cerrar sesión).
   Nav horizontal en móvil. Componentes (card/modal/drawer/select) heredan radius 0 + azul.
 - **[run]** Web en http://localhost:3000 (login 200, dashboard 200).
+
+## 2026-07-04 — Web: layout orus-pos + tema Duolingo (verde)
+- **[web]** Aclaración de diseño: se conserva el **layout de orus-pos** (shell: header + buscador ⌘K +
+  sidebar único colapsable con grupos + menú usuario), pero con el **tema Duolingo** (variante .pos-duo):
+  verde #58cc02, Nunito, radius 16, botones 3D chunky, bordes 2px, píldoras.
+- **[web]** globals.css revertido a Duolingo (tokens + tratamientos card/botón/input/dialog/sheet/select/
+  popover/badge). Fuente Nunito. Shell con esquinas redondeadas (rounded-2xl) en logo, botones, enlaces,
+  grupos, buscador y menú de usuario.

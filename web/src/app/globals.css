@@ -37,110 +37,102 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --font-sans: var(--font-sans), "Montserrat", system-ui, sans-serif;
+  --radius-sm: 1rem;
+  --radius-md: 1rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1rem;
+  --font-sans: var(--font-nunito), "Nunito", ui-rounded, system-ui, sans-serif;
 }
 
 /* ===========================================================================
-   Tema ATHENA POS / Altipal — Manual de marca: azul #004f9f (unicolor),
-   radius 0, tipografía Montserrat. Copiado de orus-pos/frontend.
+   Tema "Duolingo" (variante .pos-duo de orus-pos): verde brillante (#58cc02),
+   fuente redonda (Nunito), esquinas 16px, botones 3D chunky, bordes 2px.
    =========================================================================== */
 :root {
-  --radius: 0rem;
-  --background: #f4f7fb;
-  --foreground: #0a2540;
+  --radius: 1rem;
+  --background: #ffffff;
+  --foreground: #3c3c3c;
   --card: #ffffff;
-  --card-foreground: #0a2540;
+  --card-foreground: #3c3c3c;
   --popover: #ffffff;
-  --popover-foreground: #0a2540;
-  --primary: #004f9f;
+  --popover-foreground: #3c3c3c;
+  --primary: #58cc02;
   --primary-foreground: #ffffff;
-  --secondary: #eef3f9;
-  --secondary-foreground: #0a2540;
-  --muted: #f1f5fa;
-  --muted-foreground: #5a7088;
-  --accent: #e6f3ff;
-  --accent-foreground: #004f9f;
-  --destructive: #f25444;
+  --primary-base: #46a302;
+  --secondary: #e5f8d3;
+  --secondary-foreground: #3c8000;
+  --muted: #f7f7f7;
+  --muted-foreground: #777777;
+  --accent: #ddf4ff;
+  --accent-foreground: #1899d6;
+  --destructive: #ff4b4b;
   --destructive-foreground: #ffffff;
-  --border: #e2eaf3;
-  --input: #d7e2ee;
-  --ring: #004f9f;
-  --chart-1: #004f9f;
-  --chart-2: #15b790;
-  --chart-3: #4698eb;
-  --chart-4: #a653a0;
-  --chart-5: #94a3b8;
+  --destructive-base: #ea2b2b;
+  --border: #e5e5e5;
+  --input: #e5e5e5;
+  --ring: #1899d6;
+  --chart-1: #58cc02;
+  --chart-2: #1899d6;
+  --chart-3: #ffc800;
+  --chart-4: #ce82ff;
+  --chart-5: #ff9600;
   --sidebar: #ffffff;
-  --sidebar-foreground: #475569;
-  --sidebar-primary: #004f9f;
+  --sidebar-foreground: #4b4b4b;
+  --sidebar-primary: #58cc02;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #eef3f9;
-  --sidebar-accent-foreground: #0a2540;
-  --sidebar-border: #e9eef5;
-  --sidebar-ring: #004f9f;
-  --canvas: #eef1f6;
+  --sidebar-accent: #ddf4ff;
+  --sidebar-accent-foreground: #1899d6;
+  --sidebar-border: #e5e5e5;
+  --sidebar-ring: #58cc02;
+  --canvas: #f7f7f7;
 }
 
 .dark {
-  --background: #08182e;
-  --foreground: #e6f3ff;
-  --card: #0d2440;
-  --card-foreground: #e6f3ff;
-  --popover: #0d2440;
-  --popover-foreground: #e6f3ff;
-  --primary: #4698eb;
-  --primary-foreground: #04203f;
-  --secondary: #123154;
-  --secondary-foreground: #e6f3ff;
-  --muted: #123154;
-  --muted-foreground: #9fc1e8;
-  --accent: #1a3c63;
-  --accent-foreground: #e6f3ff;
-  --destructive: #f25444;
+  --background: #131f24;
+  --foreground: #f1f7fb;
+  --card: #1c2a31;
+  --card-foreground: #f1f7fb;
+  --popover: #1c2a31;
+  --popover-foreground: #f1f7fb;
+  --primary: #58cc02;
+  --primary-foreground: #ffffff;
+  --primary-base: #3c8000;
+  --secondary: #20323a;
+  --secondary-foreground: #b8f28a;
+  --muted: #1a262c;
+  --muted-foreground: #93a4ad;
+  --accent: #173a4a;
+  --accent-foreground: #49c0f8;
+  --destructive: #ff5b5b;
   --destructive-foreground: #ffffff;
-  --border: #1d3a5c;
-  --input: #264a73;
-  --ring: #4698eb;
-  --chart-1: #4698eb;
-  --chart-2: #15b790;
-  --chart-3: #80c2ff;
-  --chart-4: #a653a0;
-  --chart-5: #94a3b8;
-  --sidebar: #061325;
-  --sidebar-foreground: #b9d3ee;
-  --sidebar-primary: #4698eb;
-  --sidebar-primary-foreground: #04203f;
-  --sidebar-accent: #123154;
-  --sidebar-accent-foreground: #e6f3ff;
-  --sidebar-border: #1d3a5c;
-  --sidebar-ring: #4698eb;
-  --canvas: #08182e;
+  --destructive-base: #b3232c;
+  --border: #37464f;
+  --input: #37464f;
+  --ring: #49c0f8;
+  --chart-1: #58cc02;
+  --chart-2: #49c0f8;
+  --chart-3: #ffc800;
+  --chart-4: #ce82ff;
+  --chart-5: #ff9600;
+  --sidebar: #1c2a31;
+  --sidebar-foreground: #c2d0d8;
+  --sidebar-primary: #58cc02;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #173a4a;
+  --sidebar-accent-foreground: #49c0f8;
+  --sidebar-border: #37464f;
+  --sidebar-ring: #58cc02;
+  --canvas: #0d171b;
 }
 
-/* Canvas gris azulado suave (las tarjetas blancas flotan sobre él). */
 .app-canvas,
 .pos-canvas { background-color: var(--canvas); }
-.dark .app-canvas,
-.dark .pos-canvas { background-color: var(--background); }
 
-/* Elevación tipo Material (sombras crujientes, en capas). */
-.shadow-soft {
-  box-shadow: 0 1px 2px rgba(20, 35, 60, 0.08), 0 1px 3px rgba(20, 35, 60, 0.06);
-}
-.shadow-soft-md {
-  box-shadow: 0 1px 3px rgba(20, 35, 60, 0.10), 0 6px 16px -4px rgba(20, 35, 60, 0.14);
-}
-.shadow-soft-lg {
-  box-shadow: 0 2px 6px rgba(20, 35, 60, 0.08), 0 16px 40px -12px rgba(20, 35, 60, 0.20);
-}
-.shadow-header {
-  box-shadow: 0 1px 2px rgba(20, 35, 60, 0.08), 0 2px 8px -4px rgba(20, 35, 60, 0.10);
-}
+.shadow-soft { box-shadow: 0 2px 0 rgba(0, 0, 0, 0.04); }
+.shadow-soft-md { box-shadow: 0 3px 0 rgba(0, 0, 0, 0.05), 0 12px 28px -12px rgba(20, 30, 40, 0.25); }
+.shadow-soft-lg { box-shadow: 0 4px 0 rgba(0, 0, 0, 0.06), 0 18px 44px -18px rgba(20, 30, 40, 0.28); }
+.shadow-header { box-shadow: 0 2px 0 rgba(0, 0, 0, 0.03); }
 
 @layer base {
   * {
@@ -150,42 +142,103 @@
     background-color: var(--background);
     color: var(--foreground);
     font-family: var(--font-sans);
+    letter-spacing: -0.005em;
   }
-  h1, h2, h3 { font-weight: 700; }
-  svg.lucide { stroke-width: 2; }
+  h1, h2, h3 { font-weight: 800; }
 }
 
-/* ── Componentes: acabado Altipal (radius 0, sombras Material) ──────────── */
+/* ── Tarjetas: borde 2px chunky ────────────────────────────────────────── */
 [data-slot="card"] {
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border: 2px solid var(--border);
+  border-radius: 1rem;
 }
-[data-slot="dialog-content"],
-[data-slot="sheet-content"] {
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: 0 2px 6px rgba(20, 35, 60, 0.08), 0 16px 40px -12px rgba(20, 35, 60, 0.20);
+
+/* ── Botones 3D "chunky" (sello Duolingo) ──────────────────────────────── */
+[data-slot="button"] {
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  border-radius: 1rem;
+  transition: filter 0.12s ease, transform 0.04s ease, box-shadow 0.04s ease, background-color 0.12s ease;
 }
-[data-slot="select-content"],
-[data-slot="popover-content"],
-[data-slot="dropdown-menu-content"] {
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: 0 1px 3px rgba(20, 35, 60, 0.10), 0 6px 16px -4px rgba(20, 35, 60, 0.14);
+[data-slot="button"].bg-primary {
+  text-transform: uppercase;
+  border: none;
+  box-shadow: 0 4px 0 0 var(--primary-base);
 }
+[data-slot="button"].bg-primary:active:not([aria-haspopup]) {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 0 var(--primary-base);
+}
+[data-slot="button"][class*="bg-destructive"] {
+  text-transform: uppercase;
+  border: none;
+  background-color: var(--destructive);
+  color: var(--destructive-foreground);
+  box-shadow: 0 4px 0 0 var(--destructive-base);
+}
+[data-slot="button"][class*="bg-destructive"]:hover { filter: brightness(1.05); }
+[data-slot="button"][class*="bg-destructive"]:active:not([aria-haspopup]) {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 0 var(--destructive-base);
+}
+[data-slot="button"].bg-secondary {
+  text-transform: uppercase;
+  box-shadow: 0 4px 0 0 rgba(0, 0, 0, 0.14);
+}
+[data-slot="button"].bg-secondary:active:not([aria-haspopup]) {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 0 rgba(0, 0, 0, 0.14);
+}
+[data-slot="button"].bg-background {
+  text-transform: uppercase;
+  border: 2px solid var(--border);
+  box-shadow: 0 4px 0 0 rgba(0, 0, 0, 0.12);
+}
+[data-slot="button"].bg-background:active:not([aria-haspopup]) {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 0 rgba(0, 0, 0, 0.12);
+}
+
+/* ── Inputs / selects / textarea ───────────────────────────────────────── */
 [data-slot="input"],
 [data-slot="select-trigger"],
 textarea {
-  border-radius: var(--radius);
-  border-color: var(--input);
+  border-radius: 1rem;
+  border-width: 2px;
+  border-color: var(--border);
+  min-height: 2.9rem;
   background: var(--card);
 }
 [data-slot="input"]:focus-visible,
 [data-slot="select-trigger"]:focus-visible,
 [data-slot="select-trigger"][data-state="open"],
 textarea:focus-visible {
-  border-color: var(--ring);
-  box-shadow: 0 0 0 3px rgba(0, 79, 159, 0.15);
+  border-color: var(--accent-foreground);
+  box-shadow: 0 0 0 3px rgba(24, 153, 214, 0.18);
   outline: none;
 }
-[data-slot="badge"] { border-radius: var(--radius); }
+
+/* ── Modales / drawers / select / popover ──────────────────────────────── */
+[data-slot="dialog-content"] {
+  border-radius: 1rem;
+  border: 2px solid var(--border);
+  box-shadow: 0 10px 0 -2px rgba(0, 0, 0, 0.05), 0 28px 56px -18px rgba(20, 30, 40, 0.3);
+}
+[data-slot="sheet-content"] {
+  border: 2px solid var(--border);
+  box-shadow: 0 28px 56px -18px rgba(20, 30, 40, 0.35);
+}
+[data-slot="dialog-title"],
+[data-slot="sheet-title"] { font-weight: 800; }
+[data-slot="select-content"],
+[data-slot="popover-content"] {
+  border-radius: 1rem;
+  border: 2px solid var(--border);
+  box-shadow: 0 8px 0 -2px rgba(0, 0, 0, 0.04), 0 18px 44px -18px rgba(20, 30, 40, 0.25);
+}
+
+/* ── Badges píldora ────────────────────────────────────────────────────── */
+[data-slot="badge"] {
+  border-radius: 9999px;
+  font-weight: 700;
+}

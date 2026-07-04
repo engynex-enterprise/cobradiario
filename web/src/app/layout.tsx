@@ -1,14 +1,15 @@
 import type { Metadata } from 'next';
-import { Montserrat } from 'next/font/google';
+import { Nunito } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@/components/theme-provider';
 import { AuthProvider } from '@/components/auth-provider';
 import { Toaster } from 'sonner';
 
-// Tipografía del manual de marca Altipal (igual que orus-pos).
-const montserrat = Montserrat({
+// Tipografía redonda del tema Duolingo (igual que la variante .pos-duo de orus-pos).
+const nunito = Nunito({
   subsets: ['latin'],
-  variable: '--font-sans',
+  weight: ['400', '600', '700', '800', '900'],
+  variable: '--font-nunito',
 });
 
 export const metadata: Metadata = {
@@ -18,7 +19,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" className={`${montserrat.variable} font-sans`} suppressHydrationWarning>
+    <html lang="es" className={nunito.variable} suppressHydrationWarning>
       <body className="min-h-screen antialiased">
         <ThemeProvider>
           <AuthProvider>{children}</AuthProvider>
