@@ -2,48 +2,100 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ===========================================================================
+   Tema corporativo Altipal (mismo lenguaje visual que orus-pos):
+   azul #004f9f, texto navy, esquinas rectas (radius 0), superficies limpias.
+   =========================================================================== */
+:root {
+  --radius: 0rem;
+  --background: #f4f7fb;
+  --foreground: #0a2540;
+  --card: #ffffff;
+  --card-foreground: #0a2540;
+  --popover: #ffffff;
+  --popover-foreground: #0a2540;
+  --primary: #004f9f;
+  --primary-foreground: #ffffff;
+  --secondary: #eef3f9;
+  --secondary-foreground: #0a2540;
+  --muted: #f1f5fa;
+  --muted-foreground: #5a7088;
+  --accent: #e6f3ff;
+  --accent-foreground: #004f9f;
+  --destructive: #f25444;
+  --destructive-foreground: #ffffff;
+  --border: #e2eaf3;
+  --input: #d7e2ee;
+  --ring: #004f9f;
+  --chart-1: #004f9f;
+  --chart-2: #15b790;
+  --chart-3: #4698eb;
+  --chart-4: #a653a0;
+  --chart-5: #94a3b8;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #475569;
+  --sidebar-primary: #004f9f;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eef3f9;
+  --sidebar-accent-foreground: #0a2540;
+  --sidebar-border: #e9eef5;
+  --sidebar-ring: #004f9f;
+  --canvas: #eef1f6;
+}
+
+.dark {
+  --background: #08182e;
+  --foreground: #e6f3ff;
+  --card: #0d2440;
+  --card-foreground: #e6f3ff;
+  --popover: #0d2440;
+  --popover-foreground: #e6f3ff;
+  --primary: #4698eb;
+  --primary-foreground: #04203f;
+  --secondary: #123154;
+  --secondary-foreground: #e6f3ff;
+  --muted: #123154;
+  --muted-foreground: #9fc1e8;
+  --accent: #1a3c63;
+  --accent-foreground: #e6f3ff;
+  --destructive: #f25444;
+  --destructive-foreground: #ffffff;
+  --border: #1d3a5c;
+  --input: #264a73;
+  --ring: #4698eb;
+  --chart-1: #4698eb;
+  --chart-2: #15b790;
+  --chart-3: #80c2ff;
+  --chart-4: #a653a0;
+  --chart-5: #94a3b8;
+  --sidebar: #061325;
+  --sidebar-foreground: #b9d3ee;
+  --sidebar-primary: #4698eb;
+  --sidebar-primary-foreground: #04203f;
+  --sidebar-accent: #123154;
+  --sidebar-accent-foreground: #e6f3ff;
+  --sidebar-border: #1d3a5c;
+  --sidebar-ring: #4698eb;
+  --canvas: #08182e;
+}
+
+/* Canvas neutro frío donde flotan las tarjetas (look Siigo/Material). */
+.app-canvas {
+  background-color: var(--canvas);
+}
+
+/* Elevación tipo Material (sombras crujientes, en capas). */
+.shadow-soft {
+  box-shadow: 0 1px 2px rgba(20, 35, 60, 0.08), 0 1px 3px rgba(20, 35, 60, 0.06);
+}
+.shadow-soft-md {
+  box-shadow: 0 1px 3px rgba(20, 35, 60, 0.1), 0 6px 16px -4px rgba(20, 35, 60, 0.14);
+}
+.shadow-header {
+  box-shadow: 0 1px 2px rgba(20, 35, 60, 0.08), 0 2px 8px -4px rgba(20, 35, 60, 0.1);
+}
+
 @layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --primary: 142.1 76.2% 36.3%;
-    --primary-foreground: 355.7 100% 97.3%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 142.1 76.2% 36.3%;
-    --radius: 0.5rem;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --primary: 142.1 70.6% 45.3%;
-    --primary-foreground: 144.9 80.4% 10%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 142.4 71.8% 29.2%;
-  }
-
   * {
     @apply border-border;
   }

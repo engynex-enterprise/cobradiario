@@ -197,6 +197,25 @@ Bitácora de decisiones y cambios estructurales. Formato: fecha · tipo · descr
 - **[verificación]** Flujo completo por GraphQL: crear crédito en Ruta Centro → `routeName`
   correcto → filtro por ruta lo lista (1). typecheck api+web OK; páginas 200.
 
+## 2026-07-04 — Rediseño UI al sistema de diseño Altipal (orus-pos)
+
+- **[web]** Adoptado el lenguaje visual de orus-pos: azul de marca `#004f9f`, texto navy
+  `#0a2540`, fondo `#f4f7fb`, **esquinas rectas (--radius: 0)**, sombras Material (`shadow-soft`),
+  canvas neutro (`app-canvas`). `globals.css` + `tailwind.config.ts` reescritos con tokens hex
+  (variables CSS directas, no HSL).
+- **[web]** Layout con **sidebar** (`DashboardShell` + `app/dashboard/layout.tsx`): header con
+  marca + toggle de tema + usuario/logout; sidebar con navegación (Cartera/Reportes/Equipo/Caja)
+  estilo orus (uppercase, activo con borde sky + accent); nav horizontal en móvil.
+- **[web]** Modo claro/oscuro con `next-themes` (navy en oscuro). Charts al azul de marca.
+- **[verificación]** typecheck web OK; todas las páginas compilan (1986 módulos) y sirven 200.
+
+## 2026-07-04 — Login split-screen estilo orus
+
+- **[web]** Rediseño del login al patrón de orus: pantalla dividida (formulario ~46% / panel de
+  marca ~54% oculto en móvil). Panel derecho con gradiente azul de marca, tagline, mock de
+  cartera (ventana estilo navegador + mini-gráfica) y features (tiempo real / rutas / caja).
+- **[verificación]** typecheck web OK; `/login` sirve 200 y renderiza marca + tagline + formulario.
+
 <!-- Plantilla para próximas entradas:
 ## AAAA-MM-DD — Título
 - **[tipo]** descripción   (tipo ∈ decisión/infra/db/backend/app/web/seguridad/pendiente/fix)

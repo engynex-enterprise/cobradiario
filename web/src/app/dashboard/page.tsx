@@ -20,7 +20,7 @@ import {
 import { fetchLoans, fetchRoutes, type Loan, type Route } from '@/lib/graphql';
 import { getSocket } from '@/lib/socket';
 import { money } from '@/lib/utils';
-import { Landmark, LogOut, Radio, TrendingUp, Wallet, Coins, Users, BarChart3 } from 'lucide-react';
+import { Landmark, Radio, TrendingUp, Wallet } from 'lucide-react';
 
 const statusVariant: Record<string, 'default' | 'success' | 'warning' | 'destructive'> = {
   ACTIVE: 'default',
@@ -30,7 +30,7 @@ const statusVariant: Record<string, 'default' | 'success' | 'warning' | 'destruc
 };
 
 export default function DashboardPage() {
-  const { user, loading: authLoading, signOut } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [loans, setLoans] = useState<Loan[]>([]);
   const [routes, setRoutes] = useState<Route[]>([]);
@@ -90,37 +90,15 @@ export default function DashboardPage() {
   const activos = loans.filter((l) => l.status === 'ACTIVE').length;
 
   return (
-    <div className="mx-auto max-w-6xl p-4 sm:p-6">
-      <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-            <Landmark className="h-5 w-5 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-lg font-semibold leading-tight">Cobro Diario</h1>
-            <p className="text-xs text-muted-foreground">{user.fullName} · {user.role}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <Badge variant={live ? 'success' : 'secondary'} className="gap-1">
-            <Radio className="h-3 w-3" /> {live ? 'En vivo' : 'Desconectado'}
-          </Badge>
-          <Button variant="outline" size="sm" onClick={() => router.push('/dashboard/reportes')}>
-            <BarChart3 className="h-4 w-4" /> Reportes
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => router.push('/dashboard/equipo')}>
-            <Users className="h-4 w-4" /> Equipo
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => router.push('/dashboard/caja')}>
-            <Coins className="h-4 w-4" /> Caja
-          </Button>
-          <Button variant="ghost" size="sm" onClick={signOut}>
-            <LogOut className="h-4 w-4" /> Salir
-          </Button>
-        </div>
-      </header>
+    <div className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold tracking-tight">Cartera</h1>
+        <Badge variant={live ? 'success' : 'secondary'} className="gap-1">
+          <Radio className="h-3 w-3" /> {live ? 'En vivo' : 'Desconectado'}
+        </Badge>
+      </div>
 
-      <section className="mb-6 grid gap-4 sm:grid-cols-3">
+      <section className="grid gap-4 sm:grid-cols-3">
         <StatCard icon={<Wallet className="h-4 w-4" />} label="Cartera pendiente" value={money(totalCartera)} />
         <StatCard icon={<TrendingUp className="h-4 w-4" />} label="Recaudado" value={money(totalRecaudado)} />
         <StatCard icon={<Landmark className="h-4 w-4" />} label="Créditos activos" value={String(activos)} />
@@ -128,7 +106,7 @@ export default function DashboardPage() {
 
       <Card>
         <CardHeader className="flex-row items-center justify-between gap-3">
-          <CardTitle className="text-xl">Cartera</CardTitle>
+          <CardTitle className="text-xl">Créditos</CardTitle>
           <div className="flex items-center gap-2">
             <select
               className="h-9 rounded-md border border-input bg-background px-2 text-sm"

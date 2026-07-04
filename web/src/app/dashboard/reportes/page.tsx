@@ -19,10 +19,10 @@ import { fetchDashboardStats, type DashboardStats } from '@/lib/graphql';
 import { money } from '@/lib/utils';
 import { ArrowLeft, Wallet, TrendingUp, Landmark, AlertTriangle } from 'lucide-react';
 
-// Verde de marca validado (contraste ≥3:1 sobre superficie clara — ver skill dataviz).
-const ACCENT = '#16a34a';
-const INK_MUTED = '#64748b';
-const GRID = '#e2e8f0';
+// Azul de marca Altipal (chart-1). Validado ≥3:1 sobre superficie clara (skill dataviz).
+const ACCENT = '#004f9f';
+const INK_MUTED = '#5a7088';
+const GRID = '#e2eaf3';
 
 const compact = (n: number) =>
   new Intl.NumberFormat('es-CO', { notation: 'compact', maximumFractionDigits: 1 }).format(n);
