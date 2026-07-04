@@ -41,6 +41,20 @@ Bitácora de decisiones y cambios estructurales. Formato: fecha · tipo · descr
   Decimal se expone como Float GraphQL (revisar scalar Decimal para sumas muy grandes);
   mora (`calcLateFee`) aún no se aplica automáticamente por job nocturno.
 
+## 2026-07-03 — Web panel (Next.js 15 + shadcn) + query de productos
+
+- **[web]** App `@cobradiario/web`: login, dashboard con stats (cartera/recaudado/activos),
+  tabla de cartera, diálogo de nuevo crédito y de abono. Componentes estilo shadcn (button,
+  card, input, dialog, table, badge) + Tailwind + sonner. Cliente GraphQL con fetch + tokens
+  en localStorage; guard de sesión.
+- **[web/realtime]** El dashboard se suscribe a `payment.registered` (Socket.IO con JWT) y
+  refresca la cartera + toast al entrar un abono. Indicador "En vivo".
+- **[backend]** Nuevo `ProductsModule` con query `creditProducts` (necesaria para el formulario).
+- **[verificación]** `next build` OK (6 rutas); páginas sirven (200, render correcto); CORS de
+  :3000→:4000 verificado (preflight + POST); query `creditProducts` devuelve el producto del seed.
+- **[pendiente]** Refresh automático de token (401→refresh) en el cliente web; detalle de crédito
+  con plan de cuotas; rutas/cobradores; gráficas.
+
 <!-- Plantilla para próximas entradas:
 ## AAAA-MM-DD — Título
 - **[tipo]** descripción   (tipo ∈ decisión/infra/db/backend/app/web/seguridad/pendiente/fix)

@@ -13,6 +13,7 @@ import { RealtimeModule } from './realtime/realtime.module';
 import { ClientsModule } from './clients/clients.module';
 import { LoansModule } from './loans/loans.module';
 import { PaymentsModule } from './payments/payments.module';
+import { ProductsModule } from './products/products.module';
 import { GqlAuthGuard } from './common/guards/gql-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { GqlThrottlerGuard } from './common/guards/gql-throttler.guard';
@@ -51,6 +52,7 @@ import { GqlThrottlerGuard } from './common/guards/gql-throttler.guard';
     ClientsModule,
     LoansModule,
     PaymentsModule,
+    ProductsModule,
   ],
   providers: [
     // Orden importa: autenticación → autorización por rol → rate limit.

@@ -42,10 +42,27 @@ input CreateLoanInput {
   routeId: ID
 }
 
+type CreditProduct {
+  frequency: Frequency!
+  id: ID!
+  interestMethod: InterestMethod!
+  interestRate: Float!
+  name: String!
+  termCount: Int!
+}
+
 """
 A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
 """
 scalar DateTime
+
+enum Frequency {
+  BIWEEKLY
+  CUSTOM
+  DAILY
+  MONTHLY
+  WEEKLY
+}
 
 type Installment {
   amount: Float!
@@ -65,6 +82,12 @@ enum InstallmentStatus {
   PARTIAL
   PENDING
   WAIVED
+}
+
+enum InterestMethod {
+  CUSTOM
+  DECLINING_BALANCE
+  FLAT
 }
 
 type Loan {
@@ -137,6 +160,7 @@ enum PaymentStatus {
 
 type Query {
   clients: [Client!]!
+  creditProducts: [CreditProduct!]!
   loan(id: ID!): Loan!
   loans(routeId: ID): [Loan!]!
   me: AuthUser!
