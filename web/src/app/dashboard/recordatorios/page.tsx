@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { PageHeader } from '@/components/page-header';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -38,12 +39,10 @@ export default function RecordatoriosPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Recordatorios</h1>
-        <p className="text-sm text-muted-foreground">
-          Avisos programados de cuotas por vencer (se generan automáticamente cada día).
-        </p>
-      </div>
+      <PageHeader
+        title="Recordatorios"
+        description="Avisos programados de cuotas por vencer. El sistema los genera automáticamente cada día para anticipar el cobro y reducir la mora."
+      />
       <Card>
         <CardContent className="p-0">
           {items.length === 0 ? (

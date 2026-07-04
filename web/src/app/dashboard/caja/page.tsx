@@ -1,8 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,12 +26,10 @@ import {
   type CashBox,
 } from '@/lib/graphql';
 import { formatDate, money } from '@/lib/utils';
-import { ArrowLeft } from 'lucide-react';
 
 const MOVEMENT_TYPES = ['EXPENSE', 'DISBURSEMENT', 'DEPOSIT', 'ADJUSTMENT'] as const;
 
 export default function CajaPage() {
-  const router = useRouter();
   const [box, setBox] = useState<CashBox | null>(null);
   const [loaded, setLoaded] = useState(false);
 
@@ -80,11 +78,11 @@ export default function CajaPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl p-4 sm:p-6">
-      <Button variant="ghost" size="sm" className="mb-4" onClick={() => router.push('/dashboard')}>
-        <ArrowLeft className="h-4 w-4" /> Volver
-      </Button>
-      <h1 className="mb-6 text-2xl font-semibold">Caja del día</h1>
+    <div className="mx-auto max-w-3xl space-y-6 p-4 sm:p-6">
+      <PageHeader
+        title="Caja del día"
+        description="Arqueo del efectivo del cobrador: abre la caja con un saldo base, registra gastos y consignaciones, y ciérrala contando el efectivo para detectar descuadres."
+      />
 
       {!loaded ? (
         <p className="text-sm text-muted-foreground">Cargando…</p>

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { PageHeader } from '@/components/page-header';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -41,10 +42,10 @@ export default function CobroPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Cobro del día</h1>
-        <p className="text-sm text-muted-foreground">Cuotas por cobrar, vencidas y próximas a vencer.</p>
-      </div>
+      <PageHeader
+        title="Cobro del día"
+        description="Cuotas a gestionar en campo: las que vencen hoy, las que ya están vencidas (con mora) y las próximas a vencer. Usa las pestañas para cambiar de vista."
+      />
 
       <div className="flex gap-1 border-b-2 border-border">
         {TABS.map((t) => (

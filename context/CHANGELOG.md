@@ -288,6 +288,14 @@ Bitácora de decisiones y cambios estructurales. Formato: fecha · tipo · descr
 - **[web]** Selects nativos restantes de Caja (tipo de movimiento) migrados a Select de shadcn.
 - **[verificación]** typecheck web OK; páginas de tablas sirven 200.
 
+## 2026-07-04 — Subheader consistente en cada módulo
+
+- **[web]** `PageHeader` (título + descripción a la izquierda, botones/acciones a la derecha)
+  estandarizado en **todos** los módulos: Inicio, Clientes, Préstamos, Pagos, Cobro del día,
+  Movimientos, Gastos, Caja, Rutas, Equipo, Productos, Recordatorios, Notificaciones, Reportes,
+  Perfil y los placeholders (Balances/Bases/Etiquetas/Chat vía `ComingSoon`).
+- **[verificación]** typecheck web OK; las 19 secciones sirven 200.
+
 <!-- Plantilla para próximas entradas:
 ## AAAA-MM-DD — Título
 - **[tipo]** descripción   (tipo ∈ decisión/infra/db/backend/app/web/seguridad/pendiente/fix)

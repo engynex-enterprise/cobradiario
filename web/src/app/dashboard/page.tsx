@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { useAuth } from '@/components/auth-provider';
+import { PageHeader } from '@/components/page-header';
 import { Card, CardContent } from '@/components/ui/card';
 import { fetchDashboardStats, type DashboardStats } from '@/lib/graphql';
 import { money } from '@/lib/utils';
@@ -30,12 +31,10 @@ export default function InicioPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Hola, {user?.fullName?.split(' ')[0] ?? ''} 👋
-        </h1>
-        <p className="text-sm text-muted-foreground">Resumen de tu operación de cobro diario.</p>
-      </div>
+      <PageHeader
+        title={`Hola, ${user?.fullName?.split(' ')[0] ?? ''} 👋`}
+        description="Resumen de tu operación de cobro diario: cartera, recaudo del día, créditos activos y en mora, con accesos rápidos a lo más usado."
+      />
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi icon={<Wallet className="h-4 w-4" />} label="Cartera pendiente" value={stats ? money(stats.totalPortfolio) : '—'} />
