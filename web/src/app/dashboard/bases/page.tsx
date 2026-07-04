@@ -8,21 +8,39 @@ import { Card, CardContent } from '@/components/ui/card';
 import { CurrencyInput } from '@/components/ui/currency-input';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { DataTable, type Column } from '@/components/ui/data-table';
+import { DataTable, type Column, type RowAction } from '@/components/ui/data-table';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { createBaseMovement, fetchBaseMovements, type BaseMovement } from '@/lib/graphql';
+import { createBaseMovement, deleteBaseMovement, fetchBaseMovements, type BaseMovement } from '@/lib/graphql';
 import { formatDate, money } from '@/lib/utils';
-import { LogIn, LogOut, Plus } from 'lucide-react';
+import { LogIn, LogOut, Plus, Trash2 } from 'lucide-react';
 
 export default function BasesPage() {
   const [items, setItems] = useState<BaseMovement[]>([]);
   const [open, setOpen] = useState(false);
+  const [toDelete, setToDelete] = useState<BaseMovement | null>(null);
 
   const load = useCallback(() => {
     fetchBaseMovements().then((d) => setItems(d.baseMovements)).catch((e) => toast.error(e.message));
   }, []);
   useEffect(() => load(), [load]);
+
+  const rowActions = (b: BaseMovement): RowAction<BaseMovement>[] => [
+    { label: 'Eliminar', icon: Trash2, danger: true, onClick: () => setToDelete(b) },
+  ];
+
+  async function confirmDelete() {
+    if (!toDelete) return;
+    try {
+      await deleteBaseMovement(toDelete.id);
+      toast.success('Movimiento eliminado');
+      load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Error');
+      throw err;
+    }
+  }
 
   const recibido = items.filter((b) => b.type === 'RECEIVED').reduce((s, b) => s + b.amount, 0);
   const entregado = items.filter((b) => b.type === 'DELIVERED').reduce((s, b) => s + b.amount, 0);
@@ -51,9 +69,18 @@ export default function BasesPage() {
       <DataTable
         rows={items}
         columns={columns}
+        rowActions={rowActions}
         search={(b) => `${b.type} ${b.note ?? ''} ${b.authorName}`}
         searchPlaceholder="Buscar base…"
         empty="Aún no hay movimientos de base."
+      />
+
+      <ConfirmDialog
+        open={toDelete !== null}
+        onOpenChange={(v) => !v && setToDelete(null)}
+        title="Eliminar movimiento"
+        description={`Se eliminará la base ${toDelete?.type === 'RECEIVED' ? 'recibida' : 'entregada'} de ${toDelete ? money(toDelete.amount) : ''}.`}
+        onConfirm={confirmDelete}
       />
     </div>
   );

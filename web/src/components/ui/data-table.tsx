@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Table,
   TableBody,
@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { ArrowUpDown, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { ArrowUpDown, ChevronLeft, ChevronRight, MoreVertical, Search, type LucideIcon } from 'lucide-react';
 
 export interface Column<T> {
   key: string;
@@ -21,6 +21,14 @@ export interface Column<T> {
   /** Valor usado para ordenar (número o texto). */
   sortValue?: (row: T) => string | number;
   render: (row: T) => React.ReactNode;
+}
+
+export interface RowAction<T> {
+  label: string;
+  icon?: LucideIcon;
+  onClick: (row: T) => void;
+  danger?: boolean;
+  hidden?: (row: T) => boolean;
 }
 
 interface DataTableProps<T> {
@@ -33,6 +41,8 @@ interface DataTableProps<T> {
   empty?: string;
   /** Barra de acciones a la derecha del buscador. */
   toolbar?: React.ReactNode;
+  /** Menú contextual (⋮) por fila con acciones (editar, eliminar, etc.). */
+  rowActions?: (row: T) => RowAction<T>[];
 }
 
 export function DataTable<T>({
@@ -43,6 +53,7 @@ export function DataTable<T>({
   pageSize = 10,
   empty = 'Sin resultados.',
   toolbar,
+  rowActions,
 }: DataTableProps<T>) {
   const [q, setQ] = useState('');
   const [sortKey, setSortKey] = useState<string | null>(null);
@@ -72,6 +83,7 @@ export function DataTable<T>({
   const pageCount = Math.max(1, Math.ceil(sorted.length / pageSize));
   const current = Math.min(page, pageCount - 1);
   const pageRows = sorted.slice(current * pageSize, current * pageSize + pageSize);
+  const colCount = columns.length + (rowActions ? 1 : 0);
 
   function toggleSort(col: Column<T>) {
     if (!col.sortable || !col.sortValue) return;
@@ -107,7 +119,7 @@ export function DataTable<T>({
         </div>
       )}
 
-      <div className="overflow-hidden rounded-xl border-2 border-border bg-card">
+      <div className="overflow-x-auto rounded-xl border-2 border-border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
@@ -127,12 +139,13 @@ export function DataTable<T>({
                   </span>
                 </TableHead>
               ))}
+              {rowActions && <TableHead className="w-12 text-right">Acc.</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {pageRows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={columns.length} className="py-12 text-center text-sm text-muted-foreground">
+                <TableCell colSpan={colCount} className="py-12 text-center text-sm text-muted-foreground">
                   {empty}
                 </TableCell>
               </TableRow>
@@ -144,6 +157,11 @@ export function DataTable<T>({
                       {col.render(row)}
                     </TableCell>
                   ))}
+                  {rowActions && (
+                    <TableCell className="text-right">
+                      <RowActionsMenu actions={rowActions(row).filter((a) => !a.hidden?.(row))} row={row} />
+                    </TableCell>
+                  )}
                 </TableRow>
               ))
             )}
@@ -173,5 +191,73 @@ export function DataTable<T>({
         </div>
       </div>
     </div>
+  );
+}
+
+/** Botón ⋮ con menú contextual en posición fixed (no lo recorta el overflow de la tabla). */
+function RowActionsMenu<T>({ actions, row }: { actions: RowAction<T>[]; row: T }) {
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState<{ top: number; right: number }>({ top: 0, right: 0 });
+  const btnRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = () => setOpen(false);
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    window.addEventListener('scroll', close, true);
+    window.addEventListener('resize', close);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('scroll', close, true);
+      window.removeEventListener('resize', close);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  if (actions.length === 0) return null;
+
+  const openMenu = () => {
+    const r = btnRef.current?.getBoundingClientRect();
+    if (r) setPos({ top: r.bottom + 6, right: Math.max(8, window.innerWidth - r.right) });
+    setOpen(true);
+  };
+
+  return (
+    <>
+      <button
+        ref={btnRef}
+        onClick={openMenu}
+        aria-label="Opciones"
+        className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      >
+        <MoreVertical className="h-4 w-4" />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div
+            className="fixed z-50 w-48 overflow-hidden rounded-xl border-2 border-border bg-popover p-1 text-popover-foreground shadow-soft-lg"
+            style={{ top: pos.top, right: pos.right }}
+          >
+            {actions.map((a) => {
+              const Icon = a.icon;
+              return (
+                <button
+                  key={a.label}
+                  onClick={() => { setOpen(false); a.onClick(row); }}
+                  className={cn(
+                    'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm font-semibold transition-colors',
+                    a.danger ? 'text-destructive hover:bg-destructive/10' : 'hover:bg-accent hover:text-accent-foreground',
+                  )}
+                >
+                  {Icon && <Icon className="h-4 w-4" />}
+                  {a.label}
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
+    </>
   );
 }

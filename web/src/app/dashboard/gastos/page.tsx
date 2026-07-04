@@ -8,12 +8,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { CurrencyInput } from '@/components/ui/currency-input';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { DataTable, type Column } from '@/components/ui/data-table';
+import { DataTable, type Column, type RowAction } from '@/components/ui/data-table';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { createExpense, fetchExpenses, fetchFinancialSummary, type Expense, type FinancialSummary } from '@/lib/graphql';
+import { createExpense, deleteExpense, fetchExpenses, fetchFinancialSummary, type Expense, type FinancialSummary } from '@/lib/graphql';
 import { formatDate, money } from '@/lib/utils';
-import { Plus, Receipt, TrendingUp, Wallet } from 'lucide-react';
+import { Plus, Receipt, Trash2, TrendingUp, Wallet } from 'lucide-react';
 
 const CATEGORIES = ['Transporte', 'Oficina', 'Sueldos', 'Servicios', 'Otro'];
 
@@ -21,6 +22,7 @@ export default function GastosPage() {
   const [items, setItems] = useState<Expense[]>([]);
   const [summary, setSummary] = useState<FinancialSummary | null>(null);
   const [open, setOpen] = useState(false);
+  const [toDelete, setToDelete] = useState<Expense | null>(null);
 
   const load = useCallback(() => {
     fetchExpenses().then((d) => setItems(d.expenses)).catch((e) => toast.error(e.message));
@@ -35,6 +37,22 @@ export default function GastosPage() {
     { key: 'createdAt', header: 'Fecha', sortable: true, sortValue: (e) => e.createdAt, render: (e) => formatDate(e.createdAt) },
     { key: 'amount', header: 'Monto', className: 'text-right', sortable: true, sortValue: (e) => e.amount, render: (e) => <span className="font-semibold text-destructive">-{money(e.amount)}</span> },
   ];
+
+  const rowActions = (e: Expense): RowAction<Expense>[] => [
+    { label: 'Eliminar', icon: Trash2, danger: true, onClick: () => setToDelete(e) },
+  ];
+
+  async function confirmDelete() {
+    if (!toDelete) return;
+    try {
+      await deleteExpense(toDelete.id);
+      toast.success('Gasto eliminado');
+      load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Error');
+      throw err;
+    }
+  }
 
   return (
     <div className="space-y-6 p-4 sm:p-6">
@@ -53,9 +71,18 @@ export default function GastosPage() {
       <DataTable
         rows={items}
         columns={columns}
+        rowActions={rowActions}
         search={(e) => `${e.category} ${e.note ?? ''} ${e.authorName}`}
         searchPlaceholder="Buscar gasto…"
         empty="Aún no hay gastos registrados."
+      />
+
+      <ConfirmDialog
+        open={toDelete !== null}
+        onOpenChange={(v) => !v && setToDelete(null)}
+        title="Eliminar gasto"
+        description={`Se eliminará el gasto de ${toDelete ? money(toDelete.amount) : ''} (${toDelete?.category ?? ''}).`}
+        onConfirm={confirmDelete}
       />
     </div>
   );

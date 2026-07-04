@@ -34,6 +34,13 @@ export class BasesService {
     });
     return toModel(created);
   }
+
+  async remove(tenantId: string, id: string): Promise<string> {
+    const db = this.prisma.forTenant(tenantId);
+    await db.baseMovement.findFirstOrThrow({ where: { id } });
+    await db.baseMovement.delete({ where: { id } });
+    return id;
+  }
 }
 
 function toModel(b: Prisma.BaseMovementGetPayload<object>): BaseMovementModel {

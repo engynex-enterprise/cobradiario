@@ -35,6 +35,13 @@ export class ExpensesService {
     });
     return toModel(created);
   }
+
+  async remove(tenantId: string, id: string): Promise<string> {
+    const db = this.prisma.forTenant(tenantId);
+    await db.expense.findFirstOrThrow({ where: { id } });
+    await db.expense.delete({ where: { id } });
+    return id;
+  }
 }
 
 function toModel(e: Prisma.ExpenseGetPayload<object>): ExpenseModel {

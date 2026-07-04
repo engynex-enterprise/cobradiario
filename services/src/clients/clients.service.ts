@@ -1,7 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateClientInput } from './clients.inputs';
+import { CreateClientInput, UpdateClientInput } from './clients.inputs';
 import { ClientModel } from './clients.models';
 
 @Injectable()
@@ -22,6 +22,27 @@ export class ClientsService {
       data: { tenantId, ...input },
     });
     return toClientModel(created);
+  }
+
+  async update(tenantId: string, input: UpdateClientInput): Promise<ClientModel> {
+    const { id, ...data } = input;
+    const db = this.prisma.forTenant(tenantId);
+    await db.client.findFirstOrThrow({ where: { id, deletedAt: null } });
+    const updated = await db.client.update({ where: { id }, data });
+    return toClientModel(updated);
+  }
+
+  async remove(tenantId: string, id: string): Promise<ClientModel> {
+    const db = this.prisma.forTenant(tenantId);
+    const client = await db.client.findFirstOrThrow({ where: { id, deletedAt: null } });
+    const activeLoans = await db.loan.count({
+      where: { clientId: id, status: { in: ['ACTIVE', 'DEFAULTED', 'PENDING_APPROVAL'] } },
+    });
+    if (activeLoans > 0) {
+      throw new BadRequestException('No se puede eliminar: el cliente tiene créditos activos.');
+    }
+    await db.client.update({ where: { id }, data: { deletedAt: new Date() } });
+    return toClientModel(client);
   }
 }
 

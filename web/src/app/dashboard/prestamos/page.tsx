@@ -8,12 +8,12 @@ import { PayDialog } from '@/components/pay-dialog';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { DataTable, type Column } from '@/components/ui/data-table';
+import { DataTable, type Column, type RowAction } from '@/components/ui/data-table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { fetchLoans, fetchRoutes, type Loan, type Route } from '@/lib/graphql';
 import { getSocket } from '@/lib/socket';
 import { money } from '@/lib/utils';
-import { Radio } from 'lucide-react';
+import { Eye, Radio } from 'lucide-react';
 
 const statusVariant: Record<string, 'default' | 'success' | 'warning' | 'destructive'> = {
   ACTIVE: 'default',
@@ -79,14 +79,15 @@ export default function PrestamosPage() {
       header: '',
       className: 'text-right',
       render: (l) => (
-        <div className="flex justify-end gap-2">
-          <Button variant="ghost" size="sm" onClick={() => router.push(`/dashboard/loan/${l.id}`)}>
-            Ver
-          </Button>
+        <div className="flex justify-end">
           <PayDialog loan={l} onPaid={load} />
         </div>
       ),
     },
+  ];
+
+  const rowActions = (l: Loan): RowAction<Loan>[] => [
+    { label: 'Ver crédito', icon: Eye, onClick: () => router.push(`/dashboard/loan/${l.id}`) },
   ];
 
   return (
@@ -103,6 +104,7 @@ export default function PrestamosPage() {
       <DataTable
         rows={loans}
         columns={columns}
+        rowActions={rowActions}
         search={(l) => l.clientName ?? ''}
         searchPlaceholder="Buscar cliente…"
         empty="No hay créditos."

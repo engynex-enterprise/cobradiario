@@ -26,6 +26,7 @@ export interface Client {
   fullName: string;
   documentId?: string;
   phone?: string;
+  address?: string;
   city?: string;
 }
 
@@ -61,7 +62,7 @@ export function fetchLoans(routeId?: string) {
 }
 
 export function fetchClients() {
-  return gql<{ clients: Client[] }>(`{ clients { id fullName documentId phone city } }`);
+  return gql<{ clients: Client[] }>(`{ clients { id fullName documentId phone address city } }`);
 }
 
 export function createClient(input: {
@@ -73,9 +74,32 @@ export function createClient(input: {
 }) {
   return gql<{ createClient: Client }>(
     `mutation($i: CreateClientInput!) {
-      createClient(input: $i) { id fullName documentId phone city }
+      createClient(input: $i) { id fullName documentId phone address city }
     }`,
     { i: input },
+  );
+}
+
+export function updateClient(input: {
+  id: string;
+  fullName?: string;
+  documentId?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+}) {
+  return gql<{ updateClient: Client }>(
+    `mutation($i: UpdateClientInput!) {
+      updateClient(input: $i) { id fullName documentId phone address city }
+    }`,
+    { i: input },
+  );
+}
+
+export function deleteClient(id: string) {
+  return gql<{ deleteClient: { id: string } }>(
+    `mutation($id: ID!) { deleteClient(id: $id) { id } }`,
+    { id },
   );
 }
 
@@ -470,6 +494,9 @@ export function createBaseMovement(input: { type: string; amount: number; note?:
     { i: input },
   );
 }
+export function deleteBaseMovement(id: string) {
+  return gql<{ deleteBaseMovement: string }>(`mutation($id: ID!) { deleteBaseMovement(id: $id) }`, { id });
+}
 
 // --- Gastos ---
 export interface Expense {
@@ -491,6 +518,9 @@ export function createExpense(input: { category: string; amount: number; note?: 
     `mutation($i: CreateExpenseInput!) { createExpense(input: $i) { id authorName category amount note createdAt } }`,
     { i: input },
   );
+}
+export function deleteExpense(id: string) {
+  return gql<{ deleteExpense: string }>(`mutation($id: ID!) { deleteExpense(id: $id) }`, { id });
 }
 
 // --- Etiquetas ---

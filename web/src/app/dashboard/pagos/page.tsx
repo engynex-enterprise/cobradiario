@@ -1,13 +1,15 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/page-header';
 import { Badge } from '@/components/ui/badge';
-import { DataTable, type Column } from '@/components/ui/data-table';
+import { DataTable, type Column, type RowAction } from '@/components/ui/data-table';
 import { fetchRecentPayments, type PaymentFeedItem } from '@/lib/graphql';
 import { getSocket } from '@/lib/socket';
 import { formatDate, money } from '@/lib/utils';
+import { Eye } from 'lucide-react';
 
 const methodLabel: Record<string, string> = {
   CASH: 'Efectivo',
@@ -17,6 +19,7 @@ const methodLabel: Record<string, string> = {
 };
 
 export default function PagosPage() {
+  const router = useRouter();
   const [items, setItems] = useState<PaymentFeedItem[]>([]);
 
   const load = useCallback(() => {
@@ -46,6 +49,10 @@ export default function PagosPage() {
     { key: 'paidAt', header: 'Fecha', sortable: true, sortValue: (p) => p.paidAt, render: (p) => <span className="text-muted-foreground">{formatDate(p.paidAt)}</span> },
   ];
 
+  const rowActions = (p: PaymentFeedItem): RowAction<PaymentFeedItem>[] => [
+    { label: 'Ver crédito', icon: Eye, onClick: () => router.push(`/dashboard/loan/${p.loanId}`) },
+  ];
+
   return (
     <div className="space-y-6 p-4 sm:p-6">
       <PageHeader
@@ -60,6 +67,7 @@ export default function PagosPage() {
       <DataTable
         rows={items}
         columns={columns}
+        rowActions={rowActions}
         search={(p) => `${p.clientName ?? ''} ${p.collectorName ?? ''}`}
         searchPlaceholder="Buscar por cliente/cobrador…"
         empty="Aún no hay pagos."

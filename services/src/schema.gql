@@ -435,6 +435,9 @@ type Mutation {
   createRoute(input: CreateRouteInput!): Route!
   createTag(input: CreateTagInput!): Tag!
   createTeamMember(input: CreateTeamMemberInput!): TeamMember!
+  deleteBaseMovement(id: ID!): ID!
+  deleteClient(id: ID!): Client!
+  deleteExpense(id: ID!): ID!
   deleteTag(id: ID!): Boolean!
   login(input: LoginInput!): AuthPayload!
   logout(input: RefreshInput!): Boolean!
@@ -447,6 +450,7 @@ type Mutation {
   runDueReminders(withinDays: Int! = 1): EnqueuedJob!
   runOverdueSweep: EnqueuedJob!
   sendMessage(input: SendMessageInput!): Message!
+  updateClient(input: UpdateClientInput!): Client!
   updateInstallment(input: UpdateInstallmentInput!): Loan!
   updateProfile(input: UpdateProfileInput!): AuthUser!
   updateTag(input: UpdateTagInput!): Tag
@@ -640,6 +644,15 @@ type TeamMember {
 enum TenantType {
   INDIVIDUAL
   ORGANIZATION
+}
+
+input UpdateClientInput {
+  address: String
+  city: String
+  documentId: String
+  fullName: String
+  id: ID!
+  phone: String
 }
 
 input UpdateInstallmentInput {

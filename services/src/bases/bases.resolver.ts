@@ -1,7 +1,8 @@
-import { Args, GraphQLISODateTime, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { Args, GraphQLISODateTime, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { UserRole } from '@prisma/client';
 import { BasesService } from './bases.service';
 import { BaseMovementModel, CreateBaseMovementInput } from './bases.models';
-import { CurrentUser } from '../common/decorators';
+import { CurrentUser, Roles } from '../common/decorators';
 import { AuthContext } from '../common/types';
 
 @Resolver(() => BaseMovementModel)
@@ -20,5 +21,11 @@ export class BasesResolver {
   @Mutation(() => BaseMovementModel, { name: 'createBaseMovement' })
   create(@CurrentUser() user: AuthContext, @Args('input') input: CreateBaseMovementInput): Promise<BaseMovementModel> {
     return this.bases.create(user, input);
+  }
+
+  @Roles(UserRole.OWNER, UserRole.ADMIN, UserRole.MANAGER)
+  @Mutation(() => ID, { name: 'deleteBaseMovement' })
+  remove(@CurrentUser() user: AuthContext, @Args('id', { type: () => ID }) id: string): Promise<string> {
+    return this.bases.remove(user.tenantId, id);
   }
 }
