@@ -52,6 +52,7 @@ const NAV: NavNode[] = [
       { href: '/dashboard/equipo', label: 'Equipo' },
       { href: '/dashboard/productos', label: 'Productos' },
       { href: '/dashboard/etiquetas', label: 'Etiquetas' },
+      { href: '/dashboard/planes', label: 'Planes y facturación' },
     ],
   },
 ];
@@ -62,6 +63,7 @@ const ICON_BY_HREF: Record<string, LucideIcon> = {
   '/dashboard/caja': Coins, '/dashboard/balances': Scale, '/dashboard/bases': Layers, '/dashboard/rutas': Route,
   '/dashboard/equipo': Network, '/dashboard/productos': Package, '/dashboard/etiquetas': Tags,
   '/dashboard/recordatorios': BellRing, '/dashboard/notificaciones': Bell, '/dashboard/chat': MessageCircle,
+  '/dashboard/planes': CreditCard,
 };
 
 const FLAT: { href: string; label: string; icon: LucideIcon; keywords: string }[] = NAV.flatMap((n) =>
@@ -133,9 +135,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               ),
             )}
           </nav>
-          <div className="space-y-0.5 border-t border-sidebar-border p-3">
-            <SidebarLink href="/dashboard/planes" label="Planes y facturación" icon={CreditCard} active={linkActive(pathname, '/dashboard/planes')} collapsed={collapsed} />
-            <SidebarLink href="/dashboard/ayuda" label="Centro de ayuda" icon={HelpCircle} active={linkActive(pathname, '/dashboard/ayuda')} collapsed={collapsed} />
+          <div className="border-t border-sidebar-border p-3">
             <UserMenu name={user.fullName} email={user.email} role={user.role} collapsed={collapsed} onLogout={() => { signOut(); router.replace('/login'); }} />
           </div>
         </aside>
@@ -257,6 +257,10 @@ function UserMenu({ name, email, role, collapsed, onLogout }: { name: string; em
             <Link href="/dashboard/reportes" onClick={() => setOpen(false)} className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-bold transition-colors hover:bg-accent hover:text-accent-foreground">
               <BarChart3 className="size-4" /> Reportes
             </Link>
+            <Link href="/dashboard/ayuda" onClick={() => setOpen(false)} className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-bold transition-colors hover:bg-accent hover:text-accent-foreground">
+              <HelpCircle className="size-4" /> Centro de ayuda
+            </Link>
+            <div className="my-1 border-t border-border" />
             <button onClick={() => { setOpen(false); onLogout(); }} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm font-bold text-destructive transition-colors hover:bg-destructive/10">
               <LogOut className="size-4" /> Cerrar sesión
             </button>
