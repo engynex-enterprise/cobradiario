@@ -124,6 +124,20 @@ type CreditProduct {
   termCount: Int!
 }
 
+type DailyCollection {
+  amount: Float!
+  date: String!
+}
+
+type DashboardStats {
+  activeLoans: Int!
+  collectedToday: Float!
+  collectionLast7Days: [DailyCollection!]!
+  overdueInstallments: Int!
+  portfolioByStatus: [StatusCount!]!
+  totalPortfolio: Float!
+}
+
 """
 A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
 """
@@ -179,6 +193,7 @@ enum LateFeeType {
 type Loan {
   balance: Float!
   clientId: ID!
+  clientName: String
   code: String
   createdAt: DateTime!
   disbursedAt: DateTime
@@ -190,6 +205,7 @@ type Loan {
   principal: Float!
   productId: ID!
   routeId: ID
+  routeName: String
   status: LoanStatus!
   totalDue: Float!
 }
@@ -292,6 +308,7 @@ enum PaymentStatus {
 type Query {
   clients: [Client!]!
   creditProducts: [CreditProduct!]!
+  dashboardStats: DashboardStats!
   loan(id: ID!): Loan!
   loans(routeId: ID): [Loan!]!
   me: AuthUser!
@@ -357,6 +374,12 @@ type Route {
 type RouteCollectorInfo {
   fullName: String!
   userId: ID!
+}
+
+type StatusCount {
+  balance: Float!
+  count: Int!
+  status: String!
 }
 
 type TeamMember {

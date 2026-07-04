@@ -20,6 +20,7 @@ import { MaintenanceModule } from './maintenance/maintenance.module';
 import { CashBoxModule } from './cashbox/cashbox.module';
 import { RoutesModule } from './routes/routes.module';
 import { TeamModule } from './team/team.module';
+import { StatsModule } from './stats/stats.module';
 import { GqlAuthGuard } from './common/guards/gql-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { GqlThrottlerGuard } from './common/guards/gql-throttler.guard';
@@ -81,6 +82,7 @@ import { GqlThrottlerGuard } from './common/guards/gql-throttler.guard';
     CashBoxModule,
     RoutesModule,
     TeamModule,
+    StatsModule,
   ],
   providers: [
     // Orden importa: autenticación → autorización por rol → rate limit.

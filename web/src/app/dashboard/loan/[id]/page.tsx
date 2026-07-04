@@ -55,6 +55,11 @@ export default function LoanDetailPage() {
         <ArrowLeft className="h-4 w-4" /> Volver a la cartera
       </Button>
 
+      <div className="mb-4">
+        <h1 className="text-2xl font-semibold">{loan.clientName ?? 'Crédito'}</h1>
+        {loan.routeName ? <p className="text-sm text-muted-foreground">Ruta: {loan.routeName}</p> : null}
+      </div>
+
       <div className="mb-6 grid gap-4 sm:grid-cols-4">
         <Stat label="Capital" value={money(loan.principal)} />
         <Stat label="Interés" value={money(loan.interestTotal)} />

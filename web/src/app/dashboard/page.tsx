@@ -17,10 +17,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { fetchLoans, type Loan } from '@/lib/graphql';
+import { fetchLoans, fetchRoutes, type Loan, type Route } from '@/lib/graphql';
 import { getSocket } from '@/lib/socket';
 import { money } from '@/lib/utils';
-import { Landmark, LogOut, Radio, TrendingUp, Wallet, Coins, Users } from 'lucide-react';
+import { Landmark, LogOut, Radio, TrendingUp, Wallet, Coins, Users, BarChart3 } from 'lucide-react';
 
 const statusVariant: Record<string, 'default' | 'success' | 'warning' | 'destructive'> = {
   ACTIVE: 'default',
@@ -33,13 +33,15 @@ export default function DashboardPage() {
   const { user, loading: authLoading, signOut } = useAuth();
   const router = useRouter();
   const [loans, setLoans] = useState<Loan[]>([]);
+  const [routes, setRoutes] = useState<Route[]>([]);
+  const [routeId, setRouteId] = useState('');
   const [live, setLive] = useState(false);
 
   const load = useCallback(() => {
-    fetchLoans()
+    fetchLoans(routeId || undefined)
       .then((d) => setLoans(d.loans))
       .catch((e) => toast.error(e.message));
-  }, []);
+  }, [routeId]);
 
   // Guard de autenticación.
   useEffect(() => {
@@ -49,6 +51,10 @@ export default function DashboardPage() {
   useEffect(() => {
     if (user) load();
   }, [user, load]);
+
+  useEffect(() => {
+    if (user) fetchRoutes().then((d) => setRoutes(d.routes)).catch(() => {});
+  }, [user]);
 
   // Realtime: refresca la cartera y notifica cuando entra un abono.
   useEffect(() => {
@@ -99,6 +105,9 @@ export default function DashboardPage() {
           <Badge variant={live ? 'success' : 'secondary'} className="gap-1">
             <Radio className="h-3 w-3" /> {live ? 'En vivo' : 'Desconectado'}
           </Badge>
+          <Button variant="outline" size="sm" onClick={() => router.push('/dashboard/reportes')}>
+            <BarChart3 className="h-4 w-4" /> Reportes
+          </Button>
           <Button variant="outline" size="sm" onClick={() => router.push('/dashboard/equipo')}>
             <Users className="h-4 w-4" /> Equipo
           </Button>
@@ -118,21 +127,33 @@ export default function DashboardPage() {
       </section>
 
       <Card>
-        <CardHeader className="flex-row items-center justify-between">
+        <CardHeader className="flex-row items-center justify-between gap-3">
           <CardTitle className="text-xl">Cartera</CardTitle>
-          <CreateLoanDialog onCreated={load} />
+          <div className="flex items-center gap-2">
+            <select
+              className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+              value={routeId}
+              onChange={(e) => setRouteId(e.target.value)}
+            >
+              <option value="">Todas las rutas</option>
+              {routes.map((r) => (
+                <option key={r.id} value={r.id}>{r.name}</option>
+              ))}
+            </select>
+            <CreateLoanDialog onCreated={load} />
+          </div>
         </CardHeader>
         <CardContent>
           {loans.length === 0 ? (
             <div className="py-12 text-center text-sm text-muted-foreground">
-              No hay créditos todavía. Crea el primero con “Nuevo crédito”.
+              No hay créditos {routeId ? 'en esta ruta' : 'todavía'}.
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Cliente</TableHead>
                   <TableHead>Estado</TableHead>
-                  <TableHead>Capital</TableHead>
                   <TableHead>Total a pagar</TableHead>
                   <TableHead>Pagado</TableHead>
                   <TableHead>Saldo</TableHead>
@@ -143,9 +164,12 @@ export default function DashboardPage() {
                 {loans.map((l) => (
                   <TableRow key={l.id}>
                     <TableCell>
+                      <p className="font-medium">{l.clientName ?? '—'}</p>
+                      {l.routeName ? <p className="text-xs text-muted-foreground">{l.routeName}</p> : null}
+                    </TableCell>
+                    <TableCell>
                       <Badge variant={statusVariant[l.status] ?? 'secondary'}>{l.status}</Badge>
                     </TableCell>
-                    <TableCell>{money(l.principal)}</TableCell>
                     <TableCell>{money(l.totalDue)}</TableCell>
                     <TableCell className="text-emerald-600">{money(l.paidAmount)}</TableCell>
                     <TableCell className="font-semibold">{money(l.balance)}</TableCell>

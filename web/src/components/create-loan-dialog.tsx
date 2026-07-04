@@ -13,24 +13,35 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { createLoan, fetchClients, fetchProducts, type Client, type Product } from '@/lib/graphql';
+import {
+  createLoan,
+  fetchClients,
+  fetchProducts,
+  fetchRoutes,
+  type Client,
+  type Product,
+  type Route,
+} from '@/lib/graphql';
 import { Loader2, Plus } from 'lucide-react';
 
 export function CreateLoanDialog({ onCreated }: { onCreated: () => void }) {
   const [open, setOpen] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [routes, setRoutes] = useState<Route[]>([]);
   const [clientId, setClientId] = useState('');
   const [productId, setProductId] = useState('');
+  const [routeId, setRouteId] = useState('');
   const [principal, setPrincipal] = useState('100000');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!open) return;
-    Promise.all([fetchClients(), fetchProducts()])
-      .then(([c, p]) => {
+    Promise.all([fetchClients(), fetchProducts(), fetchRoutes()])
+      .then(([c, p, r]) => {
         setClients(c.clients);
         setProducts(p.creditProducts);
+        setRoutes(r.routes);
         setClientId((v) => v || c.clients[0]?.id || '');
         setProductId((v) => v || p.creditProducts[0]?.id || '');
       })
@@ -41,7 +52,7 @@ export function CreateLoanDialog({ onCreated }: { onCreated: () => void }) {
     e.preventDefault();
     setLoading(true);
     try {
-      await createLoan({ clientId, productId, principal: Number(principal) });
+      await createLoan({ clientId, productId, principal: Number(principal), routeId: routeId || undefined });
       toast.success('Crédito creado');
       setOpen(false);
       onCreated();
@@ -94,6 +105,20 @@ export function CreateLoanDialog({ onCreated }: { onCreated: () => void }) {
                 <option key={p.id} value={p.id}>
                   {p.name} ({Math.round(p.interestRate * 100)}% · {p.termCount} cuotas)
                 </option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="route">Ruta (opcional)</Label>
+            <select
+              id="route"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+              value={routeId}
+              onChange={(e) => setRouteId(e.target.value)}
+            >
+              <option value="">Sin ruta</option>
+              {routes.map((r) => (
+                <option key={r.id} value={r.id}>{r.name}</option>
               ))}
             </select>
           </div>

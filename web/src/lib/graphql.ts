@@ -16,6 +16,8 @@ export interface Loan {
   paidAmount: number;
   balance: number;
   clientId: string;
+  clientName?: string;
+  routeName?: string;
   createdAt: string;
 }
 
@@ -42,9 +44,14 @@ export function login(email: string, password: string) {
   );
 }
 
-export function fetchLoans() {
+export function fetchLoans(routeId?: string) {
   return gql<{ loans: Loan[] }>(
-    `{ loans { id status principal totalDue paidAmount balance clientId createdAt } }`,
+    `query($routeId: ID) {
+      loans(routeId: $routeId) {
+        id status principal totalDue paidAmount balance clientId clientName routeName createdAt
+      }
+    }`,
+    { routeId },
   );
 }
 
@@ -62,6 +69,7 @@ export function createLoan(input: {
   clientId: string;
   productId: string;
   principal: number;
+  routeId?: string;
 }) {
   return gql<{ createLoan: Loan }>(
     `mutation($i: CreateLoanInput!) {
@@ -105,7 +113,7 @@ export function fetchLoanDetail(id: string) {
   return gql<{ loan: LoanDetail }>(
     `query($id: ID!) {
       loan(id: $id) {
-        id status principal interestTotal totalDue paidAmount balance clientId createdAt
+        id status principal interestTotal totalDue paidAmount balance clientId clientName routeName createdAt
         installments { id sequence status dueDate amount principalPart interestPart lateFee paidAmount }
       }
     }`,
@@ -218,5 +226,24 @@ export function assignCollector(routeId: string, userId: string) {
   return gql<{ assignCollector: Route }>(
     `mutation($i: AssignCollectorInput!) { assignCollector(input: $i) { ${ROUTE_FIELDS} } }`,
     { i: { routeId, userId } },
+  );
+}
+
+export interface DashboardStats {
+  totalPortfolio: number;
+  collectedToday: number;
+  activeLoans: number;
+  overdueInstallments: number;
+  portfolioByStatus: { status: string; count: number; balance: number }[];
+  collectionLast7Days: { date: string; amount: number }[];
+}
+
+export function fetchDashboardStats() {
+  return gql<{ dashboardStats: DashboardStats }>(
+    `{ dashboardStats {
+      totalPortfolio collectedToday activeLoans overdueInstallments
+      portfolioByStatus { status count balance }
+      collectionLast7Days { date amount }
+    } }`,
   );
 }

@@ -23,8 +23,10 @@ export class LoanModel {
   @Field({ nullable: true }) code?: string;
   @Field(() => LoanStatus) status!: LoanStatus;
   @Field(() => ID) clientId!: string;
+  @Field({ nullable: true }) clientName?: string;
   @Field(() => ID) productId!: string;
   @Field(() => ID, { nullable: true }) routeId?: string;
+  @Field({ nullable: true }) routeName?: string;
   @Field(() => Float) principal!: number;
   @Field(() => Float) interestTotal!: number;
   @Field(() => Float) totalDue!: number;

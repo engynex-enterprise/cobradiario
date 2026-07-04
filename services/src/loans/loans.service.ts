@@ -89,7 +89,7 @@ export class LoansService {
 
       return tx.loan.findUniqueOrThrow({
         where: { id: created.id },
-        include: { installments: { orderBy: { sequence: 'asc' } } },
+        include: { installments: { orderBy: { sequence: 'asc' } }, client: true, route: true },
       });
     });
 
@@ -99,7 +99,7 @@ export class LoansService {
   async findById(tenantId: string, id: string): Promise<LoanModel> {
     const loan = await this.prisma.forTenant(tenantId).loan.findFirst({
       where: { id, deletedAt: null },
-      include: { installments: { orderBy: { sequence: 'asc' } } },
+      include: { installments: { orderBy: { sequence: 'asc' } }, client: true, route: true },
     });
     if (!loan) throw new NotFoundException('Crédito no encontrado');
     return toLoanModel(loan);
@@ -110,32 +110,37 @@ export class LoansService {
       where: { deletedAt: null, ...(routeId ? { routeId } : {}) },
       orderBy: { createdAt: 'desc' },
       take: 100,
+      include: { client: true, route: true },
     });
     return loans.map((l) => toLoanModel(l));
   }
 }
 
 // --- Mappers Prisma → GraphQL (Decimal → number) ---
-type LoanWithInstallments = Prisma.LoanGetPayload<{ include: { installments: true } }>;
+type LoanWithRels = Prisma.LoanGetPayload<{
+  include: { client: true; route: true };
+}> & { installments?: Prisma.InstallmentGetPayload<object>[] };
 
-function toLoanModel(loan: LoanWithInstallments | Prisma.LoanGetPayload<object>): LoanModel {
-  const anyLoan = loan as LoanWithInstallments;
+function toLoanModel(loan: LoanWithRels | Prisma.LoanGetPayload<object>): LoanModel {
+  const l = loan as LoanWithRels;
   return {
-    id: anyLoan.id,
-    code: anyLoan.code ?? undefined,
-    status: anyLoan.status,
-    clientId: anyLoan.clientId,
-    productId: anyLoan.productId,
-    routeId: anyLoan.routeId ?? undefined,
-    principal: Number(anyLoan.principal),
-    interestTotal: Number(anyLoan.interestTotal),
-    totalDue: Number(anyLoan.totalDue),
-    paidAmount: Number(anyLoan.paidAmount),
-    balance: Number(anyLoan.balance),
-    disbursedAt: anyLoan.disbursedAt ?? undefined,
-    firstDueDate: anyLoan.firstDueDate ?? undefined,
-    createdAt: anyLoan.createdAt,
-    installments: anyLoan.installments?.map(toInstallmentModel),
+    id: l.id,
+    code: l.code ?? undefined,
+    status: l.status,
+    clientId: l.clientId,
+    clientName: l.client?.fullName,
+    productId: l.productId,
+    routeId: l.routeId ?? undefined,
+    routeName: l.route?.name,
+    principal: Number(l.principal),
+    interestTotal: Number(l.interestTotal),
+    totalDue: Number(l.totalDue),
+    paidAmount: Number(l.paidAmount),
+    balance: Number(l.balance),
+    disbursedAt: l.disbursedAt ?? undefined,
+    firstDueDate: l.firstDueDate ?? undefined,
+    createdAt: l.createdAt,
+    installments: l.installments?.map(toInstallmentModel),
   };
 }
 

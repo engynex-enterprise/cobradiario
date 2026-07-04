@@ -173,6 +173,30 @@ Bitácora de decisiones y cambios estructurales. Formato: fecha · tipo · descr
 - **[dev]** Stack levantado en modo watch/hot-reload: web http://localhost:3000, API :4000.
   Nota operativa: no ejecutar `next build` mientras corre `next dev` (comparten `.next`).
 
+## 2026-07-04 — Reportes con gráficas (backend stats + web/Recharts)
+
+- **[backend]** `StatsModule` con query `dashboardStats`: cartera pendiente (sum saldo activos),
+  recaudado hoy, créditos activos, cuotas en mora, cartera por estado (groupBy) y recaudo de los
+  últimos 7 días (bucketizado). Agregados vía `forTenant` (RLS). Límites de día en UTC para que
+  `collectedToday` y los buckets coincidan (fix de un desalineo por TZ; per-tenant TZ = futuro).
+- **[web]** Página `/dashboard/reportes`: KPIs (tiles) + BarChart de recaudo 7 días + barra
+  horizontal de cartera por estado, con Recharts. Botón "Reportes" en el dashboard.
+- **[dataviz]** Gráficas de una sola serie (color único + etiquetas de texto → identidad no
+  depende del color); grid recesivo, tooltips, ejes en tinta muted. Color de acento `#16a34a`
+  validado con el script de la skill (contraste ≥3:1 sobre superficie clara).
+- **[verificación]** `dashboardStats` probado por GraphQL (cartera 456k, hoy 24k, 6 en mora);
+  typecheck web+api OK; `/dashboard/reportes` compila (Recharts) y sirve 200 sin errores.
+
+## 2026-07-04 — Cartera usable: cliente/ruta + filtro por ruta
+
+- **[backend]** `LoanModel` expone `clientName` y `routeName`; `loans`/`loan`/`createLoan` hacen
+  include de client+route y los mapean.
+- **[web]** Dashboard: columna Cliente (con ruta debajo), selector "Todas las rutas / …" que
+  filtra la cartera (usa `loans(routeId)`); el diálogo de nuevo crédito permite elegir ruta;
+  el detalle del crédito muestra nombre del cliente y ruta.
+- **[verificación]** Flujo completo por GraphQL: crear crédito en Ruta Centro → `routeName`
+  correcto → filtro por ruta lo lista (1). typecheck api+web OK; páginas 200.
+
 <!-- Plantilla para próximas entradas:
 ## AAAA-MM-DD — Título
 - **[tipo]** descripción   (tipo ∈ decisión/infra/db/backend/app/web/seguridad/pendiente/fix)
