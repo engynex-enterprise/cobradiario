@@ -1,0 +1,28 @@
+{
+  "name": "@cobradiario/credit-engine",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Motor de crédito puro y configurable: generación de plan de cuotas, mora y asignación FIFO de pagos. Sin dependencias de DB ni framework.",
+  "type": "commonjs",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test test/*.test.ts"
+  },
+  "dependencies": {
+    "decimal.js": "^10.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.0"
+  }
+}
