@@ -17,6 +17,7 @@ import { PaymentsModule } from './payments/payments.module';
 import { ProductsModule } from './products/products.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { MaintenanceModule } from './maintenance/maintenance.module';
+import { CashBoxModule } from './cashbox/cashbox.module';
 import { GqlAuthGuard } from './common/guards/gql-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { GqlThrottlerGuard } from './common/guards/gql-throttler.guard';
@@ -75,6 +76,7 @@ import { GqlThrottlerGuard } from './common/guards/gql-throttler.guard';
     ProductsModule,
     NotificationsModule,
     MaintenanceModule,
+    CashBoxModule,
   ],
   providers: [
     // Orden importa: autenticación → autorización por rol → rate limit.

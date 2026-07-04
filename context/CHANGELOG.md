@@ -87,6 +87,21 @@ Bitácora de decisiones y cambios estructurales. Formato: fecha · tipo · descr
 - **[pendiente]** Barrido particionado por tenant respetando su timezone; reintentos/backoff y
   panel de estado de colas; push real requiere device tokens de la app (infra lista).
 
+## 2026-07-03 — Arqueo de caja (CashBox)
+
+- **[backend]** `CashBoxModule`: `openCashBox` (saldo inicial + movimiento OPENING; impide doble
+  apertura), `addCashMovement` (EXPENSE/DISBURSEMENT/DEPOSIT/ADJUSTMENT; bloquea COLLECTION/OPENING
+  manuales), `closeCashBox` (calcula esperado vs. contado → diferencia/descuadre), `myOpenCashBox`.
+- **[backend]** Integración con pagos: al registrar un abono, si el cobrador tiene caja abierta,
+  el pago se enlaza (`cashBoxId`) y se crea automáticamente un movimiento `COLLECTION`.
+- **[backend]** Saldo esperado por signos de movimiento: OPENING/COLLECTION/ADJUSTMENT(+),
+  DISBURSEMENT/EXPENSE/DEPOSIT(−). En caja abierta se calcula en vivo; al cerrar se persiste.
+- **[verificación]** Flujo end-to-end: abrir \$50.000 → abono \$6.000 (COLLECTION automático) →
+  gasto \$2.000 → esperado \$54.000 → cierre contando \$53.500 → diferencia −\$500 (faltante).
+  Guards verificados: doble apertura y COLLECTION manual rechazados; caja null tras cierre.
+- **[pendiente]** RLS Postgres (tarea transversal siguiente); reportes de caja por rango/cobrador;
+  UI de caja en web y app.
+
 <!-- Plantilla para próximas entradas:
 ## AAAA-MM-DD — Título
 - **[tipo]** descripción   (tipo ∈ decisión/infra/db/backend/app/web/seguridad/pendiente/fix)

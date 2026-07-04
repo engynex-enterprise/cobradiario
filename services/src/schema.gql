@@ -2,6 +2,12 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+input AddCashMovementInput {
+  amount: Float!
+  note: String
+  type: CashMovementType!
+}
+
 type AuthPayload {
   accessToken: String!
   refreshToken: String!
@@ -16,6 +22,37 @@ type AuthUser {
   tenantId: String!
 }
 
+type CashBox {
+  closedAt: DateTime
+  closingBalance: Float
+  collectionsTotal: Float!
+  difference: Float
+  expectedBalance: Float!
+  id: ID!
+  isOpen: Boolean!
+  movements: [CashMovement!]!
+  openedAt: DateTime!
+  openingBalance: Float!
+}
+
+type CashMovement {
+  amount: Float!
+  createdAt: DateTime!
+  id: ID!
+  note: String
+  type: CashMovementType!
+}
+
+enum CashMovementType {
+  ADJUSTMENT
+  CLOSING
+  COLLECTION
+  DEPOSIT
+  DISBURSEMENT
+  EXPENSE
+  OPENING
+}
+
 type Client {
   address: String
   city: String
@@ -24,6 +61,10 @@ type Client {
   fullName: String!
   id: ID!
   phone: String
+}
+
+input CloseCashBoxInput {
+  countedBalance: Float!
 }
 
 input CreateClientInput {
@@ -128,11 +169,14 @@ input LoginInput {
 }
 
 type Mutation {
+  addCashMovement(input: AddCashMovementInput!): CashBox!
+  closeCashBox(input: CloseCashBoxInput!): CashBox!
   createClient(input: CreateClientInput!): Client!
   createLoan(input: CreateLoanInput!): Loan!
   login(input: LoginInput!): AuthPayload!
   logout(input: RefreshInput!): Boolean!
   markNotificationRead(id: ID!): Boolean!
+  openCashBox(input: OpenCashBoxInput!): CashBox!
   refreshToken(input: RefreshInput!): AuthPayload!
   register(input: RegisterInput!): AuthPayload!
   registerDeviceToken(platform: String!, token: String!): Boolean!
@@ -170,6 +214,11 @@ enum NotificationType {
   SYSTEM
 }
 
+input OpenCashBoxInput {
+  openingBalance: Float!
+  routeId: ID
+}
+
 type Payment {
   amount: Float!
   createdAt: DateTime!
@@ -203,6 +252,7 @@ type Query {
   loans(routeId: ID): [Loan!]!
   me: AuthUser!
   myNotifications: [Notification!]!
+  myOpenCashBox: CashBox
   payments(loanId: ID!): [Payment!]!
 }
 

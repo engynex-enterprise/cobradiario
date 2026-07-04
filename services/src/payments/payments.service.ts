@@ -77,11 +77,18 @@ export class PaymentsService {
         throw new BadRequestException('El crédito no tiene saldo pendiente para aplicar');
       }
 
+      // Si el cobrador tiene una caja abierta, el abono se enlaza a ella.
+      const openBox = await tx.cashBox.findFirst({
+        where: { tenantId, userId, closedAt: null },
+        select: { id: true },
+      });
+
       const payment = await tx.payment.create({
         data: {
           tenantId,
           loanId: loan.id,
           collectorId: userId,
+          cashBoxId: openBox?.id,
           amount: alloc.applied,
           method: input.method,
           status: 'COMPLETED',
@@ -98,6 +105,19 @@ export class PaymentsService {
           },
         },
       });
+
+      // Movimiento de caja por el cobro (ingreso), para el arqueo de la jornada.
+      if (openBox) {
+        await tx.cashMovement.create({
+          data: {
+            tenantId,
+            cashBoxId: openBox.id,
+            type: 'COLLECTION',
+            amount: alloc.applied,
+            note: `Abono crédito ${loan.code ?? loan.id.slice(-6)}`,
+          },
+        });
+      }
 
       // Actualiza cada cuota tocada.
       for (const u of alloc.updated) {
