@@ -27,6 +27,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(false);
   }, []);
 
+  // Si el refresh falla (sesión realmente expirada), cerrar sesión y volver al login.
+  useEffect(() => {
+    const onExpired = () => {
+      localStorage.removeItem(USER_KEY);
+      disconnectSocket();
+      setUser(null);
+      router.replace('/login');
+    };
+    window.addEventListener('auth:expired', onExpired);
+    return () => window.removeEventListener('auth:expired', onExpired);
+  }, [router]);
+
   async function signIn(email: string, password: string) {
     const { login } = await apiLogin(email, password);
     tokens.set(login.accessToken, login.refreshToken);

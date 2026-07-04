@@ -20,7 +20,7 @@ import {
 import { fetchLoans, type Loan } from '@/lib/graphql';
 import { getSocket } from '@/lib/socket';
 import { money } from '@/lib/utils';
-import { Landmark, LogOut, Radio, TrendingUp, Wallet } from 'lucide-react';
+import { Landmark, LogOut, Radio, TrendingUp, Wallet, Coins, Users } from 'lucide-react';
 
 const statusVariant: Record<string, 'default' | 'success' | 'warning' | 'destructive'> = {
   ACTIVE: 'default',
@@ -99,6 +99,12 @@ export default function DashboardPage() {
           <Badge variant={live ? 'success' : 'secondary'} className="gap-1">
             <Radio className="h-3 w-3" /> {live ? 'En vivo' : 'Desconectado'}
           </Badge>
+          <Button variant="outline" size="sm" onClick={() => router.push('/dashboard/equipo')}>
+            <Users className="h-4 w-4" /> Equipo
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => router.push('/dashboard/caja')}>
+            <Coins className="h-4 w-4" /> Caja
+          </Button>
           <Button variant="ghost" size="sm" onClick={signOut}>
             <LogOut className="h-4 w-4" /> Salir
           </Button>
@@ -144,7 +150,12 @@ export default function DashboardPage() {
                     <TableCell className="text-emerald-600">{money(l.paidAmount)}</TableCell>
                     <TableCell className="font-semibold">{money(l.balance)}</TableCell>
                     <TableCell className="text-right">
-                      <PayDialog loan={l} onPaid={load} />
+                      <div className="flex justify-end gap-2">
+                        <Button variant="ghost" size="sm" onClick={() => router.push(`/dashboard/loan/${l.id}`)}>
+                          Ver
+                        </Button>
+                        <PayDialog loan={l} onPaid={load} />
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

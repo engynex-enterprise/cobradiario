@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { tokens } from './api';
+import { tokens, setOnAuthExpired } from './api';
 import { login as apiLogin, type AuthUser } from './graphql';
 import { disconnectSocket } from './socket';
 
@@ -25,6 +25,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (access && raw) setUser(JSON.parse(raw) as AuthUser);
       setReady(true);
     })();
+
+    // Si el refresh falla (sesión expirada de verdad), cerrar sesión.
+    setOnAuthExpired(() => {
+      AsyncStorage.removeItem(USER_KEY);
+      disconnectSocket();
+      setUser(null);
+    });
+    return () => setOnAuthExpired(null);
   }, []);
 
   async function signIn(email: string, password: string) {

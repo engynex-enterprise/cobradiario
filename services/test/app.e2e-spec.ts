@@ -89,6 +89,32 @@ describe('Auth', () => {
     const res = await gql(`{ me { id } }`);
     expect(res.errors?.[0].message).toMatch(/unauthorized/i);
   });
+
+  it('refresh rota los tokens y el nuevo access funciona; reusar el viejo se revoca', async () => {
+    const { email } = await registerTenant('Refresh Co');
+    const login = await gql<{ login: { refreshToken: string } }>(
+      `mutation($i:LoginInput!){ login(input:$i){ refreshToken } }`,
+      { i: { email, password: 'Password123' } },
+    );
+    const rt = login.data!.login.refreshToken;
+
+    const refreshed = await gql<{ refreshToken: { accessToken: string; refreshToken: string } }>(
+      `mutation($i:RefreshInput!){ refreshToken(input:$i){ accessToken refreshToken } }`,
+      { i: { refreshToken: rt } },
+    );
+    expect(refreshed.data?.refreshToken.accessToken).toBeTruthy();
+
+    // El nuevo access token es válido.
+    const me = await gql(`{ me { email } }`, {}, refreshed.data!.refreshToken.accessToken);
+    expect(me.data?.me.email).toBe(email);
+
+    // Reusar el refresh viejo (ya rotado) se rechaza → detección de reuso.
+    const reused = await gql(
+      `mutation($i:RefreshInput!){ refreshToken(input:$i){ accessToken } }`,
+      { i: { refreshToken: rt } },
+    );
+    expect(reused.errors?.[0].message).toMatch(/revocada|expirad|inválid/i);
+  });
 });
 
 describe('Aislamiento multi-tenant (RLS)', () => {

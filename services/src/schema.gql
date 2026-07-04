@@ -8,6 +8,11 @@ input AddCashMovementInput {
   type: CashMovementType!
 }
 
+input AssignCollectorInput {
+  routeId: ID!
+  userId: ID!
+}
+
 type AuthPayload {
   accessToken: String!
   refreshToken: String!
@@ -95,6 +100,19 @@ input CreateProductInput {
   roundTo: Float! = 1
   roundingMode: RoundingMode! = NEAREST
   termCount: Int! = 20
+}
+
+input CreateRouteInput {
+  code: String
+  name: String!
+  zone: String
+}
+
+input CreateTeamMemberInput {
+  email: String!
+  fullName: String!
+  password: String!
+  role: UserRole! = COLLECTOR
 }
 
 type CreditProduct {
@@ -192,10 +210,13 @@ input LoginInput {
 
 type Mutation {
   addCashMovement(input: AddCashMovementInput!): CashBox!
+  assignCollector(input: AssignCollectorInput!): Route!
   closeCashBox(input: CloseCashBoxInput!): CashBox!
   createClient(input: CreateClientInput!): Client!
   createCreditProduct(input: CreateProductInput!): CreditProduct!
   createLoan(input: CreateLoanInput!): Loan!
+  createRoute(input: CreateRouteInput!): Route!
+  createTeamMember(input: CreateTeamMemberInput!): TeamMember!
   login(input: LoginInput!): AuthPayload!
   logout(input: RefreshInput!): Boolean!
   markNotificationRead(id: ID!): Boolean!
@@ -277,6 +298,8 @@ type Query {
   myNotifications: [Notification!]!
   myOpenCashBox: CashBox
   payments(loanId: ID!): [Payment!]!
+  routes: [Route!]!
+  teamMembers: [TeamMember!]!
 }
 
 enum RateBasis {
@@ -320,6 +343,28 @@ enum RoundingMode {
   NEAREST
   NONE
   UP
+}
+
+type Route {
+  code: String
+  collectors: [RouteCollectorInfo!]!
+  id: ID!
+  isActive: Boolean!
+  name: String!
+  zone: String
+}
+
+type RouteCollectorInfo {
+  fullName: String!
+  userId: ID!
+}
+
+type TeamMember {
+  email: String!
+  fullName: String!
+  id: ID!
+  isActive: Boolean!
+  role: UserRole!
 }
 
 enum TenantType {

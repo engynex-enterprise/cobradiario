@@ -134,6 +134,45 @@ Bitácora de decisiones y cambios estructurales. Formato: fecha · tipo · descr
 - **[pendiente]** Lint (falta config eslint) fuera de CI por ahora; más cobertura (mora/reminders
   como jobs); tests de la web (Playwright) y de la app.
 
+## 2026-07-03 — Refresh automático de token (web + app)
+
+- **[web + app]** Los clientes GraphQL detectan el error de autenticación (code UNAUTHENTICATED),
+  refrescan el token de forma **single-flight** (varias peticiones concurrentes comparten un solo
+  refresh) y reintentan la petición original una vez. Si el refresh falla → sesión expirada:
+  web emite `auth:expired` (AuthProvider redirige a login), app invoca `setOnAuthExpired`.
+- **[web]** `web/src/lib/api.ts` + listener en `auth-provider.tsx`.
+- **[app]** `app/src/lib/api.ts` (cachea access+refresh en memoria; persiste en SecureStore) +
+  registro del callback en `auth.tsx`.
+- **[test]** Nuevo e2e del contrato de refresh: rota tokens, el nuevo access funciona y reusar el
+  viejo se revoca (detección de reuso). Suite e2e ahora **7/7**; total con unit → **30 tests**.
+- **[verificación]** typecheck app+web OK, build web OK, e2e 7/7.
+
+## 2026-07-03 — UI web: detalle de crédito + caja/arqueo
+
+- **[web]** Página `/dashboard/loan/[id]`: resumen (capital/interés/total/saldo), % pagado y
+  **plan de cuotas** (vencimiento, estado, capital/interés/mora/pagado) + abono desde el detalle.
+- **[web]** Página `/dashboard/caja`: abrir caja, tabla de movimientos (COLLECTION automáticos +
+  manuales), agregar gasto/consignación/desembolso/ajuste, y **cierre con preview del descuadre**.
+- **[web]** Navegación: botón "Caja" en el dashboard y "Ver" por crédito hacia el detalle.
+- **[web]** Capa GraphQL extendida (`fetchLoanDetail`, `fetchOpenCashBox`, `openCashBox`,
+  `addCashMovement`, `closeCashBox`).
+- **[verificación]** typecheck + `next build` OK (rutas nuevas generadas); páginas sirven 200;
+  las queries exactas de las páginas validadas contra el servidor (detalle con 20 cuotas; ciclo
+  de caja abrir→gasto→cerrar con descuadre −500).
+
+## 2026-07-03 — Gestión de rutas y equipo (backend + web) · stack en ejecución
+
+- **[backend]** `RoutesModule`: `routes` (con cobradores), `createRoute`, `assignCollector`
+  (evita duplicados). `TeamModule`: `teamMembers`, `createTeamMember` (crea User+Membership con
+  bcrypt, dentro de tx con GUC/RLS). Roles: crear restringido a OWNER/ADMIN(/MANAGER).
+- **[web]** Página `/dashboard/equipo`: listar/crear usuarios del equipo (con rol), listar/crear
+  rutas y asignar cobradores por ruta. Botón "Equipo" en el dashboard.
+- **[web]** Capa GraphQL extendida (team + routes).
+- **[verificación]** Backend probado por GraphQL (crear cobrador→ruta→asignar→listar OK);
+  typecheck web+api OK; páginas sirven 200.
+- **[dev]** Stack levantado en modo watch/hot-reload: web http://localhost:3000, API :4000.
+  Nota operativa: no ejecutar `next build` mientras corre `next dev` (comparten `.next`).
+
 <!-- Plantilla para próximas entradas:
 ## AAAA-MM-DD — Título
 - **[tipo]** descripción   (tipo ∈ decisión/infra/db/backend/app/web/seguridad/pendiente/fix)
