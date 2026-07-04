@@ -32,13 +32,10 @@ export class LoansService {
    * Los términos se congelan como snapshot en loan.terms.
    */
   async createLoan(tenantId: string, input: CreateLoanInput): Promise<LoanModel> {
+    const db = this.prisma.forTenant(tenantId);
     const [client, product] = await Promise.all([
-      this.prisma.client.findFirst({
-        where: { id: input.clientId, tenantId, deletedAt: null },
-      }),
-      this.prisma.creditProduct.findFirst({
-        where: { id: input.productId, tenantId, deletedAt: null },
-      }),
+      db.client.findFirst({ where: { id: input.clientId, deletedAt: null } }),
+      db.creditProduct.findFirst({ where: { id: input.productId, deletedAt: null } }),
     ]);
     if (!client) throw new NotFoundException('Cliente no encontrado');
     if (!product) throw new NotFoundException('Producto de crédito no encontrado');
@@ -48,6 +45,7 @@ export class LoansService {
     const schedule = generateSchedule({ principal: input.principal, firstDueDate, terms });
 
     const loan = await this.prisma.$transaction(async (tx) => {
+      await this.prisma.setTenantGuc(tx, tenantId); // RLS dentro de la transacción
       const created = await tx.loan.create({
         data: {
           tenantId,
@@ -99,8 +97,8 @@ export class LoansService {
   }
 
   async findById(tenantId: string, id: string): Promise<LoanModel> {
-    const loan = await this.prisma.loan.findFirst({
-      where: { id, tenantId, deletedAt: null },
+    const loan = await this.prisma.forTenant(tenantId).loan.findFirst({
+      where: { id, deletedAt: null },
       include: { installments: { orderBy: { sequence: 'asc' } } },
     });
     if (!loan) throw new NotFoundException('Crédito no encontrado');
@@ -108,8 +106,8 @@ export class LoansService {
   }
 
   async list(tenantId: string, routeId?: string): Promise<LoanModel[]> {
-    const loans = await this.prisma.loan.findMany({
-      where: { tenantId, deletedAt: null, ...(routeId ? { routeId } : {}) },
+    const loans = await this.prisma.forTenant(tenantId).loan.findMany({
+      where: { deletedAt: null, ...(routeId ? { routeId } : {}) },
       orderBy: { createdAt: 'desc' },
       take: 100,
     });

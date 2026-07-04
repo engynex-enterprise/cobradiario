@@ -24,8 +24,8 @@ export class CashBoxService {
 
   /** Caja abierta del cobrador (o null). */
   async myOpenCashBox(tenantId: string, userId: string): Promise<CashBoxModel | null> {
-    const box = await this.prisma.cashBox.findFirst({
-      where: { tenantId, userId, closedAt: null },
+    const box = await this.prisma.forTenant(tenantId).cashBox.findFirst({
+      where: { userId, closedAt: null },
       include: { movements: { orderBy: { createdAt: 'asc' } } },
     });
     return box ? toModel(box) : null;
@@ -33,12 +33,13 @@ export class CashBoxService {
 
   /** Abre una caja para el cobrador. Falla si ya tiene una abierta. */
   async open(tenantId: string, userId: string, input: OpenCashBoxInput): Promise<CashBoxModel> {
-    const existing = await this.prisma.cashBox.findFirst({
-      where: { tenantId, userId, closedAt: null },
+    const db = this.prisma.forTenant(tenantId);
+    const existing = await db.cashBox.findFirst({
+      where: { userId, closedAt: null },
     });
     if (existing) throw new BadRequestException('Ya tienes una caja abierta; ciérrala primero');
 
-    const box = await this.prisma.cashBox.create({
+    const box = await db.cashBox.create({
       data: {
         tenantId,
         userId,
@@ -67,12 +68,13 @@ export class CashBoxService {
     if (input.type === CashMovementType.COLLECTION || input.type === CashMovementType.OPENING) {
       throw new BadRequestException('Ese tipo de movimiento se genera automáticamente');
     }
-    const box = await this.prisma.cashBox.findFirst({
-      where: { tenantId, userId, closedAt: null },
+    const db = this.prisma.forTenant(tenantId);
+    const box = await db.cashBox.findFirst({
+      where: { userId, closedAt: null },
     });
     if (!box) throw new NotFoundException('No tienes una caja abierta');
 
-    await this.prisma.cashMovement.create({
+    await db.cashMovement.create({
       data: { tenantId, cashBoxId: box.id, type: input.type, amount: input.amount, note: input.note },
     });
     return this.reload(tenantId, box.id);
@@ -80,8 +82,8 @@ export class CashBoxService {
 
   /** Cierra la caja: calcula esperado vs. contado y la diferencia (descuadre). */
   async close(tenantId: string, userId: string, input: CloseCashBoxInput): Promise<CashBoxModel> {
-    const box = await this.prisma.cashBox.findFirst({
-      where: { tenantId, userId, closedAt: null },
+    const box = await this.prisma.forTenant(tenantId).cashBox.findFirst({
+      where: { userId, closedAt: null },
       include: { movements: true },
     });
     if (!box) throw new NotFoundException('No tienes una caja abierta');
@@ -91,6 +93,8 @@ export class CashBoxService {
     const now = new Date();
 
     await this.prisma.$transaction([
+      // Fija el tenant (RLS) para todo el batch.
+      this.prisma.$executeRaw`SELECT set_config('app.tenant_id', ${tenantId}, true)`,
       this.prisma.cashMovement.create({
         data: {
           tenantId,
@@ -114,8 +118,8 @@ export class CashBoxService {
   }
 
   private async reload(tenantId: string, id: string): Promise<CashBoxModel> {
-    const box = await this.prisma.cashBox.findFirstOrThrow({
-      where: { id, tenantId },
+    const box = await this.prisma.forTenant(tenantId).cashBox.findFirstOrThrow({
+      where: { id },
       include: { movements: { orderBy: { createdAt: 'asc' } } },
     });
     return toModel(box);

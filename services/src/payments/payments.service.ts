@@ -32,7 +32,7 @@ export class PaymentsService {
 
     // Idempotencia: si ya existe un pago con esta clave, se devuelve el resultado previo.
     if (input.clientRequestId) {
-      const existing = await this.prisma.payment.findUnique({
+      const existing = await this.prisma.forTenant(tenantId).payment.findUnique({
         where: { tenantId_clientRequestId: { tenantId, clientRequestId: input.clientRequestId } },
       });
       if (existing) {
@@ -47,6 +47,7 @@ export class PaymentsService {
     }
 
     const result = await this.prisma.$transaction(async (tx) => {
+      await this.prisma.setTenantGuc(tx, tenantId); // RLS dentro de la transacción
       // Bloqueo pesimista de la fila del crédito dentro de la transacción.
       await tx.$executeRaw`SELECT id FROM loans WHERE id = ${input.loanId} AND "tenantId" = ${tenantId} FOR UPDATE`;
 
@@ -181,9 +182,10 @@ export class PaymentsService {
   }
 
   list(tenantId: string, loanId: string) {
-    return this.prisma.payment
-      .findMany({
-        where: { tenantId, loanId },
+    return this.prisma
+      .forTenant(tenantId)
+      .payment.findMany({
+        where: { loanId },
         orderBy: { createdAt: 'desc' },
         take: 100,
       })
@@ -191,8 +193,8 @@ export class PaymentsService {
   }
 
   private async loadLoanModel(tenantId: string, loanId: string): Promise<LoanModel> {
-    const loan = await this.prisma.loan.findFirstOrThrow({
-      where: { id: loanId, tenantId },
+    const loan = await this.prisma.forTenant(tenantId).loan.findFirstOrThrow({
+      where: { id: loanId },
       include: { installments: { orderBy: { sequence: 'asc' } } },
     });
     return mapLoan(loan);

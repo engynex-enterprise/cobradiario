@@ -102,6 +102,23 @@ Bitácora de decisiones y cambios estructurales. Formato: fecha · tipo · descr
 - **[pendiente]** RLS Postgres (tarea transversal siguiente); reportes de caja por rango/cobrador;
   UI de caja en web y app.
 
+## 2026-07-03 — Row-Level Security (RLS) multi-tenant
+
+- **[seguridad/db]** Migración `20260704120000_rls_multitenant`: `ENABLE/FORCE ROW LEVEL SECURITY`
+  + política `tenant_isolation` (USING/WITH CHECK) en las 18 tablas de negocio. Rol de app
+  `app_user` (mínimos privilegios, NO superusuario) para que RLS aplique de verdad.
+- **[config]** La app runtime se conecta como `app_user` (`DATABASE_URL`); migraciones/seed/admin
+  usan el dueño (`DIRECT_URL`). Cambiar de local a nube sigue siendo solo esas dos URLs.
+- **[backend]** `PrismaService.forTenant(tenantId)` fija `app.tenant_id` (GUC local a la tx) e
+  inyecta tenantId (belt); `system()` activa `app.bypass_rls` para auth/jobs cross-tenant;
+  `setTenantGuc(tx)` para transacciones interactivas (loans/payments/cashbox). Servicios
+  refactorizados para usarlos.
+- **[verificación]** Aislamiento probado: tenant B recién registrado ve 0 clientes/créditos/
+  productos de A; cada uno solo ve lo suyo (nivel DB, no solo app). Todos los flujos siguen OK
+  bajo RLS: login, createLoan, registerPayment (tx+row lock), caja (open/close batch), mora.
+- **[nota]** El bypass es un GUC; como todo se parametriza con Prisma (sin SQL concatenado) no es
+  alcanzable por inyección. Endurecimiento futuro: conexión de sistema separada en vez de GUC.
+
 <!-- Plantilla para próximas entradas:
 ## AAAA-MM-DD — Título
 - **[tipo]** descripción   (tipo ∈ decisión/infra/db/backend/app/web/seguridad/pendiente/fix)

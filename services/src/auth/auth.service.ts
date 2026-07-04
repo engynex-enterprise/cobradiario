@@ -25,6 +25,8 @@ export class AuthService {
 
     const user = await this.prisma
       .$transaction(async (tx) => {
+        // Registro: crea tenant/usuario antes de existir contexto de tenant → bypass RLS.
+        await tx.$executeRaw`SELECT set_config('app.bypass_rls', 'on', true)`;
         const tenant = await tx.tenant.create({
           data: { name: input.tenantName, type: input.tenantType },
         });
@@ -59,7 +61,8 @@ export class AuthService {
   // --- Login ---
   async login(input: LoginInput, meta?: TokenMeta): Promise<AuthPayload> {
     const email = input.email.toLowerCase().trim();
-    const user = await this.prisma.user.findFirst({
+    // Login es pre-tenant (no sabemos el tenant hasta resolver el usuario) → bypass RLS.
+    const user = await this.prisma.system().user.findFirst({
       where: { email, isActive: true, deletedAt: null },
       include: { memberships: { where: { status: 'ACTIVE' }, orderBy: { createdAt: 'asc' } } },
     });
@@ -72,9 +75,10 @@ export class AuthService {
     }
 
     const role = user.memberships[0]?.role ?? UserRole.VIEWER;
-    await this.prisma.$transaction([
-      this.prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } }),
-    ]);
+    await this.prisma.system().user.update({
+      where: { id: user.id },
+      data: { lastLoginAt: new Date() },
+    });
 
     return this.issueTokens(
       { id: user.id, tenantId: user.tenantId, email: user.email, fullName: user.fullName },
@@ -109,7 +113,7 @@ export class AuthService {
       throw new UnauthorizedException('Refresh token expirado');
     }
 
-    const user = await this.prisma.user.findFirst({
+    const user = await this.prisma.system().user.findFirst({
       where: { id: payload.sub, isActive: true, deletedAt: null },
       include: { memberships: { where: { status: 'ACTIVE' }, orderBy: { createdAt: 'asc' } } },
     });

@@ -6,7 +6,11 @@
 import { PrismaClient, TenantType, UserRole } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
-const prisma = new PrismaClient();
+// El seed es una operación de administración: usa la conexión del dueño (DIRECT_URL),
+// que no está sujeta a RLS, para poder crear datos de cualquier tenant.
+const prisma = new PrismaClient({
+  datasources: { db: { url: process.env.DIRECT_URL ?? process.env.DATABASE_URL } },
+});
 
 async function main(): Promise<void> {
   const passwordHash = await bcrypt.hash('Password123', 12);

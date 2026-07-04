@@ -30,7 +30,7 @@ export class NotificationsService {
 
   /** Crea una notificación in-app, la emite en realtime y (opcional) encola push. */
   async create(input: CreateNotificationInput): Promise<NotificationModel> {
-    const notif = await this.prisma.notification.create({
+    const notif = await this.prisma.forTenant(input.tenantId).notification.create({
       data: {
         tenantId: input.tenantId,
         userId: input.userId ?? null,
@@ -65,8 +65,8 @@ export class NotificationsService {
   }
 
   async listForUser(tenantId: string, userId: string): Promise<NotificationModel[]> {
-    const rows = await this.prisma.notification.findMany({
-      where: { tenantId, OR: [{ userId }, { userId: null }] },
+    const rows = await this.prisma.forTenant(tenantId).notification.findMany({
+      where: { OR: [{ userId }, { userId: null }] },
       orderBy: { createdAt: 'desc' },
       take: 50,
     });
@@ -74,8 +74,8 @@ export class NotificationsService {
   }
 
   async markRead(tenantId: string, id: string): Promise<boolean> {
-    await this.prisma.notification.updateMany({
-      where: { id, tenantId, readAt: null },
+    await this.prisma.forTenant(tenantId).notification.updateMany({
+      where: { id, readAt: null },
       data: { readAt: new Date() },
     });
     return true;
@@ -87,7 +87,7 @@ export class NotificationsService {
     token: string,
     platform: string,
   ): Promise<boolean> {
-    await this.prisma.deviceToken.upsert({
+    await this.prisma.forTenant(tenantId).deviceToken.upsert({
       where: { token },
       create: { tenantId, userId, token, platform },
       update: { userId, isActive: true },
@@ -97,9 +97,8 @@ export class NotificationsService {
 
   /** Envía notificaciones push vía Expo Push API a los dispositivos del destinatario. */
   async sendPush(job: PushJob): Promise<{ sent: number }> {
-    const devices = await this.prisma.deviceToken.findMany({
+    const devices = await this.prisma.forTenant(job.tenantId).deviceToken.findMany({
       where: {
-        tenantId: job.tenantId,
         isActive: true,
         ...(job.userId ? { userId: job.userId } : {}),
       },

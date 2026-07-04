@@ -25,7 +25,9 @@ Es una plataforma que mueve **dinero** y datos personales (deudores). El estánd
 - Manejo central de errores que **no filtra** stack traces en prod.
 
 ## Pendiente antes de producción (checklist de hardening)
-- [ ] Activar **RLS** en Postgres (migración dedicada) + `SET app.tenant_id` por request.
+- [x] **RLS** en Postgres activado (migración `20260704120000_rls_multitenant`): la app corre como
+      `app_user` (no superusuario) + políticas por `app.tenant_id`. Aislamiento verificado. La
+      amenaza #1 (fuga entre tenants) queda con defensa en profundidad DB + app.
 - [ ] Límite de **profundidad/complejidad** GraphQL + desactivar introspection/playground en prod.
 - [ ] Rotación de secretos vía gestor gestionado (no `.env`).
 - [ ] Cifrado de columnas PII sensibles / TDE del proveedor.

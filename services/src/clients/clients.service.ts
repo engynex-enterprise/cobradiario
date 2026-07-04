@@ -9,8 +9,8 @@ export class ClientsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async list(tenantId: string): Promise<ClientModel[]> {
-    const rows = await this.prisma.client.findMany({
-      where: { tenantId, deletedAt: null },
+    const rows = await this.prisma.forTenant(tenantId).client.findMany({
+      where: { deletedAt: null },
       orderBy: { fullName: 'asc' },
       take: 100,
     });
@@ -18,7 +18,7 @@ export class ClientsService {
   }
 
   async create(tenantId: string, input: CreateClientInput): Promise<ClientModel> {
-    const created = await this.prisma.client.create({
+    const created = await this.prisma.forTenant(tenantId).client.create({
       data: { tenantId, ...input },
     });
     return toClientModel(created);

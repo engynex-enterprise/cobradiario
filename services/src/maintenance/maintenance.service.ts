@@ -31,7 +31,9 @@ export class MaintenanceService {
    */
   async runOverdueSweep(tenantId?: string): Promise<SweepResult> {
     const now = new Date();
-    const loans = await this.prisma.loan.findMany({
+    // Barrido cross-tenant (o de un tenant): corre en contexto de sistema (bypass RLS).
+    const db = this.prisma.system();
+    const loans = await db.loan.findMany({
       where: { status: 'ACTIVE', deletedAt: null, ...(tenantId ? { tenantId } : {}) },
       include: {
         installments: { where: { status: { in: ['PENDING', 'PARTIAL', 'OVERDUE'] } } },
@@ -62,7 +64,7 @@ export class MaintenanceService {
         );
 
         const wasOverdue = inst.status === 'OVERDUE';
-        await this.prisma.installment.update({
+        await db.installment.update({
           where: { id: inst.id },
           data: { status: 'OVERDUE', lateFee: fee },
         });
@@ -102,7 +104,8 @@ export class MaintenanceService {
     const now = new Date();
     const until = new Date(now.getTime() + withinDays * 24 * 60 * 60 * 1000);
 
-    const loans = await this.prisma.loan.findMany({
+    const db = this.prisma.system();
+    const loans = await db.loan.findMany({
       where: { status: 'ACTIVE', deletedAt: null, ...(tenantId ? { tenantId } : {}) },
       include: {
         installments: {
@@ -117,12 +120,12 @@ export class MaintenanceService {
       const next = loan.installments[0];
 
       // Dedup: un recordatorio por cuota (targetId = installmentId).
-      const already = await this.prisma.reminder.findFirst({
+      const already = await db.reminder.findFirst({
         where: { tenantId: loan.tenantId, targetId: next.id, type: 'PAYMENT_DUE' },
       });
       if (already) continue;
 
-      await this.prisma.reminder.create({
+      await db.reminder.create({
         data: {
           tenantId: loan.tenantId,
           type: 'PAYMENT_DUE',

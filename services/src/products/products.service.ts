@@ -8,8 +8,8 @@ export class ProductsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async list(tenantId: string): Promise<ProductModel[]> {
-    const rows = await this.prisma.creditProduct.findMany({
-      where: { tenantId, isActive: true, deletedAt: null },
+    const rows = await this.prisma.forTenant(tenantId).creditProduct.findMany({
+      where: { isActive: true, deletedAt: null },
       orderBy: { name: 'asc' },
     });
     return rows.map(toProductModel);
