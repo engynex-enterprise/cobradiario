@@ -23,6 +23,7 @@
   "dependencies": {
     "@apollo/server": "^4.11.0",
     "@as-integrations/express5": "^1.1.2",
+    "@cobradiario/credit-engine": "workspace:*",
     "@nestjs/apollo": "^13.0.0",
     "@nestjs/common": "^11.0.0",
     "@nestjs/config": "^4.0.0",

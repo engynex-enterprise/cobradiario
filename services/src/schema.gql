@@ -16,20 +16,131 @@ type AuthUser {
   tenantId: String!
 }
 
+type Client {
+  address: String
+  city: String
+  createdAt: DateTime!
+  documentId: String
+  fullName: String!
+  id: ID!
+  phone: String
+}
+
+input CreateClientInput {
+  address: String
+  city: String
+  documentId: String
+  fullName: String!
+  phone: String
+}
+
+input CreateLoanInput {
+  clientId: ID!
+  firstDueDate: DateTime
+  principal: Float!
+  productId: ID!
+  routeId: ID
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+type Installment {
+  amount: Float!
+  dueDate: DateTime!
+  id: ID!
+  interestPart: Float!
+  lateFee: Float!
+  paidAmount: Float!
+  principalPart: Float!
+  sequence: Int!
+  status: InstallmentStatus!
+}
+
+enum InstallmentStatus {
+  OVERDUE
+  PAID
+  PARTIAL
+  PENDING
+  WAIVED
+}
+
+type Loan {
+  balance: Float!
+  clientId: ID!
+  code: String
+  createdAt: DateTime!
+  disbursedAt: DateTime
+  firstDueDate: DateTime
+  id: ID!
+  installments: [Installment!]
+  interestTotal: Float!
+  paidAmount: Float!
+  principal: Float!
+  productId: ID!
+  routeId: ID
+  status: LoanStatus!
+  totalDue: Float!
+}
+
+enum LoanStatus {
+  ACTIVE
+  CANCELLED
+  DEFAULTED
+  PAID
+  PENDING_APPROVAL
+  RENEWED
+}
+
 input LoginInput {
   email: String!
   password: String!
 }
 
 type Mutation {
+  createClient(input: CreateClientInput!): Client!
+  createLoan(input: CreateLoanInput!): Loan!
   login(input: LoginInput!): AuthPayload!
   logout(input: RefreshInput!): Boolean!
   refreshToken(input: RefreshInput!): AuthPayload!
   register(input: RegisterInput!): AuthPayload!
+  registerPayment(input: RegisterPaymentInput!): RegisterPaymentResult!
+}
+
+type Payment {
+  amount: Float!
+  createdAt: DateTime!
+  id: ID!
+  latitude: Float
+  loanId: ID!
+  longitude: Float
+  method: PaymentMethod!
+  note: String
+  paidAt: DateTime!
+  status: PaymentStatus!
+}
+
+enum PaymentMethod {
+  CARD
+  CASH
+  OTHER
+  TRANSFER
+}
+
+enum PaymentStatus {
+  COMPLETED
+  PENDING
+  REVERSED
 }
 
 type Query {
+  clients: [Client!]!
+  loan(id: ID!): Loan!
+  loans(routeId: ID): [Loan!]!
   me: AuthUser!
+  payments(loanId: ID!): [Payment!]!
 }
 
 input RefreshInput {
@@ -43,6 +154,23 @@ input RegisterInput {
   phone: String
   tenantName: String!
   tenantType: TenantType! = INDIVIDUAL
+}
+
+input RegisterPaymentInput {
+  amount: Float!
+  clientRequestId: String
+  latitude: Float
+  loanId: ID!
+  longitude: Float
+  method: PaymentMethod! = CASH
+  note: String
+}
+
+type RegisterPaymentResult {
+  applied: Float!
+  leftover: Float!
+  loan: Loan!
+  payment: Payment!
 }
 
 enum TenantType {

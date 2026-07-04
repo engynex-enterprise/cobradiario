@@ -26,8 +26,22 @@ Bitácora de decisiones y cambios estructurales. Formato: fecha · tipo · descr
 - **[pendiente]** Módulos de dominio NestJS que consumen el motor (loans/payments) dentro de
   transacción + emisión de eventos realtime; estrategia CUSTOM de ejemplo si se requiere.
 
+## 2026-07-03 — Vertical slice: Clientes + Créditos + Pagos (realtime)
+- **[backend]** `ClientsModule` (crear/listar), `LoansModule` (`createLoan`: genera plan con el
+  motor + persiste Loan + Installment[] + LedgerEntry de desembolso en transacción, congela
+  `terms`), `PaymentsModule` (`registerPayment`: bloqueo de fila `FOR UPDATE`, asignación FIFO,
+  Payment + PaymentAllocation[] + actualización de cuotas/crédito + LedgerEntry, **idempotencia**
+  por `clientRequestId`, emisión de evento realtime `payment.registered`).
+- **[realtime]** Evento `payment.registered` emitido a la sala `tenant:{id}` vía Socket.IO
+  (Redis adapter). Verificado con cliente WS real.
+- **[test/verificación]** Probado end-to-end por GraphQL: login → createLoan (100k @20%/20 →
+  20 cuotas de 6.000, total 120.000 exacto) → registerPayment (saldo 120k→114k, cuota #1 PAID)
+  → idempotencia (2º intento no recobra) → evento realtime recibido en vivo.
+- **[deuda]** Sobrepago (`leftover`) se devuelve pero no se persiste como saldo a favor aún;
+  Decimal se expone como Float GraphQL (revisar scalar Decimal para sumas muy grandes);
+  mora (`calcLateFee`) aún no se aplica automáticamente por job nocturno.
+
 <!-- Plantilla para próximas entradas:
 ## AAAA-MM-DD — Título
 - **[tipo]** descripción   (tipo ∈ decisión/infra/db/backend/app/web/seguridad/pendiente/fix)
 -->
-```
