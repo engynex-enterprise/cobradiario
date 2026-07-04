@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
   empty: { textAlign: 'center', color: colors.muted },
   card: {
     flexDirection: 'row', gap: 12, backgroundColor: colors.card, borderRadius: 16,
-    borderWidth: 2, borderColor: colors.border, padding: 14,
+    borderWidth: 2, borderColor: colors.border, borderBottomWidth: 4, padding: 14,
   },
   unread: { borderColor: colors.accentText },
   iconWrap: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center' },

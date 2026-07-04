@@ -20,10 +20,11 @@ export default function AppLayout() {
     <Tabs
       screenOptions={{
         header: () => <TopBar />,
-        tabBarActiveTintColor: colors.primary,
+        tabBarActiveTintColor: colors.primaryDark,
         tabBarInactiveTintColor: colors.muted,
-        tabBarStyle: { borderTopWidth: 1, borderTopColor: colors.border },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '700' },
+        tabBarStyle: { borderTopWidth: 2, borderTopColor: colors.border, height: 62, paddingTop: 6, paddingBottom: 8 },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '800' },
+        tabBarItemStyle: { paddingTop: 2 },
       }}
     >
       <Tabs.Screen
@@ -54,6 +55,8 @@ export default function AppLayout() {
       <Tabs.Screen name="cliente/[id]" options={{ href: null }} />
       <Tabs.Screen name="nuevo-cliente" options={{ href: null }} />
       <Tabs.Screen name="nuevo-credito" options={{ href: null }} />
+      <Tabs.Screen name="resumen-financiero" options={{ href: null }} />
+      <Tabs.Screen name="gastos" options={{ href: null }} />
     </Tabs>
   );
 }

@@ -23,7 +23,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     'User', 'Membership', 'Client', 'Route', 'RouteCollector', 'CreditProduct',
     'Loan', 'Installment', 'Payment', 'PaymentAllocation', 'CashBox', 'CashMovement',
     'LedgerEntry', 'Notification', 'DeviceToken', 'Reminder', 'AuditLog',
-    'Tag', 'Message',
+    'Tag', 'Message', 'CollectionManagement', 'Expense',
   ]);
 
   async onModuleInit(): Promise<void> {

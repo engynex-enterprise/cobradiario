@@ -51,7 +51,7 @@ const styles = StyleSheet.create({
   name: { fontSize: 20, fontWeight: '800', color: colors.text },
   roleChip: { backgroundColor: colors.accent, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
   roleText: { fontSize: 11, fontWeight: '700', color: colors.accentText },
-  card: { backgroundColor: colors.card, borderRadius: 16, borderWidth: 2, borderColor: colors.border, paddingHorizontal: 16 },
+  card: { backgroundColor: colors.card, borderRadius: 16, borderWidth: 2, borderColor: colors.border, borderBottomWidth: 4, paddingHorizontal: 16 },
   field: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12, paddingVertical: 14 },
   fieldBorder: { borderBottomWidth: 2, borderBottomColor: colors.border },
   fieldLabel: { fontSize: 14, color: colors.muted },

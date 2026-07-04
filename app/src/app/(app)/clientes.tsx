@@ -80,10 +80,10 @@ const styles = StyleSheet.create({
   empty: { textAlign: 'center', color: colors.muted, marginTop: 40 },
   card: {
     flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.card,
-    borderRadius: 16, borderWidth: 2, borderColor: colors.border, padding: 14,
+    borderRadius: 16, borderWidth: 2, borderColor: colors.border, borderBottomWidth: 4, padding: 14,
   },
-  avatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center' },
-  avatarText: { color: colors.accentText, fontWeight: '800' },
+  avatar: { width: 44, height: 44, borderRadius: 14, backgroundColor: '#e9f9e0', alignItems: 'center', justifyContent: 'center' },
+  avatarText: { color: colors.primaryDark, fontWeight: '800', fontSize: 16 },
   name: { fontSize: 15, fontWeight: '700', color: colors.text },
   sub: { fontSize: 13, color: colors.muted, marginTop: 2 },
 });

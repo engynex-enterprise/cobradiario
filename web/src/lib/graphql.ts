@@ -36,6 +36,8 @@ export interface Product {
   interestRate: number;
   termCount: number;
   frequency: string;
+  lateFeeType?: string;
+  lateFeeValue?: number;
 }
 
 export function login(email: string, password: string) {
@@ -79,7 +81,7 @@ export function createClient(input: {
 
 export function fetchProducts() {
   return gql<{ creditProducts: Product[] }>(
-    `{ creditProducts { id name interestMethod interestRate termCount frequency } }`,
+    `{ creditProducts { id name interestMethod interestRate termCount frequency lateFeeType lateFeeValue } }`,
   );
 }
 

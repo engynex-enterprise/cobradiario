@@ -355,3 +355,76 @@ Bitácora de decisiones y cambios estructurales. Formato: fecha · tipo · descr
   cuota, duración en días/semanas/meses/años).
 - **[verificación]** E2E OK: crédito sin producto (500.000, 20 cuotas diarias, 20%, mora 2%) →
   interés 100.000, total 600.000, 20 cuotas de 30.000 (25.000 capital + 5.000 interés). Typecheck OK en services/app/web.
+
+## 2026-07-04 — Nuevo crédito: preset + cálculo bidireccional
+- **[backend]** `CreditProduct` expone `lateFeeType` y `lateFeeValue` (para prellenar mora desde un preset).
+- **[app/web]** Formulario "Nuevo crédito": selector de **preset** (desde config/productos) que prellena
+  interés % y mora %; el valor a prestar, cuotas y frecuencia se definen en la vista del crédito.
+- **[app/web]** **Cálculo bidireccional**: N.º de cuotas ↔ valor de cuota. El último campo editado "manda":
+  si defines cuotas → calcula el valor; si defines el valor → calcula el nº de cuotas (días/semanas/quincenas/meses).
+- **[verificación]** E2E: total 600.000, valor cuota 30.000 → 20 cuotas semanales de 30.000. Typecheck OK en services/app/web.
+
+## 2026-07-04 — Resumen Financiero (app)
+- **[backend]** Query `financialSummary(from, to)` en StatsModule: actividad (nº abonos/créditos),
+  distribución de ingresos cobrados (capital/interés/mora prorrateado por PaymentAllocation→cuota),
+  medios de pago (groupBy Payment.method) y desembolsos del período. Default: hoy.
+- **[app]** Pantalla `resumen-financiero` (estilo Duolingo) con Actividad del día, Distribución de
+  ingresos (Total Cobrado), Medios de pago (Efectivo/Tarjeta/Transferencia/Oficina) y Flujo de caja
+  (ganancia neta, préstamos realizados, dinero a entregar). CTA del tab Resumen apunta aquí.
+- **[nota]** Cargos, descuentos, bases y gastos aún no están modelados → se muestran en $0 (pendiente).
+- **[verificación]** E2E: 10 abonos, total cobrado 1.384.000 = capital 1.309.158 + interés 74.842; desembolsado 39.450.000. Typecheck OK.
+
+## 2026-07-04 — Rediseño detalle de cliente y crédito (app)
+- **[app]** `cliente/[id]` rediseñado: cabecera verde con avatar, tarjeta de identidad (nombre, documento,
+  ciudad) con acciones, banner "Créditos activos (N)" y tarjetas de crédito ricas (monto, código, barra de
+  progreso pagado, valor cuota / cuotas / interés, frecuencia + fecha).
+- **[app]** `loan/[id]` rediseñado con cabecera (Valor/Interés/Tipo/Frecuencia + Ver info/Editar/Eliminar),
+  pestañas **Plan de pago / Historial / Gestiones**, filtros (Pendientes/Pagadas/Vencidas/Todas),
+  tarjetas de cuota (saldo capital/interés/total, vence, abonado), botón flotante Abonar, **modal de Info**
+  completo (ID, fechas, cuotas vencidas/pagadas, deuda a capital, intereses pendientes, saldo total),
+  Historial con tarjeta de Abonos (capital/interés/mora, balance, ganancia esperada) + lista de pagos,
+  y menú "Más opciones" (Renovar/Marcar pagado/Editar fechas/Imprimir — stubs).
+- **[app]** graphql: `Loan`/`LoanDetail`/`Installment` extendidos (code, termCount, interestRate, frequency,
+  disbursedAt, firstDueDate, principalPart, interestPart).
+- **[pendiente]** Gestiones (modelo backend + modal Nueva Gestión) y Editar/Eliminar/Renovar/Imprimir.
+- **[verificación]** Typecheck app OK; queries nuevas verificadas contra backend en vivo.
+
+## 2026-07-04 — Gestiones de cobranza (app + backend)
+- **[db]** Modelo `CollectionManagement` (tipo CALL/VISIT/SMS/WHATSAPP/EMAIL/OTHER, resultado, nota,
+  compromiso de pago [monto+fecha], seguimiento [fecha+nota]). Migración `collection_managements` con RLS.
+- **[backend]** `ManagementsModule`: query `managements(loanId)` y mutation `createManagement`.
+- **[app]** Pestaña **Gestiones** del crédito: lista de gestiones (con badges de tipo/resultado, promesa y
+  seguimiento) + modal **Nueva gestión** (tipo, resultado, nota, compromiso de pago con monto/fecha,
+  programar seguimiento). Botón flotante "Nueva gestión".
+- **[verificación]** E2E: gestión "Llamada · Promesa de pago" con $50.000 creada y listada. RLS verificado
+  (otro tenant = 0 filas). Typecheck OK en services/app.
+
+## 2026-07-04 — Estilo Duolingo en detalles + código de crédito
+- **[backend]** `createLoan` autogenera `code` legible (YYMMDD-XXX).
+- **[app]** `cliente/[id]` rediseñado 100% estilo Duolingo: hero verde brillante (#58cc02) con avatar,
+  acciones rápidas chunky, sección "Créditos activos" con pill de conteo, tarjetas de crédito con borde
+  3D, barra de progreso verde, chips de frecuencia.
+- **[app]** `loan/[id]` rediseñado estilo Duolingo: hero verde con monto/código/progreso + mini-stats,
+  acciones flotando sobre el hero, tabs chunky (verde activo), filtros de cuotas, tarjetas de cuota 3D,
+  botón Abonar/Nueva gestión flotante 3D, tarjeta de Abonos verde, modal de info e info-menú redondeados.
+  Se eliminó el verde salvia del competidor; ahora todo usa el tema Duolingo.
+- **[verificación]** Typecheck app/services OK; código de crédito verificado (260704-FG9).
+
+## 2026-07-04 — Pulido Duolingo en toda la app
+- **[app]** Pase de estilo consistente: tarjetas "chunky 3D" (borde inferior grueso) en Home, Clientes,
+  Cobro del día, Notificaciones, Balances, Resumen, Resumen Financiero, Ajustes y Perfil.
+- **[app]** Héroes/CTA unificados al verde Duolingo (#58cc02): hero de Balances y CTA de Resumen pasan de
+  azul a verde. Pestañas de Cobro del día verdes. Avatares de Clientes en verde.
+- **[app]** Barra de pestañas inferior más marcada (borde superior 2px, altura, activo verde).
+- **[app]** Modal Nueva Gestión migrado de verde salvia a verde Duolingo. Eliminadas todas las referencias
+  al verde salvia del competidor.
+
+## 2026-07-04 — Gastos (expenses)
+- **[db]** Modelo `Expense` (categoría, monto, nota, autor) con migración + RLS multi-tenant.
+- **[backend]** `ExpensesModule`: query `expenses(from,to)` + mutation `createExpense`. `financialSummary`
+  ahora agrega `expensesTotal` y `netProfit` = (interés + mora cobrados) − gastos.
+- **[app]** Pantalla **Gastos** (hero verde con total, lista con categorías de color, modal Nuevo gasto con
+  chips de categoría + monto + nota). Acceso desde Ajustes → Operación.
+- **[app]** Resumen Financiero muestra la línea **Gastos** real y la **Ganancia neta** ya descuenta gastos.
+- **[verificación]** E2E: gasto Transporte $25.000 → netProfit $162.885 (interés $187.885 − $25.000). RLS OK
+  (otro tenant = 0). Typecheck services/app OK.

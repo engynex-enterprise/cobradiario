@@ -70,12 +70,14 @@ export class LoansService {
 
     const firstDueDate = input.firstDueDate ?? new Date();
     const schedule = generateSchedule({ principal: input.principal, firstDueDate, terms });
+    const code = genLoanCode();
 
     const loan = await this.prisma.$transaction(async (tx) => {
       await this.prisma.setTenantGuc(tx, tenantId); // RLS dentro de la transacción
       const created = await tx.loan.create({
         data: {
           tenantId,
+          code,
           clientId: input.clientId,
           productId: input.productId,
           routeId: input.routeId,
@@ -141,6 +143,19 @@ export class LoansService {
     });
     return loans.map((l) => toLoanModel(l));
   }
+}
+
+/** Código legible del crédito: YYMMDD-XXX (fecha + sufijo base36). */
+function genLoanCode(): string {
+  const d = new Date();
+  const yy = String(d.getUTCFullYear()).slice(2);
+  const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(d.getUTCDate()).padStart(2, '0');
+  const suffix = Math.floor(Math.random() * 46655) // 36^3 - 1
+    .toString(36)
+    .toUpperCase()
+    .padStart(3, '0');
+  return `${yy}${mm}${dd}-${suffix}`;
 }
 
 // --- Mappers Prisma → GraphQL (Decimal → number) ---

@@ -14,6 +14,13 @@ export const colors = {
   danger: '#ff4b4b',
   dangerDark: '#ea2b2b',
   disabled: '#e5e5e5',
+  // Verde salvia para cabeceras de detalle (cliente/crédito)
+  sage: '#3f7d63',
+  sageDark: '#2f6b52',
+  sageSoft: '#e3f0e9',
+  sageText: '#3f7d63',
+  warn: '#f59e0b',
+  warnSoft: '#fef3c7',
 };
 
 export const radius = 16;

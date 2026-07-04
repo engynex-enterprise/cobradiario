@@ -142,7 +142,7 @@ function Kpi({ label, value, accent }: { label: string; value: string; accent?: 
 const styles = StyleSheet.create({
   headerWrap: { gap: 12, marginBottom: 4 },
   kpiRow: { flexDirection: 'row', gap: 12 },
-  kpi: { flex: 1, backgroundColor: colors.card, borderRadius: 16, borderWidth: 2, borderColor: colors.border, padding: 14 },
+  kpi: { flex: 1, backgroundColor: colors.card, borderRadius: 16, borderWidth: 2, borderColor: colors.border, borderBottomWidth: 4, padding: 14 },
   kpiLabel: { fontSize: 11, color: colors.muted, fontWeight: '700' },
   kpiValue: { fontSize: 18, fontWeight: '800', color: colors.text, marginTop: 2 },
   sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
   dot: { width: 8, height: 8, borderRadius: 4 },
   liveText: { fontSize: 11, color: colors.muted, fontWeight: '600' },
   empty: { textAlign: 'center', color: colors.muted, marginTop: 40 },
-  card: { backgroundColor: colors.card, borderRadius: 16, borderWidth: 2, borderColor: colors.border, padding: 16, gap: 8 },
+  card: { backgroundColor: colors.card, borderRadius: 16, borderWidth: 2, borderColor: colors.border, borderBottomWidth: 4, padding: 16, gap: 8 },
   cardRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   badge: {
     fontSize: 11, fontWeight: '800', color: colors.accentText, backgroundColor: colors.accent,

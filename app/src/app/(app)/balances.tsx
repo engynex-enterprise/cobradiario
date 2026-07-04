@@ -88,15 +88,15 @@ export default function BalancesScreen() {
 const styles = StyleSheet.create({
   h1: { fontSize: 22, fontWeight: '800', color: colors.text },
   hero: {
-    backgroundColor: colors.accentText, borderRadius: 20, padding: 18, gap: 4,
-    borderBottomWidth: 4, borderBottomColor: '#0f6ea0',
+    backgroundColor: colors.primary, borderRadius: 20, padding: 18, gap: 4,
+    borderBottomWidth: 5, borderBottomColor: colors.primaryDark,
   },
   heroLabel: { color: 'rgba(255,255,255,0.85)', fontSize: 13, fontWeight: '700' },
   heroValue: { color: '#fff', fontSize: 32, fontWeight: '800' },
   heroRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
   heroSubLabel: { color: 'rgba(255,255,255,0.8)', fontSize: 11, fontWeight: '600' },
   heroSubValue: { color: '#fff', fontSize: 15, fontWeight: '800', marginTop: 1 },
-  card: { backgroundColor: colors.card, borderRadius: 16, borderWidth: 2, borderColor: colors.border, padding: 16, gap: 8 },
+  card: { backgroundColor: colors.card, borderRadius: 16, borderWidth: 2, borderColor: colors.border, borderBottomWidth: 4, padding: 16, gap: 8 },
   cardHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   cardTitle: { fontSize: 16, fontWeight: '800', color: colors.text },
   pct: { fontSize: 16, fontWeight: '800', color: colors.primaryDark },

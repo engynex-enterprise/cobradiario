@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Balances, DashboardStats } from './stats.models';
+import { Balances, DashboardStats, FinancialSummary } from './stats.models';
 
 @Injectable()
 export class StatsService {
@@ -92,6 +92,79 @@ export class StatsService {
       totalPaid: round2(Number(agg._sum.paidAmount ?? 0)),
       outstanding: round2(Number(agg._sum.balance ?? 0)),
       byCollector,
+    };
+  }
+
+  /**
+   * Resumen financiero de un período [from, to). Agrega actividad (nº abonos/créditos),
+   * distribución de ingresos cobrados (capital/interés/mora, prorrateado por allocation),
+   * medios de pago y desembolsos.
+   */
+  async financialSummary(tenantId: string, from: Date, to: Date): Promise<FinancialSummary> {
+    const db = this.prisma.forTenant(tenantId);
+    const range = { gte: from, lt: to };
+
+    const [abonos, prestamos, byMethodRaw, disbursedAgg, allocations, expensesAgg] = await Promise.all([
+      db.payment.count({ where: { status: 'COMPLETED', paidAt: range } }),
+      db.loan.count({ where: { createdAt: range, deletedAt: null } }),
+      db.payment.groupBy({
+        by: ['method'],
+        where: { status: 'COMPLETED', paidAt: range },
+        _sum: { amount: true },
+      }),
+      db.loan.aggregate({
+        where: { createdAt: range, deletedAt: null },
+        _sum: { principal: true, interestTotal: true, totalDue: true },
+      }),
+      db.paymentAllocation.findMany({
+        where: { payment: { is: { status: 'COMPLETED', paidAt: range } } },
+        include: { installment: { select: { principalPart: true, interestPart: true, lateFee: true } } },
+      }),
+      db.expense.aggregate({ where: { createdAt: range }, _sum: { amount: true } }),
+    ]);
+
+    // Prorratea cada allocation entre capital/interés/mora según la composición de su cuota.
+    let collectedCapital = 0;
+    let collectedInterest = 0;
+    let collectedLateFee = 0;
+    let totalCollected = 0;
+    for (const a of allocations) {
+      const amt = Number(a.amount);
+      totalCollected += amt;
+      const p = Number(a.installment.principalPart);
+      const i = Number(a.installment.interestPart);
+      const l = Number(a.installment.lateFee);
+      const tot = p + i + l;
+      if (tot <= 0) {
+        collectedCapital += amt; // sin composición conocida → todo a capital
+        continue;
+      }
+      collectedCapital += (amt * p) / tot;
+      collectedInterest += (amt * i) / tot;
+      collectedLateFee += (amt * l) / tot;
+    }
+
+    const byMethod = byMethodRaw.map((m) => ({
+      method: m.method,
+      amount: round2(Number(m._sum.amount ?? 0)),
+    }));
+    // Total cobrado real por pagos (por si hay pagos sin allocation aún).
+    const paymentsTotal = byMethod.reduce((s, m) => s + m.amount, 0);
+    const expensesTotal = Number(expensesAgg._sum.amount ?? 0);
+
+    return {
+      abonos,
+      prestamos,
+      totalCollected: round2(Math.max(totalCollected, paymentsTotal)),
+      collectedCapital: round2(collectedCapital),
+      collectedInterest: round2(collectedInterest),
+      collectedLateFee: round2(collectedLateFee),
+      byMethod,
+      disbursedPrincipal: round2(Number(disbursedAgg._sum.principal ?? 0)),
+      disbursedInterest: round2(Number(disbursedAgg._sum.interestTotal ?? 0)),
+      disbursedTotal: round2(Number(disbursedAgg._sum.totalDue ?? 0)),
+      expensesTotal: round2(expensesTotal),
+      netProfit: round2(collectedInterest + collectedLateFee - expensesTotal),
     };
   }
 }

@@ -32,5 +32,7 @@ function toProductModel(p: Prisma.CreditProductGetPayload<object>): ProductModel
     interestRate: Number(p.interestRate),
     frequency: p.frequency,
     termCount: p.termCount,
+    lateFeeType: p.lateFeeType,
+    lateFeeValue: Number(p.lateFeeValue),
   };
 }

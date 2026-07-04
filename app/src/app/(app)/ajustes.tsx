@@ -34,6 +34,7 @@ export default function Ajustes() {
 
       <Group title="Operación">
         <Row icon="calendar-outline" label="Cobro del día" onPress={() => router.push('/(app)/cobro')} />
+        <Row icon="receipt-outline" label="Gastos" onPress={() => router.push('/(app)/gastos')} />
         <Row icon="notifications-outline" label="Notificaciones" onPress={() => router.push('/(app)/notificaciones')} last />
       </Group>
 
@@ -103,7 +104,7 @@ function Info({ label, value, last }: { label: string; value: string; last?: boo
 const styles = StyleSheet.create({
   profile: {
     flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: colors.card,
-    borderRadius: 16, borderWidth: 2, borderColor: colors.border, padding: 16,
+    borderRadius: 16, borderWidth: 2, borderColor: colors.border, borderBottomWidth: 4, padding: 16,
   },
   avatar: { width: 56, height: 56, borderRadius: 28, backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center' },
   avatarText: { color: colors.accentText, fontWeight: '800', fontSize: 20 },
@@ -113,7 +114,7 @@ const styles = StyleSheet.create({
   roleText: { fontSize: 10, fontWeight: '800', color: colors.accentText },
   logoutIcon: { padding: 4 },
   groupTitle: { fontSize: 13, fontWeight: '800', color: colors.muted, marginLeft: 4 },
-  group: { backgroundColor: colors.card, borderRadius: 16, borderWidth: 2, borderColor: colors.border, overflow: 'hidden' },
+  group: { backgroundColor: colors.card, borderRadius: 16, borderWidth: 2, borderColor: colors.border, borderBottomWidth: 4, overflow: 'hidden' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 14 },
   rowBorder: { borderBottomWidth: 1, borderBottomColor: colors.border },
   rowIcon: { width: 34, height: 34, borderRadius: 10, backgroundColor: '#f3fbe9', alignItems: 'center', justifyContent: 'center' },

@@ -189,6 +189,8 @@ model Tenant {
   auditLogs      AuditLog[]
   tags           Tag[]
   messages       Message[]
+  managements    CollectionManagement[]
+  expenses       Expense[]
 
   @@index([status])
   @@map("tenants")
@@ -413,6 +415,7 @@ model Loan {
   installments Installment[]
   payments     Payment[]
   ledgerEntries LedgerEntry[]
+  managements  CollectionManagement[]
 
   @@unique([tenantId, code])
   @@index([tenantId, routeId, status])
@@ -674,6 +677,64 @@ model Tag {
   @@unique([tenantId, name])
   @@index([tenantId])
   @@map("tags")
+}
+
+// Gasto operativo del negocio (no ligado a un crédito): oficina, transporte, sueldos…
+model Expense {
+  id         String   @id @default(cuid())
+  tenantId   String
+  userId     String
+  authorName String
+  routeId    String?
+
+  category String // Transporte, Oficina, Sueldos, Servicios, Otro…
+  amount   Decimal  @db.Decimal(18, 2)
+  note     String?
+
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, createdAt])
+  @@map("expenses")
+}
+
+// Gestión de cobranza: registro de contactos/acciones sobre un crédito.
+model CollectionManagement {
+  id         String           @id @default(cuid())
+  tenantId   String
+  loanId     String
+  userId     String // quien registra la gestión
+  authorName String
+
+  type   ManagementType
+  result String? // Contactado, No contestó, Promesa de pago, etc.
+  note   String?
+
+  // Compromiso de pago
+  promiseAmount Decimal?  @db.Decimal(18, 2)
+  promiseDate   DateTime?
+
+  // Seguimiento programado
+  followUpDate DateTime?
+  followUpNote String?
+
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  loan   Loan   @relation(fields: [loanId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, loanId, createdAt])
+  @@map("collection_managements")
+}
+
+enum ManagementType {
+  CALL // llamada
+  VISIT // visita
+  SMS
+  WHATSAPP
+  EMAIL // correo
+  OTHER
 }
 
 // Chat interno del tenant (administradores ↔ cobradores).

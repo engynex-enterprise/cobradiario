@@ -1,8 +1,9 @@
 import { Field, Float, ID, Int, ObjectType, registerEnumType } from '@nestjs/graphql';
-import { Frequency, InterestMethod } from '@prisma/client';
+import { Frequency, InterestMethod, LateFeeType } from '@prisma/client';
 
 registerEnumType(InterestMethod, { name: 'InterestMethod' });
 registerEnumType(Frequency, { name: 'Frequency' });
+// LateFeeType ya se registra en products.inputs.
 
 @ObjectType('CreditProduct')
 export class ProductModel {
@@ -12,4 +13,6 @@ export class ProductModel {
   @Field(() => Float) interestRate!: number;
   @Field(() => Frequency) frequency!: Frequency;
   @Field(() => Int) termCount!: number;
+  @Field(() => LateFeeType, { nullable: true }) lateFeeType?: LateFeeType;
+  @Field(() => Float, { nullable: true }) lateFeeValue?: number;
 }

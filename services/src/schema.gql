@@ -89,6 +89,21 @@ input CloseCashBoxInput {
   countedBalance: Float!
 }
 
+type CollectionManagement {
+  authorName: String!
+  createdAt: DateTime!
+  followUpDate: DateTime
+  followUpNote: String
+  id: ID!
+  loanId: ID!
+  note: String
+  promiseAmount: Float
+  promiseDate: DateTime
+  result: String
+  type: ManagementType!
+  userId: ID!
+}
+
 type CollectorBalance {
   collected: Float!
   collectorId: String!
@@ -104,6 +119,13 @@ input CreateClientInput {
   phone: String
 }
 
+input CreateExpenseInput {
+  amount: Float!
+  category: String!
+  note: String
+  routeId: ID
+}
+
 input CreateLoanInput {
   clientId: ID!
   firstDueDate: DateTime
@@ -117,6 +139,17 @@ input CreateLoanInput {
   rateBasis: RateBasis
   routeId: ID
   termCount: Int
+}
+
+input CreateManagementInput {
+  followUpDate: DateTime
+  followUpNote: String
+  loanId: ID!
+  note: String
+  promiseAmount: Float
+  promiseDate: DateTime
+  result: String
+  type: ManagementType!
 }
 
 input CreateProductInput {
@@ -156,6 +189,8 @@ type CreditProduct {
   id: ID!
   interestMethod: InterestMethod!
   interestRate: Float!
+  lateFeeType: LateFeeType
+  lateFeeValue: Float
   name: String!
   termCount: Int!
 }
@@ -201,6 +236,31 @@ type DueInstallment {
 type EnqueuedJob {
   jobId: String!
   queue: String!
+}
+
+type Expense {
+  amount: Float!
+  authorName: String!
+  category: String!
+  createdAt: DateTime!
+  id: ID!
+  note: String
+  routeId: String
+}
+
+type FinancialSummary {
+  abonos: Int!
+  byMethod: [MethodAmount!]!
+  collectedCapital: Float!
+  collectedInterest: Float!
+  collectedLateFee: Float!
+  disbursedInterest: Float!
+  disbursedPrincipal: Float!
+  disbursedTotal: Float!
+  expensesTotal: Float!
+  netProfit: Float!
+  prestamos: Int!
+  totalCollected: Float!
 }
 
 enum Frequency {
@@ -284,6 +344,15 @@ input LoginInput {
   password: String!
 }
 
+enum ManagementType {
+  CALL
+  EMAIL
+  OTHER
+  SMS
+  VISIT
+  WHATSAPP
+}
+
 type Message {
   authorName: String!
   body: String!
@@ -297,13 +366,20 @@ input MessagesQueryInput {
   limit: Int = 50
 }
 
+type MethodAmount {
+  amount: Float!
+  method: String!
+}
+
 type Mutation {
   addCashMovement(input: AddCashMovementInput!): CashBox!
   assignCollector(input: AssignCollectorInput!): Route!
   closeCashBox(input: CloseCashBoxInput!): CashBox!
   createClient(input: CreateClientInput!): Client!
   createCreditProduct(input: CreateProductInput!): CreditProduct!
+  createExpense(input: CreateExpenseInput!): Expense!
   createLoan(input: CreateLoanInput!): Loan!
+  createManagement(input: CreateManagementInput!): CollectionManagement!
   createRoute(input: CreateRouteInput!): Route!
   createTag(input: CreateTagInput!): Tag!
   createTeamMember(input: CreateTeamMemberInput!): TeamMember!
@@ -399,8 +475,11 @@ type Query {
   creditProducts: [CreditProduct!]!
   dashboardStats: DashboardStats!
   dueInstallments(filter: DueFilter!): [DueInstallment!]!
+  expenses(from: DateTime, to: DateTime): [Expense!]!
+  financialSummary(from: DateTime, to: DateTime): FinancialSummary!
   loan(id: ID!): Loan!
   loans(routeId: ID): [Loan!]!
+  managements(loanId: ID!): [CollectionManagement!]!
   me: AuthUser!
   messages(query: MessagesQueryInput): [Message!]!
   myNotifications: [Notification!]!

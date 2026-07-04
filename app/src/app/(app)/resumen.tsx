@@ -49,13 +49,13 @@ export default function Resumen() {
         <Text style={styles.note}>No incluye mora ni cargos en el progreso de cobro.</Text>
       </View>
 
-      <TouchableOpacity style={styles.cta} activeOpacity={0.85} onPress={() => router.push('/(app)/balances' as never)}>
+      <TouchableOpacity style={styles.cta} activeOpacity={0.85} onPress={() => router.push('/(app)/resumen-financiero' as never)}>
         <View style={styles.ctaIcon}>
           <Ionicons name="bar-chart-outline" size={22} color="#fff" />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={styles.ctaTitle}>Ver resumen financiero</Text>
-          <Text style={styles.ctaSub}>Balance, recaudo por cobrador y estadísticas</Text>
+          <Text style={styles.ctaSub}>Ingresos, medios de pago y flujo de caja</Text>
         </View>
         <Ionicons name="chevron-forward" size={22} color="#fff" />
       </TouchableOpacity>
@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
   h1: { fontSize: 22, fontWeight: '800', color: colors.text },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   tile: {
-    flexBasis: '47%', flexGrow: 1, backgroundColor: colors.card, borderRadius: 16, borderWidth: 2,
+    flexBasis: '47%', flexGrow: 1, backgroundColor: colors.card, borderRadius: 16, borderWidth: 2, borderBottomWidth: 4,
     borderColor: colors.border, padding: 14, gap: 6,
   },
   tileIcon: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
@@ -108,8 +108,8 @@ const styles = StyleSheet.create({
   footStrong: { fontSize: 13, color: colors.text, fontWeight: '800' },
   note: { fontSize: 11, color: colors.muted },
   cta: {
-    flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.accentText,
-    borderRadius: 16, padding: 16, borderBottomWidth: 4, borderBottomColor: '#0f6ea0',
+    flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.primary,
+    borderRadius: 16, padding: 16, borderBottomWidth: 5, borderBottomColor: colors.primaryDark,
   },
   ctaIcon: { width: 42, height: 42, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
   ctaTitle: { fontSize: 16, fontWeight: '800', color: '#fff' },
