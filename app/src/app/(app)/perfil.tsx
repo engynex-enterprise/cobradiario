@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/lib/auth';
@@ -21,6 +21,14 @@ export default function Perfil() {
         </View>
         <Text style={styles.name}>{user?.fullName ?? 'Usuario'}</Text>
         <View style={styles.roleChip}><Text style={styles.roleText}>{user?.role}</Text></View>
+        <TouchableOpacity
+          style={styles.editBtn}
+          activeOpacity={0.85}
+          onPress={() => Alert.alert('Editar perfil', 'La edición de perfil estará disponible muy pronto.')}
+        >
+          <Ionicons name="create-outline" size={18} color="#fff" />
+          <Text style={styles.editText}>Editar perfil</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.card}>
@@ -51,6 +59,8 @@ const styles = StyleSheet.create({
   name: { fontSize: 20, fontWeight: '800', color: colors.text },
   roleChip: { backgroundColor: colors.accent, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
   roleText: { fontSize: 11, fontWeight: '700', color: colors.accentText },
+  editBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.primary, borderRadius: 14, paddingHorizontal: 18, paddingVertical: 10, borderBottomWidth: 4, borderBottomColor: colors.primaryDark, marginTop: 4 },
+  editText: { color: '#fff', fontWeight: '800', fontSize: 14 },
   card: { backgroundColor: colors.card, borderRadius: 16, borderWidth: 2, borderColor: colors.border, borderBottomWidth: 4, paddingHorizontal: 16 },
   field: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12, paddingVertical: 14 },
   fieldBorder: { borderBottomWidth: 2, borderBottomColor: colors.border },

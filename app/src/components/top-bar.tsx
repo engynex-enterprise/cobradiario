@@ -53,7 +53,7 @@ export function TopBar() {
       <View style={styles.totals}>
         <View style={styles.totalItem}>
           <Text style={styles.totalLabel}>Recaudado hoy</Text>
-          <Text style={[styles.totalValue, { color: colors.success }]}>{money(collected)}</Text>
+          <Text style={styles.totalValue}>{money(collected)}</Text>
         </View>
         <View style={styles.divider} />
         <View style={styles.totalItem}>
@@ -76,7 +76,7 @@ export function TopBar() {
               </View>
             </View>
             <MenuRow icon="person-outline" label="Mi perfil" onPress={() => go('/(app)/perfil')} />
-            <MenuRow icon="settings-outline" label="Ajustes" onPress={() => go('/(app)/ajustes')} />
+            <MenuRow icon="lock-closed-outline" label="Cerrar operación" onPress={() => go('/(app)/cierre')} />
             <View style={styles.sep} />
             <MenuRow icon="log-out-outline" label="Cerrar sesión" danger onPress={() => { setMenu(false); signOut(); }} />
           </Pressable>
@@ -131,11 +131,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   avatarText: { color: '#fff', fontWeight: '800', fontSize: 15 },
-  totals: { flexDirection: 'row', alignItems: 'center' },
+  totals: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.14)', borderRadius: 14, paddingVertical: 6, paddingHorizontal: 14 },
   totalItem: { alignItems: 'flex-end' },
-  totalLabel: { color: 'rgba(255,255,255,0.75)', fontSize: 10, fontWeight: '600' },
+  totalLabel: { color: '#ffffff', fontSize: 10, fontWeight: '800', opacity: 0.95 },
   totalValue: { color: '#fff', fontSize: 15, fontWeight: '800' },
-  divider: { width: 1, height: 26, backgroundColor: 'rgba(255,255,255,0.25)', marginHorizontal: 12 },
+  divider: { width: 1, height: 26, backgroundColor: 'rgba(255,255,255,0.4)', marginHorizontal: 12 },
   overlay: { flex: 1, backgroundColor: 'rgba(10,20,40,0.35)' },
   sheet: {
     position: 'absolute',

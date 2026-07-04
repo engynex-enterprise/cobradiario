@@ -26,7 +26,7 @@ export class LoansResolver {
     return this.loans.findById(user.tenantId, id);
   }
 
-  @Roles(UserRole.OWNER, UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.OWNER, UserRole.ADMIN, UserRole.MANAGER, UserRole.COLLECTOR)
   @Mutation(() => LoanModel)
   createLoan(
     @CurrentUser() user: AuthContext,

@@ -428,3 +428,19 @@ Bitácora de decisiones y cambios estructurales. Formato: fecha · tipo · descr
 - **[app]** Resumen Financiero muestra la línea **Gastos** real y la **Ganancia neta** ya descuenta gastos.
 - **[verificación]** E2E: gasto Transporte $25.000 → netProfit $162.885 (interés $187.885 − $25.000). RLS OK
   (otro tenant = 0). Typecheck services/app OK.
+
+## 2026-07-04 — Navegación stack, permisos, ajustes y Home
+- **[backend]** `createLoan` ahora permite COLLECTOR (el cobrador crea préstamos en campo). Corrige
+  "No tienes permisos para esta operación".
+- **[app]** Reestructura de navegación: tabs movidas a grupo `(tabs)`; el layout de `(app)` pasa a **Stack**
+  (headerShown:false) para que los detalles se apilen y el botón "atrás" vuelva a la vista anterior
+  (antes volvía siempre al Home). `backBehavior="history"` en las tabs.
+- **[app]** Menú del avatar: **Mi perfil / Cerrar operación / Cerrar sesión** (se quitó "Ajustes").
+  Nueva pantalla **Cerrar operación** (cierre del día con resumen: recaudado, gastos, ganancia neta).
+- **[app]** Pestaña **Ajustes** convertida en **configuración global** (interés/mora, productos, empresa,
+  moneda, formato, idioma, usuarios, rutas, operación) — ya no es ajuste del usuario.
+- **[app]** **Perfil** con botón "Editar perfil".
+- **[app]** Header: totales sobre chip translúcido para mejor contraste sobre el verde.
+- **[app]** **Home refactorizado**: saludo + KPIs (con íconos de color) + acciones rápidas
+  (Cliente/Cobro/Gasto) + **Cobros de hoy** (cuotas del día) en vez de la lista de toda la cartera.
+- **[verificación]** Cobrador crea préstamo OK (260704-BOI). Typecheck app/services OK.
