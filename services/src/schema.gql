@@ -152,10 +152,12 @@ input CreateLoanInput {
   clientId: ID!
   firstDueDate: DateTime
   frequency: Frequency
+  guarantor: GuarantorInput
   interestMethod: InterestMethod
   interestRate: Float
   lateFeeType: LateFeeType
   lateFeeValue: Float
+  nonPayDays: [Int!]
   principal: Float!
   productId: ID
   rateBasis: RateBasis
@@ -296,6 +298,20 @@ enum Frequency {
   WEEKLY
 }
 
+type Guarantor {
+  address: String
+  documentId: String
+  fullName: String!
+  phone: String
+}
+
+input GuarantorInput {
+  address: String
+  documentId: String
+  fullName: String!
+  phone: String
+}
+
 type Installment {
   amount: Float!
   chargePart: Float!
@@ -321,6 +337,8 @@ enum InterestMethod {
   CUSTOM
   DECLINING_BALANCE
   FLAT
+  GERMAN
+  INTEREST_ONLY
 }
 
 enum LateFeeType {
@@ -341,6 +359,7 @@ type Loan {
   disbursedAt: DateTime
   firstDueDate: DateTime
   frequency: Frequency
+  guarantor: Guarantor
   id: ID!
   installments: [Installment!]
   interestMethod: InterestMethod
@@ -428,6 +447,7 @@ type Mutation {
   runDueReminders(withinDays: Int! = 1): EnqueuedJob!
   runOverdueSweep: EnqueuedJob!
   sendMessage(input: SendMessageInput!): Message!
+  updateInstallment(input: UpdateInstallmentInput!): Loan!
   updateProfile(input: UpdateProfileInput!): AuthUser!
   updateTag(input: UpdateTagInput!): Tag
 }
@@ -620,6 +640,12 @@ type TeamMember {
 enum TenantType {
   INDIVIDUAL
   ORGANIZATION
+}
+
+input UpdateInstallmentInput {
+  amount: Float
+  dueDate: DateTime
+  id: ID!
 }
 
 input UpdateProfileInput {

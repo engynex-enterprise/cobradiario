@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,6 +8,7 @@ import {
   fetchLoanDetail,
   fetchManagements,
   fetchPayments,
+  updateInstallment,
   type Installment,
   type LoanDetail,
   type Management,
@@ -60,6 +61,7 @@ export default function LoanDetailScreen() {
   const [info, setInfo] = useState(false);
   const [menu, setMenu] = useState(false);
   const [gestion, setGestion] = useState(false);
+  const [editInst, setEditInst] = useState<Installment | null>(null);
 
   const load = useCallback(() => {
     if (!id) return;
@@ -81,6 +83,11 @@ export default function LoanDetailScreen() {
     if (!id) return;
     setGestion(false);
     try { await createManagement({ loanId: id, ...input }); load(); } catch { /* noop */ }
+  }
+  async function saveInstallment(instId: string, amount: number, dueDate?: string) {
+    setEditInst(null);
+    try { await updateInstallment({ id: instId, amount, dueDate }); load(); }
+    catch (e) { Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo editar la cuota'); }
   }
 
   const split = useMemo(() => {
@@ -153,7 +160,7 @@ export default function LoanDetailScreen() {
             <FilterChip label="Todas" color={colors.accentText} bg={colors.accent} active={filter === 'ALL'} onPress={() => setFilter('ALL')} />
           </View>
           <ScrollView contentContainerStyle={{ padding: 16, gap: 10, paddingBottom: 110 }}>
-            {filtered.length === 0 ? <Text style={styles.empty}>Sin cuotas en este filtro.</Text> : filtered.map((it) => <InstallmentCard key={it.id} it={it} />)}
+            {filtered.length === 0 ? <Text style={styles.empty}>Sin cuotas en este filtro.</Text> : filtered.map((it) => <InstallmentCard key={it.id} it={it} onEdit={it.paidAmount === 0 ? () => setEditInst(it) : undefined} />)}
           </ScrollView>
           <FloatingBtn icon="cash-outline" label="Abonar" onPress={() => setAbono(true)} bottom={insets.bottom} />
         </>
@@ -248,6 +255,15 @@ export default function LoanDetailScreen() {
               <InfoRow label="Prestado + intereses" value={money(loan.totalDue)} />
               <InfoRow label="Total abonado" value={money(loan.paidAmount)} />
               <View style={styles.infoDivider} />
+              {loan.guarantor?.fullName ? (
+                <>
+                  <View style={styles.abDivider} />
+                  <InfoRow label="Fiador" value={loan.guarantor.fullName} />
+                  {loan.guarantor.documentId ? <InfoRow label="Documento fiador" value={loan.guarantor.documentId} /> : null}
+                  {loan.guarantor.phone ? <InfoRow label="Teléfono fiador" value={loan.guarantor.phone} /> : null}
+                  <View style={styles.abDivider} />
+                </>
+              ) : null}
               <InfoRow label="Deuda a Capital" value={money(loan.principal - split.capPaid)} strong />
               <InfoRow label="Intereses Pendientes" value={money(loan.interestTotal - split.intPaid)} strong />
               <InfoRow label="Saldo Total" value={money(loan.balance)} strong />
@@ -272,6 +288,7 @@ export default function LoanDetailScreen() {
 
       <AbonoModal loan={loan} visible={abono} onClose={() => setAbono(false)} onConfirm={confirmAbono} />
       <GestionModal visible={gestion} onClose={() => setGestion(false)} onSave={saveGestion} />
+      <EditInstallmentModal inst={editInst} onClose={() => setEditInst(null)} onSave={saveInstallment} />
     </View>
   );
 }
@@ -316,7 +333,7 @@ function FloatingBtn({ icon, label, onPress, bottom = 0 }: { icon: keyof typeof 
     </View>
   );
 }
-function InstallmentCard({ it }: { it: Installment }) {
+function InstallmentCard({ it, onEdit }: { it: Installment; onEdit?: () => void }) {
   const base = it.amount + it.lateFee;
   const unpaid = Math.max(0, base - it.paidAmount);
   const ratio = base > 0 ? unpaid / base : 0;
@@ -344,7 +361,48 @@ function InstallmentCard({ it }: { it: Installment }) {
           <Text style={styles.instPaid}>Abonado {money(it.paidAmount)}</Text>
         </View>
       </View>
+      {onEdit ? (
+        <TouchableOpacity style={styles.instEdit} onPress={onEdit} hitSlop={8}>
+          <Ionicons name="create-outline" size={18} color={colors.sage ?? colors.primaryDark} />
+        </TouchableOpacity>
+      ) : null}
     </View>
+  );
+}
+
+function EditInstallmentModal({ inst, onClose, onSave }: { inst: Installment | null; onClose: () => void; onSave: (id: string, amount: number, dueDate?: string) => void }) {
+  const [amount, setAmount] = useState(0);
+  const [date, setDate] = useState('');
+  useEffect(() => {
+    if (inst) {
+      setAmount(Math.round(inst.amount));
+      setDate(new Date(inst.dueDate).toISOString().slice(0, 10));
+    }
+  }, [inst]);
+  if (!inst) return null;
+  const nf = new Intl.NumberFormat('es-CO');
+  const iso = /^\d{4}-\d{2}-\d{2}$/.test(date.trim()) ? new Date(`${date.trim()}T12:00:00Z`).toISOString() : undefined;
+  return (
+    <Modal visible={!!inst} transparent animationType="fade" onRequestClose={onClose}>
+      <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={onClose}>
+        <TouchableOpacity activeOpacity={1} style={styles.editCard}>
+          <Text style={styles.infoTitle}>Editar cuota #{inst.sequence}</Text>
+          <Text style={styles.editLabel}>Valor de la cuota</Text>
+          <TextInput
+            style={styles.editInput}
+            keyboardType="number-pad"
+            value={amount > 0 ? nf.format(amount) : ''}
+            onChangeText={(t) => setAmount(Number(t.replace(/[^\d]/g, '')) || 0)}
+          />
+          <Text style={styles.editLabel}>Fecha de vencimiento (AAAA-MM-DD)</Text>
+          <TextInput style={styles.editInput} value={date} onChangeText={setDate} placeholder="2026-07-10" placeholderTextColor={colors.muted} />
+          <TouchableOpacity style={[styles.fab, { alignSelf: 'stretch', justifyContent: 'center', marginTop: 8 }, amount <= 0 && { opacity: 0.5 }]} disabled={amount <= 0} onPress={() => onSave(inst.id, amount, iso)}>
+            <Ionicons name="save-outline" size={18} color="#fff" />
+            <Text style={styles.fabText}>Guardar cambios</Text>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </TouchableOpacity>
+    </Modal>
   );
 }
 function AbRow({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
@@ -407,6 +465,10 @@ const styles = StyleSheet.create({
   instLabelStrong: { fontSize: 14, color: colors.text, fontWeight: '800' },
   instValue: { fontSize: 13, fontWeight: '700', color: colors.text },
   instTotal: { fontSize: 15, fontWeight: '800', color: colors.primaryDark },
+  instEdit: { position: 'absolute', top: 10, right: 10, width: 30, height: 30, borderRadius: 10, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' },
+  editCard: { backgroundColor: colors.card, borderRadius: 20, padding: 20, gap: 8 },
+  editLabel: { fontSize: 13, fontWeight: '800', color: colors.text, marginTop: 4 },
+  editInput: { backgroundColor: colors.card, borderWidth: 2, borderColor: colors.border, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, fontSize: 16, fontWeight: '700', color: colors.text },
   instFoot: { flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 2, borderTopColor: colors.border, paddingTop: 8, marginTop: 4 },
   instDue: { fontSize: 12, color: colors.muted, fontWeight: '700' },
   instPaid: { fontSize: 12, color: colors.primaryDark, fontWeight: '800' },

@@ -57,13 +57,13 @@ export default function LoanDetailPage() {
   }, [load]);
 
   if (!loan) {
-    return <div className="mx-auto max-w-5xl p-6 text-sm text-muted-foreground">Cargando…</div>;
+    return <div className="p-6 text-sm text-muted-foreground">Cargando…</div>;
   }
 
   const progress = loan.totalDue > 0 ? Math.round((loan.paidAmount / loan.totalDue) * 100) : 0;
 
   return (
-    <div className="mx-auto max-w-5xl p-4 sm:p-6">
+    <div className="p-4 sm:p-6">
       <Button variant="ghost" size="sm" className="mb-4" onClick={() => router.push('/dashboard/prestamos')}>
         <ArrowLeft className="h-4 w-4" /> Volver a la cartera
       </Button>
@@ -92,6 +92,7 @@ export default function LoanDetailPage() {
             value={loan.termCount != null ? `${loan.termCount} · ${FREQ_LABEL[loan.frequency ?? ''] ?? loan.frequency ?? ''}` : '—'}
           />
           <Term label="Mora por cuota" value={loan.lateFeeValue ? `${Math.round(loan.lateFeeValue * 100)}%` : 'Sin mora'} />
+          {loan.chargesTotal ? <Term label="Cargos adicionales" value={money(loan.chargesTotal)} /> : null}
         </CardContent>
       </Card>
 
@@ -118,6 +119,7 @@ export default function LoanDetailPage() {
                 <TableHead>Cuota</TableHead>
                 <TableHead>Capital</TableHead>
                 <TableHead>Interés</TableHead>
+                <TableHead>Cargos</TableHead>
                 <TableHead>Mora</TableHead>
                 <TableHead>Pagado</TableHead>
               </TableRow>
@@ -133,6 +135,7 @@ export default function LoanDetailPage() {
                   <TableCell>{money(it.amount)}</TableCell>
                   <TableCell className="text-muted-foreground">{money(it.principalPart)}</TableCell>
                   <TableCell className="text-muted-foreground">{money(it.interestPart)}</TableCell>
+                  <TableCell className="text-muted-foreground">{money(it.chargePart)}</TableCell>
                   <TableCell className={it.lateFee > 0 ? 'text-destructive' : 'text-muted-foreground'}>
                     {money(it.lateFee)}
                   </TableCell>

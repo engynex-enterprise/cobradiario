@@ -43,7 +43,7 @@ export default function EtiquetasPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
+    <div className="space-y-6 p-4 sm:p-6">
       <PageHeader
         title="Etiquetas"
         description="Clasifica clientes y créditos con etiquetas de color (buen pagador, moroso, zona…). Créalas aquí y reutilízalas en toda la operación."

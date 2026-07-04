@@ -1,7 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (&:is(.dark, .night) *);
 
 /* Mapea los tokens (variables CSS) a utilidades de Tailwind v4 — igual que orus-pos. */
 @theme inline {
@@ -124,6 +124,42 @@
   --sidebar-border: #37464f;
   --sidebar-ring: #58cc02;
   --canvas: #0d171b;
+}
+
+/* Modo Noche (OLED negro) — se combina con .dark (class="dark night"); va después
+   para sobrescribir solo las superficies a negro, conservando el verde de marca. */
+.night {
+  --background: #000000;
+  --foreground: #e8ebef;
+  --card: #0b0b0d;
+  --card-foreground: #e8ebef;
+  --popover: #0b0b0d;
+  --popover-foreground: #e8ebef;
+  --primary: #58cc02;
+  --primary-foreground: #ffffff;
+  --primary-base: #3c8000;
+  --secondary: #15161a;
+  --secondary-foreground: #b8f28a;
+  --muted: #141519;
+  --muted-foreground: #98a2ad;
+  --accent: #12303c;
+  --accent-foreground: #49c0f8;
+  --destructive: #ff5b5b;
+  --destructive-foreground: #ffffff;
+  --destructive-base: #b3232c;
+  --border: #24262b;
+  --input: #24262b;
+  --ring: #58cc02;
+  --sidebar: #000000;
+  --sidebar-foreground: #c2cad3;
+  --sidebar-primary: #58cc02;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #15161a;
+  --sidebar-accent-foreground: #49c0f8;
+  --sidebar-border: #24262b;
+  --sidebar-ring: #58cc02;
+  --canvas: #000000;
+  color-scheme: dark;
 }
 
 .app-canvas,

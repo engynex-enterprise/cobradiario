@@ -39,14 +39,14 @@ export default function ReportesPage() {
   }, []);
 
   if (!stats) {
-    return <div className="mx-auto max-w-5xl p-6 text-sm text-muted-foreground">Cargando…</div>;
+    return <div className="p-6 text-sm text-muted-foreground">Cargando…</div>;
   }
 
   const collection = stats.collectionLast7Days.map((d) => ({ label: dayLabel(d.date), amount: d.amount }));
   const byStatus = stats.portfolioByStatus.map((s) => ({ label: s.status, count: s.count, balance: s.balance }));
 
   return (
-    <div className="mx-auto max-w-5xl p-4 sm:p-6">
+    <div className="p-4 sm:p-6">
       <PageHeader
         icon={BarChart3}
         title="Reportes"

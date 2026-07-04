@@ -18,6 +18,48 @@ export class LoanChargeInput {
 }
 
 @InputType()
+export class UpdateInstallmentInput {
+  @Field(() => ID)
+  @IsString()
+  id!: string;
+
+  @Field(() => Float, { nullable: true })
+  @IsOptional()
+  @IsPositive()
+  amount?: number;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  dueDate?: Date;
+}
+
+@InputType()
+export class GuarantorInput {
+  @Field()
+  @IsString()
+  @MaxLength(120)
+  fullName!: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  documentId?: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  phone?: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  address?: string;
+}
+
+@InputType()
 export class CreateLoanInput {
   @Field(() => ID)
   @IsString()
@@ -89,6 +131,19 @@ export class CreateLoanInput {
   @ValidateNested({ each: true })
   @Type(() => LoanChargeInput)
   charges?: LoanChargeInput[];
+
+  /** Días de la semana sin cobro (0=dom … 6=sáb). Las cuotas saltan esos días. */
+  @Field(() => [Int], { nullable: true })
+  @IsOptional()
+  @IsArray()
+  nonPayDays?: number[];
+
+  /** Datos del fiador/garante (opcional). */
+  @Field(() => GuarantorInput, { nullable: true })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => GuarantorInput)
+  guarantor?: GuarantorInput;
 
   /** Fecha de la primera cuota. Si se omite, se usa el día de hoy. */
   @Field({ nullable: true })

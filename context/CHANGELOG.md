@@ -526,3 +526,67 @@ Bitácora de decisiones y cambios estructurales. Formato: fecha · tipo · descr
   muestra cargos.
 - **[verificación]** E2E: 500.000 + 20% + cargos 15.000 → total 615.000, 20 cuotas de 30.750 (25.000+5.000+750)
   suman exacto. Typecheck services/app/web OK.
+
+## 2026-07-04 — Web: cargos en detalle + sidebar recategorizado
+- **[web]** Detalle de crédito: término "Cargos adicionales" + columna "Cargos" en el plan de cuotas.
+- **[web]** Sidebar reorganizado por flujo: Inicio, **Cobro del día** (enlace directo), grupos
+  **Cartera** (Clientes/Préstamos/Pagos/Recordatorios), **Caja y finanzas** (Caja/Movimientos/Gastos/Bases),
+  **Análisis** (Balances/Reportes) y **Configuración** (Rutas/Equipo/Productos/Etiquetas).
+- **[web]** **Notificaciones y Chat movidos al header** (íconos a la derecha, junto al tema). Salieron del sidebar.
+
+## 2026-07-04 — Fiador, días sin cobro, sidebar (ayuda/planes)
+- **[db]** `Loan.guarantor Json?` (migración). `Installment.chargePart` ya existía.
+- **[engine]** `CreditTerms.nonPayDays` + `dueDateFor` salta los días excluidos (DAILY cuenta solo hábiles;
+  otras frecuencias avanzan al siguiente hábil). Paquete credit-engine recompilado (dist).
+- **[backend]** `CreateLoanInput`: `guarantor {fullName,documentId,phone,address}` y `nonPayDays [Int]`.
+  `Loan` expone `guarantor`. Persistencia + snapshot de nonPayDays en terms.
+- **[app]** Nuevo crédito: sección **Días sin cobro** (chips Lun–Dom) y **Datos del fiador**. Detalle del
+  crédito muestra el fiador en el modal de info.
+- **[web]** Sidebar: **quitado Perfil** (ya está en el menú de usuario al pie), añadidos **Planes y
+  facturación** y **Centro de ayuda** al pie (estilo orus-pos). Nuevas páginas `/dashboard/planes`
+  (plan actual + consumo + ORO/Bronce/Gratis) y `/dashboard/ayuda` (FAQ + soporte).
+- **[verificación]** E2E: crédito diario con nonPayDays [Sáb,Dom] salta el fin de semana (vie→lun→…); fiador
+  persiste. Typecheck services/app/web OK.
+
+## 2026-07-04 — Sistemas de amortización (app)
+- **[app]** Nuevo crédito: selector **Sistema de amortización** — "Interés fijo" (FLAT, gota a gota) y
+  "Cuota fija (francés)" (DECLINING_BALANCE). El interés/cuota del resumen se calcula según el método
+  (francés usa fórmula de amortización); envía interestMethod + rateBasis (PER_LOAN/PER_PERIOD).
+- **[verificación]** Motor DECLINING_BALANCE OK (cuota fija 23.097, interés decreciente).
+- **[pendiente]** Sistemas Alemán (capital constante) y Estadounidense (solo interés + balloon) requieren
+  estrategias nuevas en el motor — anotados para una iteración futura.
+
+## 2026-07-04 — Web: modo noche (light/dark/night)
+- **[web]** `theme-provider` con 3 temas (light/dark/night); night mapea a class="dark night" para reusar
+  el variant dark y sobrescribir superficies a negro OLED conservando el verde. `.night` en globals.css.
+- **[web]** `ThemeToggle` cicla Claro → Oscuro → Noche (Sun/Moon/MoonStar).
+
+## 2026-07-04 — Sistemas de amortización Alemán y Estadounidense + paridad web
+- **[engine]** `InterestMethod` añade `GERMAN` (capital constante, cuota decreciente) e `INTEREST_ONLY`
+  (solo interés + capital balloon al final). Estrategias en schedule.ts con helper perPeriodRate. Enum
+  Prisma migrado. Paquete recompilado.
+- **[app/web]** Selector "Sistema de amortización" con los 4 sistemas (Interés fijo, Francés, Alemán,
+  Solo interés); el resumen calcula interés/cuota por método. Web create-loan-dialog con paridad total
+  (sistema + días sin cobro + fiador).
+- **[verificación]** E2E: Alemán 100k/5/5% → cuotas 25k→21k (cap 20k fijo), total 115k; Solo interés →
+  4×5k + 105k balloon, total 125k. Ambos cuadran exacto. Typecheck services/app/web OK.
+
+## 2026-07-04 — Cuota editable
+- **[backend]** Mutation `updateInstallment(id, amount?, dueDate?)` — solo cuotas sin abonos; recalcula
+  totalDue y saldo del crédito a partir de la suma de cuotas (transacción con RLS).
+- **[app]** Detalle de crédito: botón editar en cuotas sin abono → modal (valor + fecha de vencimiento).
+- **[verificación]** E2E: editar cuota #1 a 50.000 → total recalculado 146.000, saldo actualizado. Typecheck OK.
+- **[nota]** Movimientos, Caja y Recordatorios de la web ya estaban funcionales (cashMovements/reminders/
+  cashbox), no eran placeholders.
+
+## 2026-07-04 — Fixes hidratación y modo noche
+- **[web]** `suppressHydrationWarning` también en `<body>` (extensiones del navegador inyectan atributos
+  como `cz-shortcut-listen` → warning de hidratación benigno).
+- **[web]** Modo noche: se quitó el `value` compuesto `'dark night'` de next-themes (rompía classList.remove
+  con InvalidCharacterError). Ahora `night` es clase única con paleta `.night` completa, y el variant
+  Tailwind se extendió a `.dark, .night`.
+
+## 2026-07-04 — Sub-header full-bleed
+- **[web]** Se quitó `mx-auto max-w-*` de los contenedores de las 21 páginas del dashboard. El `PageHeader`
+  (sticky, con márgenes negativos) ahora ocupa todo el ancho del área de contenido: toca el sidebar y el
+  borde derecho. Título, descripción y acciones ya viven dentro del sub-header. Contenido a ancho completo.

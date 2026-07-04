@@ -41,7 +41,7 @@ export default function CobroPage() {
   const total = items.reduce((s, i) => s + (i.amount + i.lateFee - i.paidAmount), 0);
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6">
+    <div className="space-y-6 p-4 sm:p-6">
       <PageHeader
         title="Cobro del día"
         description="Cuotas a gestionar en campo: las que vencen hoy, las que ya están vencidas (con mora) y las próximas a vencer. Usa las pestañas para cambiar de vista."

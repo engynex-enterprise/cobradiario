@@ -146,6 +146,8 @@ export function createLoan(input: {
   lateFeeType?: string;
   lateFeeValue?: number;
   charges?: { concept: string; amount: number }[];
+  nonPayDays?: number[];
+  guarantor?: { fullName: string; documentId?: string; phone?: string; address?: string };
   productId?: string;
   routeId?: string;
   firstDueDate?: string;
@@ -154,6 +156,13 @@ export function createLoan(input: {
     `mutation($i: CreateLoanInput!) {
       createLoan(input: $i) { id status principal interestTotal totalDue paidAmount balance clientId }
     }`,
+    { i: input },
+  );
+}
+
+export function updateInstallment(input: { id: string; amount?: number; dueDate?: string }) {
+  return gql<{ updateInstallment: { id: string } }>(
+    `mutation($i: UpdateInstallmentInput!) { updateInstallment(input: $i) { id } }`,
     { i: input },
   );
 }
@@ -333,6 +342,7 @@ export interface LoanDetail extends Loan {
   frequency?: string;
   lateFeeValue?: number;
   chargesTotal?: number;
+  guarantor?: { fullName: string; documentId?: string; phone?: string; address?: string };
   disbursedAt?: string;
   firstDueDate?: string;
   installments: Installment[];
@@ -343,6 +353,7 @@ export function fetchLoanDetail(id: string) {
       loan(id: $id) {
         id code status principal interestTotal totalDue paidAmount balance clientId clientName routeName
         termCount interestRate interestMethod frequency lateFeeValue chargesTotal disbursedAt firstDueDate
+        guarantor { fullName documentId phone address }
         installments { id sequence status dueDate amount principalPart interestPart chargePart lateFee paidAmount }
       }
     }`,

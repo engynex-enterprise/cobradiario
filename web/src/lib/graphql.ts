@@ -203,6 +203,8 @@ export function createLoan(input: {
   lateFeeType?: string;
   lateFeeValue?: number;
   charges?: { concept: string; amount: number }[];
+  nonPayDays?: number[];
+  guarantor?: { fullName: string; documentId?: string; phone?: string; address?: string };
   productId?: string;
   routeId?: string;
 }) {

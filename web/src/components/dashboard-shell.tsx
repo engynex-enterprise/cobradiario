@@ -9,8 +9,8 @@ import { cn } from '@/lib/utils';
 import {
   Home, Users, HandCoins, Banknote, CalendarCheck, ArrowLeftRight, Receipt, Coins, Scale,
   Layers, Route, Network, Package, Tags, BellRing, Bell, MessageCircle, BarChart3, UserRound,
-  Landmark, LogOut, Wallet, Settings, MessagesSquare, ChevronDown, ChevronsUpDown, Search,
-  PanelLeftClose, PanelLeftOpen, type LucideIcon,
+  Landmark, LogOut, Wallet, Settings, ChevronDown, ChevronsUpDown, Search,
+  PanelLeftClose, PanelLeftOpen, CreditCard, HelpCircle, type LucideIcon,
 } from 'lucide-react';
 
 type NavLink = { kind: 'link'; href: string; label: string; icon: LucideIcon; keywords?: string };
@@ -19,27 +19,34 @@ type NavNode = NavLink | NavGroup;
 
 const NAV: NavNode[] = [
   { kind: 'link', href: '/dashboard', label: 'Inicio', icon: Home, keywords: 'home dashboard' },
+  { kind: 'link', href: '/dashboard/cobro', label: 'Cobro del día', icon: CalendarCheck, keywords: 'ruta hoy vencidas' },
   {
     kind: 'group', label: 'Cartera', icon: HandCoins,
     children: [
       { href: '/dashboard/clientes', label: 'Clientes' },
       { href: '/dashboard/prestamos', label: 'Préstamos' },
       { href: '/dashboard/pagos', label: 'Pagos' },
-      { href: '/dashboard/cobro', label: 'Cobro del día' },
+      { href: '/dashboard/recordatorios', label: 'Recordatorios' },
     ],
   },
   {
-    kind: 'group', label: 'Finanzas', icon: Wallet,
+    kind: 'group', label: 'Caja y finanzas', icon: Wallet,
     children: [
+      { href: '/dashboard/caja', label: 'Caja' },
       { href: '/dashboard/movimientos', label: 'Movimientos' },
       { href: '/dashboard/gastos', label: 'Gastos' },
-      { href: '/dashboard/caja', label: 'Caja' },
-      { href: '/dashboard/balances', label: 'Balances' },
       { href: '/dashboard/bases', label: 'Bases' },
     ],
   },
   {
-    kind: 'group', label: 'Gestión', icon: Settings,
+    kind: 'group', label: 'Análisis', icon: BarChart3,
+    children: [
+      { href: '/dashboard/balances', label: 'Balances' },
+      { href: '/dashboard/reportes', label: 'Reportes' },
+    ],
+  },
+  {
+    kind: 'group', label: 'Configuración', icon: Settings,
     children: [
       { href: '/dashboard/rutas', label: 'Rutas' },
       { href: '/dashboard/equipo', label: 'Equipo' },
@@ -47,15 +54,6 @@ const NAV: NavNode[] = [
       { href: '/dashboard/etiquetas', label: 'Etiquetas' },
     ],
   },
-  {
-    kind: 'group', label: 'Comunicación', icon: MessagesSquare,
-    children: [
-      { href: '/dashboard/recordatorios', label: 'Recordatorios' },
-      { href: '/dashboard/notificaciones', label: 'Notificaciones' },
-      { href: '/dashboard/chat', label: 'Chat' },
-    ],
-  },
-  { kind: 'link', href: '/dashboard/reportes', label: 'Reportes', icon: BarChart3, keywords: 'resumen analitica' },
 ];
 
 const ICON_BY_HREF: Record<string, LucideIcon> = {
@@ -113,6 +111,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           <GlobalSearch />
         </div>
         <div className="flex flex-1 items-center justify-end gap-1.5">
+          <button title="Chat" onClick={() => router.push('/dashboard/chat')} className="flex size-11 items-center justify-center rounded-2xl text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground">
+            <MessageCircle className="size-6" />
+          </button>
           <button title="Notificaciones" onClick={() => router.push('/dashboard/notificaciones')} className="flex size-11 items-center justify-center rounded-2xl text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground">
             <Bell className="size-6" />
           </button>
@@ -133,7 +134,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             )}
           </nav>
           <div className="space-y-0.5 border-t border-sidebar-border p-3">
-            <SidebarLink href="/dashboard/perfil" label="Perfil" icon={UserRound} active={linkActive(pathname, '/dashboard/perfil')} collapsed={collapsed} />
+            <SidebarLink href="/dashboard/planes" label="Planes y facturación" icon={CreditCard} active={linkActive(pathname, '/dashboard/planes')} collapsed={collapsed} />
+            <SidebarLink href="/dashboard/ayuda" label="Centro de ayuda" icon={HelpCircle} active={linkActive(pathname, '/dashboard/ayuda')} collapsed={collapsed} />
             <UserMenu name={user.fullName} email={user.email} role={user.role} collapsed={collapsed} onLogout={() => { signOut(); router.replace('/login'); }} />
           </div>
         </aside>

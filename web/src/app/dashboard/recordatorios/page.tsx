@@ -38,7 +38,7 @@ export default function RecordatoriosPage() {
   }, []);
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
+    <div className="space-y-6 p-4 sm:p-6">
       <PageHeader
         title="Recordatorios"
         description="Avisos programados de cuotas por vencer. El sistema los genera automáticamente cada día para anticipar el cobro y reducir la mora."

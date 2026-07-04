@@ -24,7 +24,7 @@ export default function EquipoPage() {
   useEffect(() => load(), [load]);
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 p-4 sm:p-6">
+    <div className="space-y-6 p-4 sm:p-6">
       <PageHeader
         title="Equipo"
         description="Usuarios de tu organización y sus roles (dueño, administrador, supervisor, cobrador). Crea cobradores para asignarlos a rutas y que registren abonos desde la app."

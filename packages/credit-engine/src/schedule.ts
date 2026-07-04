@@ -32,6 +32,10 @@ export function generateSchedule(
       return flatSchedule(input);
     case 'DECLINING_BALANCE':
       return decliningBalanceSchedule(input);
+    case 'GERMAN':
+      return germanSchedule(input);
+    case 'INTEREST_ONLY':
+      return interestOnlySchedule(input);
     case 'CUSTOM': {
       const key = String(terms.config?.strategy ?? '');
       const strategy = strategies?.[key];
@@ -92,7 +96,7 @@ function flatSchedule(input: ScheduleInput): Schedule {
 
     installments.push({
       sequence: i + 1,
-      dueDate: dueDateFor(firstDueDate, i, terms.frequency, terms.customIntervalDays),
+      dueDate: dueDateFor(firstDueDate, i, terms.frequency, terms.customIntervalDays, terms.nonPayDays),
       amount: toMoney(amount),
       interestPart: toMoney(interestPart),
       principalPart: toMoney(principalPart),
@@ -166,7 +170,7 @@ function decliningBalanceSchedule(input: ScheduleInput): Schedule {
 
     installments.push({
       sequence: k + 1,
-      dueDate: dueDateFor(firstDueDate, k, terms.frequency, terms.customIntervalDays),
+      dueDate: dueDateFor(firstDueDate, k, terms.frequency, terms.customIntervalDays, terms.nonPayDays),
       amount: toMoney(amount),
       interestPart: toMoney(interestPart),
       principalPart: toMoney(principalPart),
@@ -180,4 +184,86 @@ function decliningBalanceSchedule(input: ScheduleInput): Schedule {
     totalDue: toMoney(totalDue),
     installments,
   };
+}
+
+/** Tasa por período según la base configurada. */
+function perPeriodRate(terms: ScheduleInput['terms']): Decimal {
+  switch (terms.rateBasis) {
+    case 'PER_PERIOD':
+      return D(terms.interestRate);
+    case 'ANNUAL':
+      return D(terms.interestRate).div(periodsPerYear(terms.frequency, terms.periodsPerYear));
+    case 'PER_LOAN':
+    default:
+      return D(terms.interestRate).div(terms.termCount);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// GERMAN — amortización de capital constante (cuota decreciente)
+// ---------------------------------------------------------------------------
+function germanSchedule(input: ScheduleInput): Schedule {
+  const { principal, firstDueDate, terms } = input;
+  const n = terms.termCount;
+  const P = D(principal);
+  const i = perPeriodRate(terms);
+  const basePrincipal = D(toMoney(P.div(n)));
+
+  const installments: ScheduledInstallment[] = [];
+  let balance = P;
+  let interestTotal = D(0);
+
+  for (let k = 0; k < n; k++) {
+    const isLast = k === n - 1;
+    const interestPart = D(toMoney(balance.mul(i)));
+    // La última cuota amortiza el saldo restante (absorbe redondeo).
+    const principalPart = isLast ? balance : basePrincipal;
+    const amount = principalPart.plus(interestPart);
+    balance = balance.minus(principalPart);
+    interestTotal = interestTotal.plus(interestPart);
+
+    installments.push({
+      sequence: k + 1,
+      dueDate: dueDateFor(firstDueDate, k, terms.frequency, terms.customIntervalDays, terms.nonPayDays),
+      amount: toMoney(amount),
+      interestPart: toMoney(interestPart),
+      principalPart: toMoney(principalPart),
+    });
+  }
+
+  const totalDue = installments.reduce((s, it) => s.plus(it.amount), D(0));
+  return { principal: toMoney(P), interestTotal: toMoney(interestTotal), totalDue: toMoney(totalDue), installments };
+}
+
+// ---------------------------------------------------------------------------
+// INTEREST_ONLY — "estadounidense": solo interés cada período; capital al final (balloon)
+// ---------------------------------------------------------------------------
+function interestOnlySchedule(input: ScheduleInput): Schedule {
+  const { principal, firstDueDate, terms } = input;
+  const n = terms.termCount;
+  const P = D(principal);
+  const i = perPeriodRate(terms);
+  const interestPerPeriod = D(toMoney(P.mul(i)));
+
+  const installments: ScheduledInstallment[] = [];
+  let interestTotal = D(0);
+
+  for (let k = 0; k < n; k++) {
+    const isLast = k === n - 1;
+    const interestPart = interestPerPeriod;
+    const principalPart = isLast ? P : D(0); // el capital se liquida en la última cuota
+    const amount = principalPart.plus(interestPart);
+    interestTotal = interestTotal.plus(interestPart);
+
+    installments.push({
+      sequence: k + 1,
+      dueDate: dueDateFor(firstDueDate, k, terms.frequency, terms.customIntervalDays, terms.nonPayDays),
+      amount: toMoney(amount),
+      interestPart: toMoney(interestPart),
+      principalPart: toMoney(principalPart),
+    });
+  }
+
+  const totalDue = installments.reduce((s, it) => s.plus(it.amount), D(0));
+  return { principal: toMoney(P), interestTotal: toMoney(interestTotal), totalDue: toMoney(totalDue), installments };
 }

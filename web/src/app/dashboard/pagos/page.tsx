@@ -47,7 +47,7 @@ export default function PagosPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6">
+    <div className="space-y-6 p-4 sm:p-6">
       <PageHeader
         title="Pagos"
         description="Historial de abonos recibidos en todos los créditos: monto, método, cobrador y fecha. Cada abono se descuenta del saldo del crédito y alimenta la caja del cobrador."

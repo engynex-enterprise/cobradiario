@@ -90,7 +90,7 @@ export default function PrestamosPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6">
+    <div className="space-y-6 p-4 sm:p-6">
       <PageHeader
         title="Préstamos"
         description="La cartera de créditos: cada préstamo con su cliente, ruta, total a pagar, abonado y saldo. Crea nuevos créditos, búscalos, ordénalos y registra abonos. Se actualiza en tiempo real."

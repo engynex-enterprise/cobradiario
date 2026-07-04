@@ -44,7 +44,7 @@ export default function ProductosPage() {
   useEffect(() => load(), [load]);
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
+    <div className="space-y-6 p-4 sm:p-6">
       <PageHeader
         title="Productos de crédito"
         description="Plantillas configurables de interés, plazo y mora. Al crear un crédito eliges un producto y sus términos se aplican y quedan congelados en ese crédito."

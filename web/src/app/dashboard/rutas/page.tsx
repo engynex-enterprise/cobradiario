@@ -63,7 +63,7 @@ export default function RutasPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
+    <div className="space-y-6 p-4 sm:p-6">
       <PageHeader
         title="Rutas"
         description="Zonas de cobro que agrupan créditos y se asignan a uno o varios cobradores. Sirven para organizar el trabajo en campo y filtrar la cartera por ruta."

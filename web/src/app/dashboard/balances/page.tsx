@@ -18,13 +18,13 @@ export default function BalancesPage() {
   }, []);
 
   if (!data) {
-    return <div className="mx-auto max-w-5xl p-6 text-sm text-muted-foreground">Cargando…</div>;
+    return <div className="p-6 text-sm text-muted-foreground">Cargando…</div>;
   }
 
   const collectedPct = data.totalDue > 0 ? Math.round((data.totalPaid / data.totalDue) * 100) : 0;
 
   return (
-    <div className="mx-auto max-w-5xl p-4 sm:p-6">
+    <div className="p-4 sm:p-6">
       <PageHeader
         icon={Scale}
         title="Balances"

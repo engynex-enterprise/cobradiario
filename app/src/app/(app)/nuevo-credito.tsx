@@ -38,11 +38,19 @@ export default function NuevoCredito() {
   const [interestPct, setInterestPct] = useState(20);
   const [moraPct, setMoraPct] = useState(0);
   const [freq, setFreq] = useState<Freq>('DAILY');
+  const [method, setMethod] = useState<'FLAT' | 'DECLINING_BALANCE' | 'GERMAN' | 'INTEREST_ONLY'>('FLAT');
 
   // Cargos adicionales
   const [charges, setCharges] = useState<{ concept: string; amount: number }[]>([]);
   const [chgConcept, setChgConcept] = useState('');
   const [chgAmount, setChgAmount] = useState(0);
+
+  // Días sin cobro (0=dom … 6=sáb) y fiador
+  const [nonPayDays, setNonPayDays] = useState<number[]>([]);
+  const [gName, setGName] = useState('');
+  const [gDoc, setGDoc] = useState('');
+  const [gPhone, setGPhone] = useState('');
+  const toggleDay = (d: number) => setNonPayDays((xs) => (xs.includes(d) ? xs.filter((x) => x !== d) : [...xs, d]));
 
   // Cálculo bidireccional: el campo editado por último "manda".
   const [driver, setDriver] = useState<'count' | 'amount'>('count');
@@ -57,19 +65,41 @@ export default function NuevoCredito() {
   }, [clientId]);
   useEffect(() => load(), [load]);
 
-  const interestTotal = Math.round(principal * (interestPct / 100));
+  const iRate = interestPct / 100;
   const chargesTotal = charges.reduce((s, c) => s + c.amount, 0);
-  const totalDue = principal + interestTotal + chargesTotal;
 
-  // Deriva cuotas ↔ valor según el "driver".
-  const { termCount, cuota } = useMemo(() => {
+  // Deriva cuotas/valor/interés según método y "driver".
+  const { termCount, cuota, interestTotal } = useMemo(() => {
+    const n0 = Math.max(1, Math.round(termCountInput || 0));
+    if (method === 'DECLINING_BALANCE') {
+      const factor = iRate > 0 ? iRate / (1 - Math.pow(1 + iRate, -n0)) : 1 / n0;
+      const interest = Math.max(0, Math.round(principal * factor) * n0 - principal);
+      const total = principal + interest + chargesTotal;
+      return { termCount: n0, interestTotal: interest, cuota: Math.round(total / n0) };
+    }
+    if (method === 'GERMAN') {
+      // Capital constante: interés = i · P · (n+1)/2
+      const interest = Math.round(iRate * principal * (n0 + 1) / 2);
+      const total = principal + interest + chargesTotal;
+      return { termCount: n0, interestTotal: interest, cuota: Math.round(total / n0) };
+    }
+    if (method === 'INTEREST_ONLY') {
+      // Solo interés cada período + capital al final: interés = i · P · n
+      const interest = Math.round(iRate * principal * n0);
+      const total = principal + interest + chargesTotal;
+      return { termCount: n0, interestTotal: interest, cuota: Math.round(total / n0) };
+    }
+    // FLAT (interés fijo sobre el capital)
+    const interest = Math.round(principal * iRate);
+    const total = principal + interest + chargesTotal;
     if (driver === 'count') {
-      const n = Math.max(1, Math.round(termCountInput || 0));
-      return { termCount: n, cuota: totalDue > 0 ? Math.round(totalDue / n) : 0 };
+      return { termCount: n0, interestTotal: interest, cuota: total > 0 ? Math.round(total / n0) : 0 };
     }
     const c = Math.max(1, Math.round(cuotaInput || 0));
-    return { termCount: totalDue > 0 && c > 0 ? Math.max(1, Math.round(totalDue / c)) : 0, cuota: c };
-  }, [driver, termCountInput, cuotaInput, totalDue]);
+    return { termCount: total > 0 && c > 0 ? Math.max(1, Math.round(total / c)) : 0, interestTotal: interest, cuota: c };
+  }, [method, driver, termCountInput, cuotaInput, principal, iRate, chargesTotal]);
+
+  const totalDue = principal + interestTotal + chargesTotal;
 
   function applyPreset(p: CreditProduct) {
     setPresetId(p.id);
@@ -91,12 +121,14 @@ export default function NuevoCredito() {
         principal,
         termCount,
         interestRate: interestPct / 100,
-        interestMethod: 'FLAT',
-        rateBasis: 'PER_LOAN',
+        interestMethod: method,
+        rateBasis: method === 'FLAT' ? 'PER_LOAN' : 'PER_PERIOD',
         frequency: freq,
         lateFeeType: moraPct > 0 ? 'PERCENT_OF_INSTALLMENT' : 'NONE',
         lateFeeValue: moraPct > 0 ? moraPct / 100 : 0,
         charges: charges.length ? charges : undefined,
+        nonPayDays: nonPayDays.length ? nonPayDays : undefined,
+        guarantor: gName.trim() ? { fullName: gName.trim(), documentId: gDoc.trim() || undefined, phone: gPhone.trim() || undefined } : undefined,
       });
       router.replace(`/(app)/loan/${loan.id}` as never);
     } catch (e) {
@@ -134,6 +166,31 @@ export default function NuevoCredito() {
             </View>
           </>
         ) : null}
+
+        {/* Sistema de amortización */}
+        <Text style={styles.label}>Sistema de amortización</Text>
+        <View style={styles.freqWrap}>
+          {([
+            { k: 'FLAT', l: 'Interés fijo' },
+            { k: 'DECLINING_BALANCE', l: 'Francés' },
+            { k: 'GERMAN', l: 'Alemán' },
+            { k: 'INTEREST_ONLY', l: 'Solo interés' },
+          ] as const).map((m) => (
+            <TouchableOpacity
+              key={m.k}
+              style={[styles.freqChip, method === m.k && styles.freqChipActive]}
+              onPress={() => { setMethod(m.k); if (m.k !== 'FLAT') setDriver('count'); }}
+            >
+              <Text style={[styles.freqText, method === m.k && styles.freqTextActive]}>{m.l}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        <Text style={styles.hintLine}>
+          {method === 'FLAT' ? '→ Interés fijo sobre el capital; cuota e interés iguales.'
+            : method === 'DECLINING_BALANCE' ? '→ Cuota fija; el interés decrece con el saldo (francés).'
+            : method === 'GERMAN' ? '→ Capital constante; la cuota decrece cada período (alemán).'
+            : '→ Solo pagas interés; el capital se liquida en la última cuota.'}
+        </Text>
 
         {/* 1. Monto */}
         <Text style={styles.label}>1. Valor a prestar</Text>
@@ -259,6 +316,27 @@ export default function NuevoCredito() {
           </TouchableOpacity>
         </View>
 
+        {/* 7. Días sin cobro */}
+        <Text style={styles.label}>7. Días sin cobro (opcional)</Text>
+        <View style={styles.freqWrap}>
+          {[{ d: 1, l: 'Lun' }, { d: 2, l: 'Mar' }, { d: 3, l: 'Mié' }, { d: 4, l: 'Jue' }, { d: 5, l: 'Vie' }, { d: 6, l: 'Sáb' }, { d: 0, l: 'Dom' }].map((x) => {
+            const active = nonPayDays.includes(x.d);
+            return (
+              <TouchableOpacity key={x.d} style={[styles.dayChip, active && styles.dayChipActive]} onPress={() => toggleDay(x.d)}>
+                <Text style={[styles.dayText, active && { color: '#fff' }]}>{x.l}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {/* 8. Fiador */}
+        <Text style={styles.label}>8. Datos del fiador (opcional)</Text>
+        <TextInput style={styles.input} placeholder="Nombre del fiador" placeholderTextColor={colors.muted} value={gName} onChangeText={setGName} />
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          <TextInput style={[styles.input, { flex: 1 }]} placeholder="Documento" placeholderTextColor={colors.muted} keyboardType="number-pad" value={gDoc} onChangeText={setGDoc} />
+          <TextInput style={[styles.input, { flex: 1 }]} placeholder="Teléfono" placeholderTextColor={colors.muted} keyboardType="phone-pad" value={gPhone} onChangeText={setGPhone} />
+        </View>
+
         {/* Resumen */}
         <View style={styles.summary}>
           <Text style={styles.summaryTitle}>Resumen del crédito</Text>
@@ -331,6 +409,10 @@ const styles = StyleSheet.create({
   chargeInput: { flex: 1, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.border, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 11, fontSize: 14, color: colors.text },
   chargeAmt: { width: 96, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.border, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 11, fontSize: 14, fontWeight: '700', color: colors.text },
   chargeBtn: { width: 44, height: 44, borderRadius: 12, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', borderBottomWidth: 3, borderBottomColor: colors.primaryDark },
+  input: { backgroundColor: colors.card, borderWidth: 2, borderColor: colors.border, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: colors.text },
+  dayChip: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 999, borderWidth: 2, borderColor: colors.border, backgroundColor: colors.card },
+  dayChipActive: { borderColor: colors.dangerDark, backgroundColor: colors.danger },
+  dayText: { fontSize: 13, fontWeight: '800', color: colors.muted },
   summary: { backgroundColor: colors.card, borderRadius: 16, borderWidth: 2, borderColor: colors.primary, padding: 16, gap: 9, marginTop: 4 },
   summaryTitle: { fontSize: 15, fontWeight: '800', color: colors.text, marginBottom: 2 },
   sumRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },

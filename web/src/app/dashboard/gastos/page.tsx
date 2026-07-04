@@ -37,7 +37,7 @@ export default function GastosPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6">
+    <div className="space-y-6 p-4 sm:p-6">
       <PageHeader
         title="Gastos"
         description="Egresos operativos del negocio (transporte, oficina, sueldos, servicios…). Se descuentan de la ganancia neta del período."

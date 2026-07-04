@@ -30,7 +30,7 @@ export default function InicioPage() {
   }, []);
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6">
+    <div className="space-y-6 p-4 sm:p-6">
       <PageHeader
         title={`Hola, ${user?.fullName?.split(' ')[0] ?? ''} 👋`}
         description="Resumen de tu operación de cobro diario: cartera, recaudo del día, créditos activos y en mora, con accesos rápidos a lo más usado."

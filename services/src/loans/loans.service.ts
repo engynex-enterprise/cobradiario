@@ -39,6 +39,7 @@ export class LoansService {
       lateFeeValue: input.lateFeeValue ?? 0,
       roundingMode: 'NEAREST',
       roundTo: 1,
+      nonPayDays: input.nonPayDays ?? [],
       config: {},
     };
   }
@@ -96,6 +97,7 @@ export class LoansService {
           paidAmount: 0,
           balance: round2(schedule.totalDue + chargesTotal),
           terms: termsSnapshot,
+          guarantor: input.guarantor ? (input.guarantor as unknown as Prisma.InputJsonValue) : undefined,
           disbursedAt: new Date(),
           firstDueDate,
         },
@@ -138,6 +140,33 @@ export class LoansService {
     });
 
     return toLoanModel(loan);
+  }
+
+  /** Edita monto/fecha de una cuota (solo si no tiene abonos) y recalcula el total/saldo del crédito. */
+  async updateInstallment(tenantId: string, input: { id: string; amount?: number; dueDate?: Date }): Promise<LoanModel> {
+    const db = this.prisma.forTenant(tenantId);
+    const inst = await db.installment.findFirst({ where: { id: input.id } });
+    if (!inst) throw new NotFoundException('Cuota no encontrada');
+    if (Number(inst.paidAmount) > 0) {
+      throw new BadRequestException('No se puede editar una cuota que ya tiene abonos');
+    }
+
+    const loanId = inst.loanId;
+    await this.prisma.$transaction(async (tx) => {
+      await this.prisma.setTenantGuc(tx, tenantId);
+      const data: { amount?: Prisma.Decimal; dueDate?: Date } = {};
+      if (input.amount !== undefined) data.amount = new Prisma.Decimal(round2(input.amount));
+      if (input.dueDate !== undefined) data.dueDate = input.dueDate;
+      await tx.installment.updateMany({ where: { id: input.id }, data });
+
+      // Recalcula total y saldo del crédito a partir de la suma de cuotas.
+      const rows = await tx.installment.findMany({ where: { loanId }, select: { amount: true, paidAmount: true } });
+      const totalDue = round2(rows.reduce((s, r) => s + Number(r.amount), 0));
+      const paid = round2(rows.reduce((s, r) => s + Number(r.paidAmount), 0));
+      await tx.loan.updateMany({ where: { id: loanId }, data: { totalDue, balance: round2(totalDue - paid) } });
+    });
+
+    return this.findById(tenantId, loanId);
   }
 
   async findById(tenantId: string, id: string): Promise<LoanModel> {
@@ -205,6 +234,7 @@ function toLoanModel(loan: LoanWithRels | Prisma.LoanGetPayload<object>): LoanMo
     frequency: terms.frequency as LoanModel['frequency'],
     lateFeeValue: terms.lateFeeValue,
     chargesTotal: (terms as { chargesTotal?: number }).chargesTotal,
+    guarantor: (l as unknown as { guarantor?: LoanModel['guarantor'] }).guarantor ?? undefined,
     disbursedAt: l.disbursedAt ?? undefined,
     firstDueDate: l.firstDueDate ?? undefined,
     createdAt: l.createdAt,

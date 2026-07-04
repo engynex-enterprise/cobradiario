@@ -76,8 +76,10 @@ enum PaymentStatus {
 }
 
 enum InterestMethod {
-  FLAT // interés fijo "gota a gota"
-  DECLINING_BALANCE // saldo decreciente / amortización
+  FLAT // interés fijo "gota a gota" (informal)
+  DECLINING_BALANCE // saldo decreciente / cuota fija (francés)
+  GERMAN // capital constante, cuota decreciente (alemán)
+  INTEREST_ONLY // solo interés + capital al final (estadounidense)
   CUSTOM // estrategia parametrizada vía config JSON
 }
 
@@ -400,6 +402,9 @@ model Loan {
 
   // Snapshot de la config del producto al originar (inmutable para este crédito):
   terms Json @default("{}")
+
+  // Datos del fiador/garante (opcional): { documentId, fullName, phone, address }
+  guarantor Json?
 
   disbursedAt DateTime?
   firstDueDate DateTime?

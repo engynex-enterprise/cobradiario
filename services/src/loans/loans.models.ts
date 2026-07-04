@@ -19,6 +19,14 @@ export class InstallmentModel {
   @Field(() => Float) paidAmount!: number;
 }
 
+@ObjectType('Guarantor')
+export class GuarantorModel {
+  @Field() fullName!: string;
+  @Field({ nullable: true }) documentId?: string;
+  @Field({ nullable: true }) phone?: string;
+  @Field({ nullable: true }) address?: string;
+}
+
 @ObjectType('Loan')
 export class LoanModel {
   @Field(() => ID) id!: string;
@@ -42,6 +50,7 @@ export class LoanModel {
   @Field(() => Frequency, { nullable: true }) frequency?: Frequency;
   @Field(() => Float, { nullable: true }) lateFeeValue?: number;
   @Field(() => Float, { nullable: true }) chargesTotal?: number;
+  @Field(() => GuarantorModel, { nullable: true }) guarantor?: GuarantorModel;
 
   @Field({ nullable: true }) disbursedAt?: Date;
   @Field({ nullable: true }) firstDueDate?: Date;

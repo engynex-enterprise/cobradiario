@@ -36,7 +36,7 @@ export default function BasesPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6">
+    <div className="space-y-6 p-4 sm:p-6">
       <PageHeader
         title="Bases"
         description="Efectivo que el cobrador recibe para prestar/dar cambio y el que entrega al cierre. Alimenta las líneas de Bases del resumen financiero."

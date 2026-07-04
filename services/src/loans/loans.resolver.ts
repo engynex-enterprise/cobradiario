@@ -2,7 +2,7 @@ import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { UserRole } from '@prisma/client';
 import { LoansService } from './loans.service';
 import { LoanModel } from './loans.models';
-import { CreateLoanInput } from './loans.inputs';
+import { CreateLoanInput, UpdateInstallmentInput } from './loans.inputs';
 import { CurrentUser, Roles } from '../common/decorators';
 import { AuthContext } from '../common/types';
 
@@ -33,5 +33,14 @@ export class LoansResolver {
     @Args('input') input: CreateLoanInput,
   ): Promise<LoanModel> {
     return this.loans.createLoan(user.tenantId, input);
+  }
+
+  @Roles(UserRole.OWNER, UserRole.ADMIN, UserRole.MANAGER, UserRole.COLLECTOR)
+  @Mutation(() => LoanModel)
+  updateInstallment(
+    @CurrentUser() user: AuthContext,
+    @Args('input') input: UpdateInstallmentInput,
+  ): Promise<LoanModel> {
+    return this.loans.updateInstallment(user.tenantId, input);
   }
 }

@@ -49,9 +49,15 @@ export function CreateLoanDialog({ onCreated, clientId: fixedClient }: { onCreat
   const [interestPct, setInterestPct] = useState(20);
   const [moraPct, setMoraPct] = useState(0);
   const [freq, setFreq] = useState<Freq>('DAILY');
+  const [method, setMethod] = useState<'FLAT' | 'DECLINING_BALANCE' | 'GERMAN' | 'INTEREST_ONLY'>('FLAT');
   const [charges, setCharges] = useState<{ concept: string; amount: number }[]>([]);
   const [chgConcept, setChgConcept] = useState('');
   const [chgAmount, setChgAmount] = useState(0);
+  const [nonPayDays, setNonPayDays] = useState<number[]>([]);
+  const [gName, setGName] = useState('');
+  const [gDoc, setGDoc] = useState('');
+  const [gPhone, setGPhone] = useState('');
+  const toggleDay = (d: number) => setNonPayDays((xs) => (xs.includes(d) ? xs.filter((x) => x !== d) : [...xs, d]));
 
   // Bidireccional: el último campo editado manda.
   const [driver, setDriver] = useState<'count' | 'amount'>('count');
@@ -72,18 +78,37 @@ export function CreateLoanDialog({ onCreated, clientId: fixedClient }: { onCreat
       .catch((e) => toast.error(e.message));
   }, [open, fixedClient]);
 
-  const interestTotal = Math.round(principal * (interestPct / 100));
+  const iRate = interestPct / 100;
   const chargesTotal = charges.reduce((s, c) => s + c.amount, 0);
-  const totalDue = principal + interestTotal + chargesTotal;
 
-  const { termCount, cuota } = useMemo(() => {
+  const { termCount, cuota, interestTotal } = useMemo(() => {
+    const n0 = Math.max(1, Math.round(termCountInput || 0));
+    if (method === 'DECLINING_BALANCE') {
+      const factor = iRate > 0 ? iRate / (1 - Math.pow(1 + iRate, -n0)) : 1 / n0;
+      const interest = Math.max(0, Math.round(principal * factor) * n0 - principal);
+      const total = principal + interest + chargesTotal;
+      return { termCount: n0, interestTotal: interest, cuota: Math.round(total / n0) };
+    }
+    if (method === 'GERMAN') {
+      const interest = Math.round(iRate * principal * (n0 + 1) / 2);
+      const total = principal + interest + chargesTotal;
+      return { termCount: n0, interestTotal: interest, cuota: Math.round(total / n0) };
+    }
+    if (method === 'INTEREST_ONLY') {
+      const interest = Math.round(iRate * principal * n0);
+      const total = principal + interest + chargesTotal;
+      return { termCount: n0, interestTotal: interest, cuota: Math.round(total / n0) };
+    }
+    const interest = Math.round(principal * iRate);
+    const total = principal + interest + chargesTotal;
     if (driver === 'count') {
-      const n = Math.max(1, Math.round(termCountInput || 0));
-      return { termCount: n, cuota: totalDue > 0 ? Math.round(totalDue / n) : 0 };
+      return { termCount: n0, interestTotal: interest, cuota: total > 0 ? Math.round(total / n0) : 0 };
     }
     const c = Math.max(1, Math.round(cuotaInput || 0));
-    return { termCount: totalDue > 0 && c > 0 ? Math.max(1, Math.round(totalDue / c)) : 0, cuota: c };
-  }, [driver, termCountInput, cuotaInput, totalDue]);
+    return { termCount: total > 0 && c > 0 ? Math.max(1, Math.round(total / c)) : 0, interestTotal: interest, cuota: c };
+  }, [method, driver, termCountInput, cuotaInput, principal, iRate, chargesTotal]);
+
+  const totalDue = principal + interestTotal + chargesTotal;
 
   function applyPreset(id: string) {
     setPresetId(id);
@@ -108,12 +133,14 @@ export function CreateLoanDialog({ onCreated, clientId: fixedClient }: { onCreat
         principal,
         termCount,
         interestRate: interestPct / 100,
-        interestMethod: 'FLAT',
-        rateBasis: 'PER_LOAN',
+        interestMethod: method,
+        rateBasis: method === 'FLAT' ? 'PER_LOAN' : 'PER_PERIOD',
         frequency: freq,
         lateFeeType: moraPct > 0 ? 'PERCENT_OF_INSTALLMENT' : 'NONE',
         lateFeeValue: moraPct > 0 ? moraPct / 100 : 0,
         charges: charges.length ? charges : undefined,
+        nonPayDays: nonPayDays.length ? nonPayDays : undefined,
+        guarantor: gName.trim() ? { fullName: gName.trim(), documentId: gDoc.trim() || undefined, phone: gPhone.trim() || undefined } : undefined,
         routeId: routeId !== 'none' ? routeId : undefined,
       });
       toast.success('Crédito creado');
@@ -171,6 +198,19 @@ export function CreateLoanDialog({ onCreated, clientId: fixedClient }: { onCreat
               </Select>
             </div>
           )}
+
+          <div className="space-y-2">
+            <Label>Sistema de amortización</Label>
+            <Select value={method} onValueChange={(v) => { setMethod(v as typeof method); if (v !== 'FLAT') setDriver('count'); }}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="FLAT">Interés fijo (gota a gota)</SelectItem>
+                <SelectItem value="DECLINING_BALANCE">Cuota fija (francés)</SelectItem>
+                <SelectItem value="GERMAN">Capital constante (alemán)</SelectItem>
+                <SelectItem value="INTEREST_ONLY">Solo interés (estadounidense)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
           <div className="space-y-2">
             <Label>1. Valor a prestar</Label>
@@ -243,6 +283,31 @@ export function CreateLoanDialog({ onCreated, clientId: fixedClient }: { onCreat
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Días sin cobro */}
+          <div className="space-y-2">
+            <Label>Días sin cobro (opcional)</Label>
+            <div className="flex flex-wrap gap-1.5">
+              {[{ d: 1, l: 'Lun' }, { d: 2, l: 'Mar' }, { d: 3, l: 'Mié' }, { d: 4, l: 'Jue' }, { d: 5, l: 'Vie' }, { d: 6, l: 'Sáb' }, { d: 0, l: 'Dom' }].map((x) => {
+                const active = nonPayDays.includes(x.d);
+                return (
+                  <button key={x.d} type="button" onClick={() => toggleDay(x.d)} className={`rounded-full border-2 px-3 py-1.5 text-xs font-bold ${active ? 'border-destructive bg-destructive/10 text-destructive' : 'border-border text-muted-foreground'}`}>
+                    {x.l}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Datos del fiador */}
+          <div className="space-y-2">
+            <Label>Datos del fiador (opcional)</Label>
+            <Input placeholder="Nombre del fiador" value={gName} onChange={(e) => setGName(e.target.value)} />
+            <div className="grid grid-cols-2 gap-2">
+              <Input placeholder="Documento" value={gDoc} onChange={(e) => setGDoc(e.target.value)} />
+              <Input placeholder="Teléfono" value={gPhone} onChange={(e) => setGPhone(e.target.value)} />
+            </div>
           </div>
 
           {/* Cargos adicionales */}

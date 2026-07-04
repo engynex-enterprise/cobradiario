@@ -60,7 +60,7 @@ export default function NotificacionesPage() {
   const unreadCount = items.filter((n) => !n.readAt).length;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 p-4 sm:p-6">
+    <div className="space-y-6 p-4 sm:p-6">
       <PageHeader
         title="Notificaciones"
         description="Avisos del sistema en tiempo real: créditos que caen en mora, cuotas por vencer y eventos de tu operación. Márcalas como leídas cuando las revises."

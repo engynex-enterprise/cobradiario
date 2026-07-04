@@ -18,7 +18,7 @@ export default function PerfilPage() {
   useEffect(() => setMounted(true), []);
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 p-4 sm:p-6">
+    <div className="space-y-6 p-4 sm:p-6">
       <PageHeader
         title="Perfil"
         description="Tu cuenta, la organización a la que perteneces y las preferencias de apariencia (tema claro/oscuro). Desde aquí también puedes cerrar sesión."

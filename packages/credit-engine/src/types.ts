@@ -4,7 +4,7 @@
  * es lógica pura y testeable en aislamiento.
  */
 
-export type InterestMethod = 'FLAT' | 'DECLINING_BALANCE' | 'CUSTOM';
+export type InterestMethod = 'FLAT' | 'DECLINING_BALANCE' | 'GERMAN' | 'INTEREST_ONLY' | 'CUSTOM';
 export type RateBasis = 'PER_LOAN' | 'PER_PERIOD' | 'ANNUAL';
 export type Frequency = 'DAILY' | 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY' | 'CUSTOM';
 export type LateFeeType =
@@ -37,6 +37,9 @@ export interface CreditTerms {
   periodsPerYear?: number;
   /** Días entre cuotas cuando frequency = CUSTOM. */
   customIntervalDays?: number;
+
+  /** Días de la semana sin cobro (0=domingo … 6=sábado). Las cuotas saltan esos días. */
+  nonPayDays?: number[];
 
   /** Extensión libre para estrategias CUSTOM. */
   config?: Record<string, unknown>;

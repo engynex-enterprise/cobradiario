@@ -78,7 +78,7 @@ export default function CajaPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 p-4 sm:p-6">
+    <div className="space-y-6 p-4 sm:p-6">
       <PageHeader
         title="Caja del día"
         description="Arqueo del efectivo del cobrador: abre la caja con un saldo base, registra gastos y consignaciones, y ciérrala contando el efectivo para detectar descuadres."
