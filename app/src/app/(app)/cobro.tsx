@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { fetchDueInstallments, type DueInstallment } from '@/lib/graphql';
 import { money } from '@/lib/format';
@@ -19,6 +20,7 @@ function fmtDate(iso: string) {
 
 export default function Cobro() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [tab, setTab] = useState<Tab>('TODAY');
   const [items, setItems] = useState<DueInstallment[]>([]);
 
@@ -31,7 +33,7 @@ export default function Cobro() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
-      <TouchableOpacity style={styles.back} onPress={() => router.back()}>
+      <TouchableOpacity style={[styles.back, { paddingTop: insets.top + 12 }]} onPress={() => router.back()}>
         <Ionicons name="chevron-back" size={20} color={colors.primary} />
         <Text style={styles.backText}>Volver</Text>
       </TouchableOpacity>

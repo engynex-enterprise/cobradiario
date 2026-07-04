@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { createExpense, fetchExpenses, type Expense } from '@/lib/graphql';
 import { money } from '@/lib/format';
@@ -33,6 +34,7 @@ function fmtFull(iso: string) {
 
 export default function Gastos() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [items, setItems] = useState<Expense[]>([]);
   const [open, setOpen] = useState(false);
 
@@ -56,7 +58,7 @@ export default function Gastos() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
-      <View style={styles.hero}>
+      <View style={[styles.hero, { paddingTop: insets.top + 8 }]}>
         <View style={styles.heroBar}>
           <TouchableOpacity style={styles.circleBtn} onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={22} color="#fff" />
@@ -96,7 +98,7 @@ export default function Gastos() {
         )}
       </ScrollView>
 
-      <View style={styles.fabWrap}>
+      <View style={[styles.fabWrap, { bottom: insets.bottom + 16 }]}>
         <TouchableOpacity style={styles.fab} activeOpacity={0.85} onPress={() => setOpen(true)}>
           <Ionicons name="add" size={20} color="#fff" />
           <Text style={styles.fabText}>Nuevo gasto</Text>

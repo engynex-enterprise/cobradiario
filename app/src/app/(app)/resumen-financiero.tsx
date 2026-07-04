@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { fetchFinancialSummary, type FinancialSummary } from '@/lib/graphql';
 import { money } from '@/lib/format';
@@ -16,6 +17,7 @@ const METHOD_ORDER = ['CASH', 'CARD', 'TRANSFER', 'OTHER'];
 
 export default function ResumenFinanciero() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [data, setData] = useState<FinancialSummary | null>(null);
 
   const load = useCallback(() => {
@@ -30,7 +32,7 @@ export default function ResumenFinanciero() {
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: colors.bg }}
-      contentContainerStyle={{ padding: 16, gap: 18, paddingBottom: 32 }}
+      contentContainerStyle={{ padding: 16, paddingTop: insets.top + 12, gap: 18, paddingBottom: 32 }}
       refreshControl={<RefreshControl refreshing={false} onRefresh={load} tintColor={colors.primary} />}
     >
       <TouchableOpacity style={styles.back} onPress={() => router.back()}>

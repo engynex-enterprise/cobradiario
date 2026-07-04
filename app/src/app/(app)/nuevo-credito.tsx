@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { createLoan, fetchClients, fetchCreditProducts, type Client, type CreditProduct } from '@/lib/graphql';
 import { money } from '@/lib/format';
@@ -28,6 +29,7 @@ function durationLabel(termCount: number, freq: Freq): string {
 export default function NuevoCredito() {
   const { clientId } = useLocalSearchParams<{ clientId: string }>();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [client, setClient] = useState<Client | null>(null);
   const [products, setProducts] = useState<CreditProduct[]>([]);
   const [presetId, setPresetId] = useState<string | null>(null);
@@ -101,7 +103,7 @@ export default function NuevoCredito() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 130 }} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={{ padding: 16, paddingTop: insets.top + 12, gap: 16, paddingBottom: 130 }} keyboardShouldPersistTaps="handled">
         <TouchableOpacity style={styles.back} onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={20} color={colors.primary} />
           <Text style={styles.backText}>Volver</Text>
@@ -226,7 +228,7 @@ export default function NuevoCredito() {
         </View>
       </ScrollView>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: insets.bottom + 14 }]}>
         <TouchableOpacity
           style={[styles.btn, (!valid || saving) && styles.btnDisabled]}
           disabled={!valid || saving}

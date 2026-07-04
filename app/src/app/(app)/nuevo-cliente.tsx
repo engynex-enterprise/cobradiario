@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { createClient } from '@/lib/graphql';
 import { colors } from '@/lib/theme';
 
 export default function NuevoCliente() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [form, setForm] = useState({ fullName: '', documentId: '', phone: '', address: '', city: '' });
   const [saving, setSaving] = useState(false);
   const set = (k: keyof typeof form) => (v: string) => setForm((f) => ({ ...f, [k]: v }));
@@ -32,7 +34,7 @@ export default function NuevoCliente() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 120 }}>
+      <ScrollView contentContainerStyle={{ padding: 16, paddingTop: insets.top + 12, gap: 14, paddingBottom: 120 }}>
         <TouchableOpacity style={styles.back} onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={20} color={colors.primary} />
           <Text style={styles.backText}>Volver</Text>
@@ -47,7 +49,7 @@ export default function NuevoCliente() {
         <Field label="Ciudad" value={form.city} onChange={set('city')} placeholder="Ciudad" />
       </ScrollView>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: insets.bottom + 14 }]}>
         <TouchableOpacity
           style={[styles.btn, (!form.fullName.trim() || saving) && styles.btnDisabled]}
           disabled={!form.fullName.trim() || saving}

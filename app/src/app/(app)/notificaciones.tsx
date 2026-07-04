@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { fetchNotifications, markNotificationRead, type AppNotification } from '@/lib/graphql';
 import { getSocket } from '@/lib/socket';
@@ -16,6 +18,8 @@ const TYPE_LABEL: Record<string, string> = {
 };
 
 export default function Notificaciones() {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [items, setItems] = useState<AppNotification[]>([]);
 
   const load = useCallback(() => {
@@ -40,11 +44,19 @@ export default function Notificaciones() {
   }
 
   return (
-    <FlatList
-      style={{ backgroundColor: colors.bg }}
-      data={items}
-      keyExtractor={(n) => n.id}
-      contentContainerStyle={{ padding: 16, gap: 10, paddingBottom: 32 }}
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+          <Ionicons name="chevron-back" size={22} color={colors.primaryDark} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Notificaciones</Text>
+        <View style={{ width: 40 }} />
+      </View>
+      <FlatList
+        style={{ backgroundColor: colors.bg }}
+        data={items}
+        keyExtractor={(n) => n.id}
+        contentContainerStyle={{ padding: 16, gap: 10, paddingBottom: 32 }}
       refreshControl={<RefreshControl refreshing={false} onRefresh={load} tintColor={colors.primary} />}
       ListEmptyComponent={
         <View style={styles.emptyWrap}>
@@ -71,11 +83,15 @@ export default function Notificaciones() {
           </View>
         </TouchableOpacity>
       )}
-    />
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingBottom: 12, backgroundColor: colors.card, borderBottomWidth: 2, borderBottomColor: colors.border },
+  backBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#e9f9e0', alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { fontSize: 18, fontWeight: '800', color: colors.text },
   emptyWrap: { alignItems: 'center', gap: 8, marginTop: 60 },
   empty: { textAlign: 'center', color: colors.muted },
   card: {

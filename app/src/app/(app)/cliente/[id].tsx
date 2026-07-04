@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { fetchClients, fetchLoans, type Client, type Loan } from '@/lib/graphql';
 import { money } from '@/lib/format';
@@ -18,6 +19,7 @@ function fmtDate(iso?: string) {
 export default function ClienteDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [client, setClient] = useState<Client | null>(null);
   const [loans, setLoans] = useState<Loan[]>([]);
 
@@ -33,7 +35,7 @@ export default function ClienteDetail() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       {/* Hero verde Duolingo */}
-      <View style={styles.hero}>
+      <View style={[styles.hero, { paddingTop: insets.top + 8 }]}>
         <View style={styles.heroBar}>
           <TouchableOpacity style={styles.circleBtn} onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={22} color="#fff" />

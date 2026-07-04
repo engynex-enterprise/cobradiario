@@ -444,3 +444,10 @@ Bitácora de decisiones y cambios estructurales. Formato: fecha · tipo · descr
 - **[app]** **Home refactorizado**: saludo + KPIs (con íconos de color) + acciones rápidas
   (Cliente/Cobro/Gasto) + **Cobros de hoy** (cuotas del día) en vez de la lista de toda la cartera.
 - **[verificación]** Cobrador crea préstamo OK (260704-BOI). Typecheck app/services OK.
+
+## 2026-07-04 — Safe area (notch/status bar/home indicator)
+- **[app]** Todas las pantallas de detalle (Stack) respetan el safe-area: `useSafeAreaInsets` aplica
+  `insets.top` a los héroes/filas de "Volver" (el botón atrás ya no queda bajo el reloj del iPhone) y
+  `insets.bottom` a los botones flotantes y footers (ya no quedan bajo el home indicator).
+  Afecta: cliente/[id], loan/[id], gastos, cierre, nuevo-cliente, nuevo-credito, cobro, perfil,
+  resumen-financiero y notificaciones (esta última recibió header con back).

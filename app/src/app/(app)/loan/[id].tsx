@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import {
   createManagement,
@@ -49,6 +50,7 @@ function fmtFull(iso?: string) {
 export default function LoanDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [loan, setLoan] = useState<LoanDetail | null>(null);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [managements, setManagements] = useState<Management[]>([]);
@@ -102,7 +104,7 @@ export default function LoanDetailScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       {/* Hero verde Duolingo */}
-      <View style={styles.hero}>
+      <View style={[styles.hero, { paddingTop: insets.top + 8 }]}>
         <View style={styles.heroBar}>
           <TouchableOpacity style={styles.circleBtn} onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={22} color="#fff" />
@@ -153,7 +155,7 @@ export default function LoanDetailScreen() {
           <ScrollView contentContainerStyle={{ padding: 16, gap: 10, paddingBottom: 110 }}>
             {filtered.length === 0 ? <Text style={styles.empty}>Sin cuotas en este filtro.</Text> : filtered.map((it) => <InstallmentCard key={it.id} it={it} />)}
           </ScrollView>
-          <FloatingBtn icon="cash-outline" label="Abonar" onPress={() => setAbono(true)} />
+          <FloatingBtn icon="cash-outline" label="Abonar" onPress={() => setAbono(true)} bottom={insets.bottom} />
         </>
       )}
 
@@ -218,7 +220,7 @@ export default function LoanDetailScreen() {
               })}
             </ScrollView>
           )}
-          <FloatingBtn icon="add" label="Nueva gestión" onPress={() => setGestion(true)} />
+          <FloatingBtn icon="add" label="Nueva gestión" onPress={() => setGestion(true)} bottom={insets.bottom} />
         </>
       )}
 
@@ -303,9 +305,9 @@ function FilterChip({ label, color, bg, active, onPress }: { label: string; colo
     </TouchableOpacity>
   );
 }
-function FloatingBtn({ icon, label, onPress }: { icon: keyof typeof Ionicons.glyphMap; label: string; onPress: () => void }) {
+function FloatingBtn({ icon, label, onPress, bottom = 0 }: { icon: keyof typeof Ionicons.glyphMap; label: string; onPress: () => void; bottom?: number }) {
   return (
-    <View style={styles.fabWrap}>
+    <View style={[styles.fabWrap, { bottom: bottom + 16 }]}>
       <TouchableOpacity style={styles.fab} activeOpacity={0.85} onPress={onPress}>
         <Ionicons name={icon} size={20} color="#fff" />
         <Text style={styles.fabText}>{label}</Text>

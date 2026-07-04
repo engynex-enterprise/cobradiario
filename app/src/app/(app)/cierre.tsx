@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { fetchFinancialSummary, type FinancialSummary } from '@/lib/graphql';
 import { money } from '@/lib/format';
@@ -8,6 +9,7 @@ import { colors } from '@/lib/theme';
 
 export default function Cierre() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [data, setData] = useState<FinancialSummary | null>(null);
 
   const load = useCallback(() => {
@@ -37,7 +39,7 @@ export default function Cierre() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
-      <View style={styles.hero}>
+      <View style={[styles.hero, { paddingTop: insets.top + 8 }]}>
         <View style={styles.heroBar}>
           <TouchableOpacity style={styles.circleBtn} onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={22} color="#fff" />
