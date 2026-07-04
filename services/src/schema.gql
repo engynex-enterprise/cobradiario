@@ -1,0 +1,59 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type AuthPayload {
+  accessToken: String!
+  refreshToken: String!
+  user: AuthUser!
+}
+
+type AuthUser {
+  email: String!
+  fullName: String!
+  id: String!
+  role: UserRole!
+  tenantId: String!
+}
+
+input LoginInput {
+  email: String!
+  password: String!
+}
+
+type Mutation {
+  login(input: LoginInput!): AuthPayload!
+  logout(input: RefreshInput!): Boolean!
+  refreshToken(input: RefreshInput!): AuthPayload!
+  register(input: RegisterInput!): AuthPayload!
+}
+
+type Query {
+  me: AuthUser!
+}
+
+input RefreshInput {
+  refreshToken: String!
+}
+
+input RegisterInput {
+  email: String!
+  fullName: String!
+  password: String!
+  phone: String
+  tenantName: String!
+  tenantType: TenantType! = INDIVIDUAL
+}
+
+enum TenantType {
+  INDIVIDUAL
+  ORGANIZATION
+}
+
+enum UserRole {
+  ADMIN
+  COLLECTOR
+  MANAGER
+  OWNER
+  VIEWER
+}

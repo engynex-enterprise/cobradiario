@@ -1,0 +1,28 @@
+{
+  "name": "cobradiario",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Plataforma SaaS multi-tenant de cobro diario (gota a gota / microcrédito) — realtime, notificaciones y motor de crédito configurable.",
+  "packageManager": "pnpm@11.9.0",
+  "engines": {
+    "node": ">=20 <=26",
+    "pnpm": ">=11"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "db:up": "docker compose up -d postgres redis",
+    "db:down": "docker compose down",
+    "db:logs": "docker compose logs -f postgres",
+    "api:dev": "pnpm --filter @cobradiario/api start:dev",
+    "api:migrate": "pnpm --filter @cobradiario/api prisma migrate dev",
+    "api:seed": "pnpm --filter @cobradiario/api prisma db seed",
+    "api:studio": "pnpm --filter @cobradiario/api prisma studio"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.0"
+  }
+}

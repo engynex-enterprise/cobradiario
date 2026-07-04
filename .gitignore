@@ -1,0 +1,47 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# env — NUNCA commitear secretos
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# builds
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# prisma
+services/prisma/*.db
+
+# logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# testing
+coverage/
+
+# native / expo
+app/.expo/
+app/android/
+app/ios/
+*.keystore
+
+# os / editor
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# docker volumes locales
+.volumes/
+
+# turbo
+.turbo/

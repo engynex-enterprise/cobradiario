@@ -1,0 +1,659 @@
+// =============================================================================
+// COBRO DIARIO — Schema Prisma (PostgreSQL)
+// Multi-tenant SaaS · motor de crédito configurable.
+// Doc de dominio: context/02-domain-model.md
+// Reglas: dinero SIEMPRE Decimal(18,2). Soft-delete en entidades de negocio.
+//         Toda tabla de negocio lleva tenantId (aislamiento + índices).
+// =============================================================================
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["relationJoins"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ----------------------------------------------------------------------------
+// ENUMS
+// ----------------------------------------------------------------------------
+enum TenantType {
+  ORGANIZATION
+  INDIVIDUAL
+}
+
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+  CANCELLED
+}
+
+enum UserRole {
+  OWNER
+  ADMIN
+  MANAGER // supervisor
+  COLLECTOR // cobrador
+  VIEWER
+}
+
+enum MembershipStatus {
+  ACTIVE
+  INVITED
+  DISABLED
+}
+
+enum LoanStatus {
+  PENDING_APPROVAL
+  ACTIVE
+  PAID
+  DEFAULTED
+  RENEWED
+  CANCELLED
+}
+
+enum InstallmentStatus {
+  PENDING
+  PARTIAL
+  PAID
+  OVERDUE
+  WAIVED
+}
+
+enum PaymentMethod {
+  CASH
+  TRANSFER
+  CARD
+  OTHER
+}
+
+enum PaymentStatus {
+  COMPLETED
+  REVERSED
+  PENDING
+}
+
+enum InterestMethod {
+  FLAT // interés fijo "gota a gota"
+  DECLINING_BALANCE // saldo decreciente / amortización
+  CUSTOM // estrategia parametrizada vía config JSON
+}
+
+enum RateBasis {
+  PER_LOAN
+  PER_PERIOD
+  ANNUAL
+}
+
+enum Frequency {
+  DAILY
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+  CUSTOM
+}
+
+enum LateFeeType {
+  NONE
+  FIXED
+  PERCENT_OF_INSTALLMENT
+  PERCENT_OF_BALANCE
+  DAILY_PERCENT
+}
+
+enum RoundingMode {
+  NONE
+  UP
+  DOWN
+  NEAREST
+}
+
+enum CashMovementType {
+  OPENING
+  COLLECTION // ingreso por cobro
+  DISBURSEMENT // desembolso de crédito
+  EXPENSE
+  DEPOSIT // consignación
+  ADJUSTMENT
+  CLOSING
+}
+
+enum NotificationType {
+  PAYMENT_DUE
+  PAYMENT_RECEIVED
+  LOAN_APPROVED
+  LOAN_OVERDUE
+  ROUTE_ASSIGNED
+  CASHBOX_CLOSED
+  SYSTEM
+}
+
+enum NotificationChannel {
+  IN_APP
+  PUSH
+  SMS
+  EMAIL
+  WHATSAPP
+}
+
+enum ReminderStatus {
+  SCHEDULED
+  SENT
+  CANCELLED
+  FAILED
+}
+
+enum LedgerEntryType {
+  DISBURSEMENT
+  PAYMENT
+  LATE_FEE
+  ADJUSTMENT
+  REVERSAL
+  WRITE_OFF
+}
+
+// ----------------------------------------------------------------------------
+// TENANCY & IDENTITY
+// ----------------------------------------------------------------------------
+model Tenant {
+  id          String       @id @default(cuid())
+  type        TenantType   @default(INDIVIDUAL)
+  status      TenantStatus @default(ACTIVE)
+  name        String
+  legalId     String? // NIT / documento fiscal
+  countryCode String       @default("CO")
+  currency    String       @default("COP")
+  timezone    String       @default("America/Bogota")
+  settings    Json         @default("{}") // reglas de negocio del tenant
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  users          User[]
+  memberships    Membership[]
+  clients        Client[]
+  routes         Route[]
+  creditProducts CreditProduct[]
+  loans          Loan[]
+  installments   Installment[]
+  payments       Payment[]
+  cashBoxes      CashBox[]
+  cashMovements  CashMovement[]
+  notifications  Notification[]
+  deviceTokens   DeviceToken[]
+  reminders      Reminder[]
+  ledgerEntries  LedgerEntry[]
+  auditLogs      AuditLog[]
+
+  @@index([status])
+  @@map("tenants")
+}
+
+model User {
+  id           String  @id @default(cuid())
+  tenantId     String
+  email        String
+  phone        String?
+  passwordHash String
+  fullName     String
+  avatarUrl    String?
+  isActive     Boolean @default(true)
+
+  lastLoginAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  tenant             Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  memberships        Membership[]
+  refreshTokens      RefreshToken[]
+  routeAssignments   RouteCollector[]
+  cashBoxes          CashBox[]
+  paymentsCollected  Payment[]        @relation("PaymentCollector")
+  notifications      Notification[]
+  deviceTokens       DeviceToken[]
+  auditLogs          AuditLog[]
+
+  @@unique([tenantId, email])
+  @@index([tenantId, isActive])
+  @@map("users")
+}
+
+// Rol del usuario dentro del tenant (permite futura pertenencia multi-tenant).
+model Membership {
+  id       String           @id @default(cuid())
+  tenantId String
+  userId   String
+  role     UserRole         @default(COLLECTOR)
+  status   MembershipStatus @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId, role])
+  @@index([tenantId, role])
+  @@map("memberships")
+}
+
+// Refresh tokens rotados y hasheados (revocación + detección de reuso).
+model RefreshToken {
+  id         String    @id @default(cuid())
+  userId     String
+  tokenHash  String // sha-256 del token; nunca el token en claro
+  familyId   String // familia de rotación
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  replacedBy String?
+  userAgent  String?
+  ip         String?
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tokenHash])
+  @@index([userId])
+  @@index([familyId])
+  @@map("refresh_tokens")
+}
+
+// ----------------------------------------------------------------------------
+// CLIENTES / DEUDORES
+// ----------------------------------------------------------------------------
+model Client {
+  id           String  @id @default(cuid())
+  tenantId     String
+  fullName     String
+  documentId   String? // cédula / identificación
+  phone        String?
+  email        String?
+  address      String?
+  city         String?
+  latitude     Float?
+  longitude    Float?
+  photoUrl     String?
+  notes        String?
+  references   Json    @default("[]") // referencias personales
+  isBlacklisted Boolean @default(false)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  loans  Loan[]
+
+  @@unique([tenantId, documentId])
+  @@index([tenantId, fullName])
+  @@map("clients")
+}
+
+// ----------------------------------------------------------------------------
+// RUTAS
+// ----------------------------------------------------------------------------
+model Route {
+  id       String  @id @default(cuid())
+  tenantId String
+  name     String
+  code     String?
+  zone     String?
+  isActive Boolean @default(true)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  tenant      Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  collectors  RouteCollector[]
+  loans       Loan[]
+  cashBoxes   CashBox[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId, isActive])
+  @@map("routes")
+}
+
+// Asignación N:M cobrador <-> ruta.
+model RouteCollector {
+  id         String   @id @default(cuid())
+  tenantId   String
+  routeId    String
+  userId     String
+  assignedAt DateTime @default(now())
+
+  route Route @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([routeId, userId])
+  @@index([tenantId, userId])
+  @@map("route_collectors")
+}
+
+// ----------------------------------------------------------------------------
+// PRODUCTO DE CRÉDITO (configuración del motor)
+// ----------------------------------------------------------------------------
+model CreditProduct {
+  id       String  @id @default(cuid())
+  tenantId String
+  name     String
+  isActive Boolean @default(true)
+
+  interestMethod InterestMethod @default(FLAT)
+  interestRate   Decimal        @default(0) @db.Decimal(9, 6) // ej. 0.20 = 20%
+  rateBasis      RateBasis      @default(PER_LOAN)
+  frequency      Frequency      @default(DAILY)
+  termCount      Int            @default(20) // número de cuotas
+  graceDays      Int            @default(0)
+
+  lateFeeType  LateFeeType @default(NONE)
+  lateFeeValue Decimal     @default(0) @db.Decimal(18, 6)
+
+  roundingMode RoundingMode @default(NEAREST)
+  roundTo      Decimal      @default(1) @db.Decimal(18, 2) // redondear cuota a múltiplos de N
+
+  minPrincipal Decimal? @db.Decimal(18, 2)
+  maxPrincipal Decimal? @db.Decimal(18, 2)
+
+  config Json @default("{}") // extensión para variantes CUSTOM
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  loans  Loan[]
+
+  @@index([tenantId, isActive])
+  @@map("credit_products")
+}
+
+// ----------------------------------------------------------------------------
+// CRÉDITOS / PRÉSTAMOS
+// ----------------------------------------------------------------------------
+model Loan {
+  id       String     @id @default(cuid())
+  tenantId String
+  code     String? // consecutivo legible
+  status   LoanStatus @default(PENDING_APPROVAL)
+
+  clientId  String
+  productId String
+  routeId   String?
+
+  principal    Decimal @db.Decimal(18, 2) // monto entregado
+  totalDue     Decimal @db.Decimal(18, 2) // principal + interés (snapshot)
+  interestTotal Decimal @db.Decimal(18, 2)
+  paidAmount   Decimal @default(0) @db.Decimal(18, 2)
+  balance      Decimal @db.Decimal(18, 2) // saldo pendiente
+
+  // Snapshot de la config del producto al originar (inmutable para este crédito):
+  terms Json @default("{}")
+
+  disbursedAt DateTime?
+  firstDueDate DateTime?
+  closedAt    DateTime?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client       Client        @relation(fields: [clientId], references: [id])
+  product      CreditProduct @relation(fields: [productId], references: [id])
+  route        Route?        @relation(fields: [routeId], references: [id])
+  installments Installment[]
+  payments     Payment[]
+  ledgerEntries LedgerEntry[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId, routeId, status])
+  @@index([tenantId, clientId])
+  @@index([tenantId, status])
+  @@map("loans")
+}
+
+model Installment {
+  id       String            @id @default(cuid())
+  tenantId String
+  loanId   String
+  sequence Int // 1..n
+  status   InstallmentStatus @default(PENDING)
+
+  dueDate       DateTime
+  amount        Decimal  @db.Decimal(18, 2) // total de la cuota
+  principalPart Decimal  @default(0) @db.Decimal(18, 2)
+  interestPart  Decimal  @default(0) @db.Decimal(18, 2)
+  lateFee       Decimal  @default(0) @db.Decimal(18, 2)
+  paidAmount    Decimal  @default(0) @db.Decimal(18, 2)
+  paidAt        DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant      Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  loan        Loan               @relation(fields: [loanId], references: [id], onDelete: Cascade)
+  allocations PaymentAllocation[]
+
+  @@unique([loanId, sequence])
+  @@index([tenantId, loanId, dueDate])
+  @@index([tenantId, status, dueDate])
+  @@map("installments")
+}
+
+// ----------------------------------------------------------------------------
+// PAGOS / ABONOS
+// ----------------------------------------------------------------------------
+model Payment {
+  id       String        @id @default(cuid())
+  tenantId String
+  loanId   String
+  collectorId String? // usuario que registró el cobro
+  cashBoxId String?
+
+  amount    Decimal       @db.Decimal(18, 2)
+  method    PaymentMethod @default(CASH)
+  status    PaymentStatus @default(COMPLETED)
+  reference String?
+  note      String?
+
+  latitude  Float?
+  longitude Float?
+
+  // Idempotencia para reintentos offline de la app:
+  clientRequestId String?
+
+  paidAt    DateTime  @default(now())
+  reversedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant      Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  loan        Loan                @relation(fields: [loanId], references: [id])
+  collector   User?               @relation("PaymentCollector", fields: [collectorId], references: [id])
+  cashBox     CashBox?            @relation(fields: [cashBoxId], references: [id])
+  allocations PaymentAllocation[]
+
+  @@unique([tenantId, clientRequestId])
+  @@index([tenantId, createdAt])
+  @@index([tenantId, loanId])
+  @@index([tenantId, collectorId, paidAt])
+  @@map("payments")
+}
+
+// Asignación de un pago a una o varias cuotas (pagos parciales / FIFO).
+model PaymentAllocation {
+  id            String  @id @default(cuid())
+  tenantId      String
+  paymentId     String
+  installmentId String
+  amount        Decimal @db.Decimal(18, 2)
+
+  payment     Payment     @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  installment Installment @relation(fields: [installmentId], references: [id])
+
+  @@index([tenantId, paymentId])
+  @@index([tenantId, installmentId])
+  @@map("payment_allocations")
+}
+
+// ----------------------------------------------------------------------------
+// CAJA / ARQUEO
+// ----------------------------------------------------------------------------
+model CashBox {
+  id       String    @id @default(cuid())
+  tenantId String
+  userId   String // cobrador dueño de la caja
+  routeId  String?
+
+  openingBalance Decimal   @default(0) @db.Decimal(18, 2)
+  closingBalance Decimal?  @db.Decimal(18, 2)
+  expectedBalance Decimal? @db.Decimal(18, 2)
+  difference     Decimal?  @db.Decimal(18, 2)
+
+  openedAt DateTime  @default(now())
+  closedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant    Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user      User           @relation(fields: [userId], references: [id])
+  route     Route?         @relation(fields: [routeId], references: [id])
+  movements CashMovement[]
+  payments  Payment[]
+
+  @@index([tenantId, userId, openedAt])
+  @@map("cash_boxes")
+}
+
+model CashMovement {
+  id        String           @id @default(cuid())
+  tenantId  String
+  cashBoxId String
+  type      CashMovementType
+  amount    Decimal          @db.Decimal(18, 2)
+  note      String?
+
+  createdAt DateTime @default(now())
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  cashBox CashBox @relation(fields: [cashBoxId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, cashBoxId])
+  @@map("cash_movements")
+}
+
+// ----------------------------------------------------------------------------
+// LEDGER FINANCIERO (append-only, auditable)
+// ----------------------------------------------------------------------------
+model LedgerEntry {
+  id       String          @id @default(cuid())
+  tenantId String
+  loanId   String?
+  type     LedgerEntryType
+  amount   Decimal         @db.Decimal(18, 2) // positivo=ingreso, negativo=egreso
+  balanceAfter Decimal?    @db.Decimal(18, 2)
+  reference String? // id del pago/desembolso relacionado
+  metadata  Json           @default("{}")
+
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  loan   Loan?  @relation(fields: [loanId], references: [id])
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, loanId])
+  @@map("ledger_entries")
+}
+
+// ----------------------------------------------------------------------------
+// NOTIFICACIONES / RECORDATORIOS / PUSH
+// ----------------------------------------------------------------------------
+model Notification {
+  id       String              @id @default(cuid())
+  tenantId String
+  userId   String? // destinatario (null = broadcast del tenant)
+  type     NotificationType
+  channel  NotificationChannel @default(IN_APP)
+  title    String
+  body     String
+  data     Json                @default("{}")
+  readAt   DateTime?
+
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User?  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, userId, readAt])
+  @@map("notifications")
+}
+
+model DeviceToken {
+  id       String  @id @default(cuid())
+  tenantId String
+  userId   String
+  token    String // Expo push token / FCM
+  platform String // ios | android | web
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@index([tenantId, userId])
+  @@map("device_tokens")
+}
+
+model Reminder {
+  id       String         @id @default(cuid())
+  tenantId String
+  type     NotificationType
+  status   ReminderStatus @default(SCHEDULED)
+  targetId String? // loanId / clientId según contexto
+  runAt    DateTime
+  payload  Json           @default("{}")
+  sentAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([status, runAt])
+  @@index([tenantId, runAt])
+  @@map("reminders")
+}
+
+// ----------------------------------------------------------------------------
+// AUDITORÍA
+// ----------------------------------------------------------------------------
+model AuditLog {
+  id       String  @id @default(cuid())
+  tenantId String
+  userId   String?
+  action   String // ej. "loan.approve", "payment.reverse"
+  entity   String
+  entityId String?
+  diff     Json    @default("{}")
+  ip       String?
+
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User?  @relation(fields: [userId], references: [id])
+
+  @@index([tenantId, entity, entityId])
+  @@index([tenantId, createdAt])
+  @@map("audit_logs")
+}
