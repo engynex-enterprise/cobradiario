@@ -25,11 +25,14 @@ export interface Client {
   id: string;
   fullName: string;
   documentId?: string;
+  phone?: string;
+  city?: string;
 }
 
 export interface Product {
   id: string;
   name: string;
+  interestMethod: string;
   interestRate: number;
   termCount: number;
   frequency: string;
@@ -56,12 +59,69 @@ export function fetchLoans(routeId?: string) {
 }
 
 export function fetchClients() {
-  return gql<{ clients: Client[] }>(`{ clients { id fullName documentId } }`);
+  return gql<{ clients: Client[] }>(`{ clients { id fullName documentId phone city } }`);
+}
+
+export function createClient(input: {
+  fullName: string;
+  documentId?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+}) {
+  return gql<{ createClient: Client }>(
+    `mutation($i: CreateClientInput!) {
+      createClient(input: $i) { id fullName documentId phone city }
+    }`,
+    { i: input },
+  );
 }
 
 export function fetchProducts() {
   return gql<{ creditProducts: Product[] }>(
-    `{ creditProducts { id name interestRate termCount frequency } }`,
+    `{ creditProducts { id name interestMethod interestRate termCount frequency } }`,
+  );
+}
+
+export function createCreditProduct(input: {
+  name: string;
+  interestMethod: string;
+  interestRate: number;
+  rateBasis: string;
+  frequency: string;
+  termCount: number;
+  graceDays: number;
+  lateFeeType: string;
+  lateFeeValue: number;
+  roundTo: number;
+}) {
+  return gql<{ createCreditProduct: Product }>(
+    `mutation($i: CreateProductInput!) {
+      createCreditProduct(input: $i) { id name interestMethod interestRate termCount frequency }
+    }`,
+    { i: input },
+  );
+}
+
+export interface AppNotification {
+  id: string;
+  type: string;
+  title: string;
+  body: string;
+  readAt?: string;
+  createdAt: string;
+}
+
+export function fetchNotifications() {
+  return gql<{ myNotifications: AppNotification[] }>(
+    `{ myNotifications { id type title body readAt createdAt } }`,
+  );
+}
+
+export function markNotificationRead(id: string) {
+  return gql<{ markNotificationRead: boolean }>(
+    `mutation($id: ID!) { markNotificationRead(id: $id) }`,
+    { id },
   );
 }
 

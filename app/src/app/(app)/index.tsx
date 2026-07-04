@@ -87,7 +87,7 @@ export default function RutaDelDia() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#16a34a" />
+        <ActivityIndicator size="large" color="#004f9f" />
       </View>
     );
   }
@@ -136,7 +136,7 @@ export default function RutaDelDia() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f1f5f9' },
+  container: { flex: 1, backgroundColor: '#f4f7fb' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   statusBar: {
     flexDirection: 'row',
@@ -144,11 +144,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 10,
-    backgroundColor: '#ecfdf5',
+    backgroundColor: '#e6f3ff',
     borderBottomWidth: 1,
-    borderBottomColor: '#d1fae5',
+    borderBottomColor: '#cfe4ff',
   },
-  statusText: { fontSize: 13, color: '#065f46', fontWeight: '600' },
+  statusText: { fontSize: 13, color: '#004f9f', fontWeight: '600' },
   logout: { fontSize: 13, color: '#dc2626', fontWeight: '600' },
   empty: { textAlign: 'center', color: '#94a3b8', marginTop: 40 },
   card: { backgroundColor: '#fff', borderRadius: 14, padding: 16, gap: 8 },
@@ -163,9 +163,9 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     overflow: 'hidden',
   },
-  balance: { fontSize: 20, fontWeight: '800', color: '#0f172a' },
+  balance: { fontSize: 20, fontWeight: '800', color: '#0a2540' },
   detail: { fontSize: 13, color: '#64748b' },
-  payBtn: { backgroundColor: '#16a34a', borderRadius: 10, paddingVertical: 12, alignItems: 'center', marginTop: 4 },
+  payBtn: { backgroundColor: '#004f9f', borderRadius: 10, paddingVertical: 12, alignItems: 'center', marginTop: 4 },
   payBtnDisabled: { backgroundColor: '#cbd5e1' },
   payBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
 });

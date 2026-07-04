@@ -78,10 +78,10 @@ export default function Login() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f1f5f9', justifyContent: 'center', padding: 20 },
+  container: { flex: 1, backgroundColor: '#f4f7fb', justifyContent: 'center', padding: 20 },
   card: { backgroundColor: '#fff', borderRadius: 16, padding: 24, gap: 6 },
   logo: { fontSize: 40, textAlign: 'center' },
-  title: { fontSize: 24, fontWeight: '700', textAlign: 'center', color: '#0f172a' },
+  title: { fontSize: 24, fontWeight: '700', textAlign: 'center', color: '#0a2540' },
   subtitle: { fontSize: 14, color: '#64748b', textAlign: 'center', marginBottom: 12 },
   label: { fontSize: 13, fontWeight: '600', color: '#334155', marginTop: 8 },
   input: {
@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   button: {
-    backgroundColor: '#16a34a',
+    backgroundColor: '#004f9f',
     borderRadius: 10,
     paddingVertical: 14,
     alignItems: 'center',

@@ -14,7 +14,7 @@ export default function AppLayout() {
   if (!user) return <Redirect href="/login" />;
 
   return (
-    <Stack screenOptions={{ headerStyle: { backgroundColor: '#16a34a' }, headerTintColor: '#fff' }}>
+    <Stack screenOptions={{ headerStyle: { backgroundColor: '#004f9f' }, headerTintColor: '#fff' }}>
       <Stack.Screen name="index" options={{ title: 'Ruta del día' }} />
     </Stack>
   );

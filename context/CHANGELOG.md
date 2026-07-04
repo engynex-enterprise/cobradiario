@@ -216,6 +216,27 @@ Bitácora de decisiones y cambios estructurales. Formato: fecha · tipo · descr
   cartera (ventana estilo navegador + mini-gráfica) y features (tiempo real / rutas / caja).
 - **[verificación]** typecheck web OK; `/login` sirve 200 y renderiza marca + tagline + formulario.
 
+## 2026-07-04 — Coherencia visual: app Expo con azul de marca
+
+- **[app]** Reemplazados los colores verdes/slate por la paleta Altipal (azul `#004f9f`, navy
+  `#0a2540`, fondo `#f4f7fb`, acento `#e6f3ff`) en login, ruta del día y header del stack.
+  La app móvil ahora comparte identidad de marca con la web.
+- **[verificación]** typecheck app OK (cambio solo de literales de color; bundle previo ya validado).
+
+## 2026-07-04 — Menú ampliado + páginas Clientes/Productos/Notificaciones/Ajustes
+
+- **[web]** Sidebar reorganizado en secciones (Operación / Análisis / Administración) con más
+  ítems. Nuevas páginas:
+  - **Clientes** (`/dashboard/clientes`): listado + crear cliente.
+  - **Productos** (`/dashboard/productos`): tarjetas de productos + crear producto de crédito
+    configurable (método, tasa, base, frecuencia, plazo, gracia, mora, redondeo).
+  - **Notificaciones** (`/dashboard/notificaciones`): listado, marcar leída(s), realtime.
+  - **Ajustes** (`/dashboard/ajustes`): perfil, organización, apariencia (tema), cerrar sesión.
+- **[web]** GraphQL: `createClient`, `createCreditProduct`, `fetchNotifications`,
+  `markNotificationRead`; campos extra en Client/Product.
+- **[verificación]** typecheck web OK; 8 páginas del panel sirven 200; operaciones nuevas
+  probadas contra el servidor (crear cliente/producto, notificaciones).
+
 <!-- Plantilla para próximas entradas:
 ## AAAA-MM-DD — Título
 - **[tipo]** descripción   (tipo ∈ decisión/infra/db/backend/app/web/seguridad/pendiente/fix)

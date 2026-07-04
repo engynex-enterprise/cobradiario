@@ -6,17 +6,55 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/components/auth-provider';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { cn } from '@/lib/utils';
-import { LayoutGrid, BarChart3, Users, Coins, Landmark, LogOut } from 'lucide-react';
+import {
+  Wallet,
+  Users,
+  Coins,
+  BarChart3,
+  Network,
+  Package,
+  Bell,
+  Settings,
+  Landmark,
+  LogOut,
+  type LucideIcon,
+} from 'lucide-react';
 
-const NAV = [
-  { href: '/dashboard', label: 'Cartera', icon: LayoutGrid },
-  { href: '/dashboard/reportes', label: 'Reportes', icon: BarChart3 },
-  { href: '/dashboard/equipo', label: 'Equipo y rutas', icon: Users },
-  { href: '/dashboard/caja', label: 'Caja', icon: Coins },
+interface NavItem {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+}
+
+const NAV: { section: string; items: NavItem[] }[] = [
+  {
+    section: 'Operación',
+    items: [
+      { href: '/dashboard', label: 'Cartera', icon: Wallet },
+      { href: '/dashboard/clientes', label: 'Clientes', icon: Users },
+      { href: '/dashboard/caja', label: 'Caja', icon: Coins },
+    ],
+  },
+  {
+    section: 'Análisis',
+    items: [{ href: '/dashboard/reportes', label: 'Reportes', icon: BarChart3 }],
+  },
+  {
+    section: 'Administración',
+    items: [
+      { href: '/dashboard/equipo', label: 'Equipo y rutas', icon: Network },
+      { href: '/dashboard/productos', label: 'Productos', icon: Package },
+      { href: '/dashboard/notificaciones', label: 'Notificaciones', icon: Bell },
+      { href: '/dashboard/ajustes', label: 'Ajustes', icon: Settings },
+    ],
+  },
 ];
 
+const FLAT = NAV.flatMap((g) => g.items);
+
 function isActive(pathname: string, href: string) {
-  return href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(href);
+  if (href === '/dashboard') return pathname === '/dashboard' || pathname.startsWith('/dashboard/loan');
+  return pathname === href || pathname.startsWith(href + '/');
 }
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
@@ -63,26 +101,33 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       {/* Cuerpo: sidebar + contenido */}
       <div className="flex min-h-0 flex-1">
         <aside className="hidden w-60 shrink-0 flex-col border-r-2 border-border bg-sidebar md:flex">
-          <nav className="flex-1 space-y-1 overflow-y-auto p-3">
-            {NAV.map((item) => {
-              const active = isActive(pathname, item.href);
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    'flex items-center gap-3 border-2 px-3 py-2.5 text-[13px] font-bold uppercase tracking-wide transition-colors',
-                    active
-                      ? 'border-sky-300 bg-accent text-accent-foreground'
-                      : 'border-transparent text-sidebar-foreground hover:bg-muted hover:text-foreground',
-                  )}
-                >
-                  <Icon className="size-5 shrink-0" />
-                  <span className="truncate">{item.label}</span>
-                </Link>
-              );
-            })}
+          <nav className="flex-1 space-y-4 overflow-y-auto p-3">
+            {NAV.map((group) => (
+              <div key={group.section} className="space-y-1">
+                <p className="px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  {group.section}
+                </p>
+                {group.items.map((item) => {
+                  const active = isActive(pathname, item.href);
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={cn(
+                        'flex items-center gap-3 border-2 px-3 py-2.5 text-[13px] font-bold uppercase tracking-wide transition-colors',
+                        active
+                          ? 'border-sky-300 bg-accent text-accent-foreground'
+                          : 'border-transparent text-sidebar-foreground hover:bg-muted hover:text-foreground',
+                      )}
+                    >
+                      <Icon className="size-5 shrink-0" />
+                      <span className="truncate">{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            ))}
           </nav>
           <div className="border-t-2 border-sidebar-border p-3 text-xs text-muted-foreground">
             <p className="font-semibold text-foreground">Plataforma de cobro diario</p>
@@ -93,7 +138,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         {/* Nav horizontal en móvil */}
         <div className="flex min-w-0 flex-1 flex-col">
           <nav className="flex gap-1 overflow-x-auto border-b-2 border-border bg-card px-2 py-1.5 md:hidden">
-            {NAV.map((item) => {
+            {FLAT.map((item) => {
               const active = isActive(pathname, item.href);
               return (
                 <Link

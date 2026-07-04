@@ -48,6 +48,15 @@ type CashMovement {
   type: CashMovementType!
 }
 
+type CashMovementFeedItem {
+  amount: Float!
+  collectorName: String
+  createdAt: DateTime!
+  id: ID!
+  note: String
+  type: CashMovementType!
+}
+
 enum CashMovementType {
   ADJUSTMENT
   CLOSING
@@ -142,6 +151,25 @@ type DashboardStats {
 A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
 """
 scalar DateTime
+
+enum DueFilter {
+  OVERDUE
+  TODAY
+  UPCOMING
+}
+
+type DueInstallment {
+  amount: Float!
+  clientName: String
+  dueDate: DateTime!
+  id: ID!
+  lateFee: Float!
+  loanId: ID!
+  paidAmount: Float!
+  routeName: String
+  sequence: Int!
+  status: String!
+}
 
 type EnqueuedJob {
   jobId: String!
@@ -292,6 +320,16 @@ type Payment {
   status: PaymentStatus!
 }
 
+type PaymentFeedItem {
+  amount: Float!
+  clientName: String
+  collectorName: String
+  id: ID!
+  loanId: ID!
+  method: PaymentMethod!
+  paidAt: DateTime!
+}
+
 enum PaymentMethod {
   CARD
   CASH
@@ -306,15 +344,19 @@ enum PaymentStatus {
 }
 
 type Query {
+  cashMovements(type: CashMovementType): [CashMovementFeedItem!]!
   clients: [Client!]!
   creditProducts: [CreditProduct!]!
   dashboardStats: DashboardStats!
+  dueInstallments(filter: DueFilter!): [DueInstallment!]!
   loan(id: ID!): Loan!
   loans(routeId: ID): [Loan!]!
   me: AuthUser!
   myNotifications: [Notification!]!
   myOpenCashBox: CashBox
   payments(loanId: ID!): [Payment!]!
+  recentPayments: [PaymentFeedItem!]!
+  reminders: [ReminderItem!]!
   routes: [Route!]!
   teamMembers: [TeamMember!]!
 }
@@ -353,6 +395,14 @@ type RegisterPaymentResult {
   leftover: Float!
   loan: Loan!
   payment: Payment!
+}
+
+type ReminderItem {
+  id: ID!
+  runAt: DateTime!
+  sentAt: DateTime
+  status: String!
+  type: String!
 }
 
 enum RoundingMode {
