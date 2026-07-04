@@ -6,8 +6,10 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { CurrencyInput } from '@/components/ui/currency-input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import {
   Table,
   TableBody,
@@ -96,7 +98,7 @@ export default function CajaPage() {
 }
 
 function OpenForm({ onOpen }: { onOpen: (amount: number) => void }) {
-  const [amount, setAmount] = useState('50000');
+  const [amount, setAmount] = useState(50000);
   return (
     <Card>
       <CardHeader>
@@ -107,12 +109,12 @@ function OpenForm({ onOpen }: { onOpen: (amount: number) => void }) {
           className="flex items-end gap-3"
           onSubmit={(e) => {
             e.preventDefault();
-            onOpen(Number(amount));
+            onOpen(amount);
           }}
         >
           <div className="flex-1 space-y-2">
             <Label htmlFor="opening">Saldo inicial (base)</Label>
-            <Input id="opening" type="number" value={amount} onChange={(e) => setAmount(e.target.value)} />
+            <CurrencyInput value={amount} onValueChange={setAmount} />
           </div>
           <Button type="submit">Abrir</Button>
         </form>
@@ -131,10 +133,10 @@ function OpenBox({
   onClose: (counted: number) => void;
 }) {
   const [type, setType] = useState<string>('EXPENSE');
-  const [amount, setAmount] = useState('');
+  const [amount, setAmount] = useState(0);
   const [note, setNote] = useState('');
-  const [counted, setCounted] = useState('');
-  const preview = counted !== '' ? Number(counted) - box.expectedBalance : null;
+  const [counted, setCounted] = useState<number | undefined>(undefined);
+  const preview = counted !== undefined ? counted - box.expectedBalance : null;
 
   return (
     <div className="space-y-6">
@@ -184,28 +186,25 @@ function OpenBox({
             onSubmit={(e) => {
               e.preventDefault();
               if (!amount) return;
-              onAdd(type, Number(amount), note);
-              setAmount('');
+              onAdd(type, amount, note);
+              setAmount(0);
               setNote('');
             }}
           >
             <div className="space-y-2">
               <Label>Tipo</Label>
-              <select
-                className="flex h-10 w-40 rounded-md border border-input bg-background px-3 text-sm"
-                value={type}
-                onChange={(e) => setType(e.target.value)}
-              >
-                {MOVEMENT_TYPES.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
-                  </option>
-                ))}
-              </select>
+              <Select value={type} onValueChange={setType}>
+                <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {MOVEMENT_TYPES.map((t) => (
+                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <div className="space-y-2">
+            <div className="w-40 space-y-2">
               <Label>Monto</Label>
-              <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} className="w-36" />
+              <CurrencyInput value={amount} onValueChange={setAmount} />
             </div>
             <div className="flex-1 space-y-2">
               <Label>Nota</Label>
@@ -227,19 +226,13 @@ function OpenBox({
             className="flex flex-wrap items-end gap-3"
             onSubmit={(e) => {
               e.preventDefault();
-              if (counted === '') return;
-              onClose(Number(counted));
+              if (counted === undefined) return;
+              onClose(counted);
             }}
           >
-            <div className="space-y-2">
+            <div className="w-44 space-y-2">
               <Label>Efectivo contado</Label>
-              <Input
-                type="number"
-                value={counted}
-                onChange={(e) => setCounted(e.target.value)}
-                className="w-44"
-                placeholder={String(box.expectedBalance)}
-              />
+              <CurrencyInput value={counted} onValueChange={setCounted} />
             </div>
             {preview !== null && (
               <p className={`pb-2 text-sm ${preview === 0 ? 'text-emerald-600' : 'text-destructive'}`}>

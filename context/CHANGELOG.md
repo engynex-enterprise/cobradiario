@@ -279,6 +279,15 @@ Bitácora de decisiones y cambios estructurales. Formato: fecha · tipo · descr
 - **[pendiente]** Swap literal de Radix → `@base-ui/react` (shadcn base-nova) si se exige identidad
   a nivel de librería (no solo visual).
 
+## 2026-07-04 — Tablas con filtro/orden/paginación + inputs de moneda
+
+- **[web]** `DataTable` reutilizable: buscador, ordenamiento por columna (click en cabecera) y
+  paginación. Aplicado a **Clientes, Pagos, Préstamos, Movimientos y Gastos**.
+- **[web]** `CurrencyInput`: formato de moneda con separador de miles ($ 1.250.000) y valor entero
+  en pesos. Aplicado a montos de **crédito, abono y caja** (apertura/movimiento/conteo de cierre).
+- **[web]** Selects nativos restantes de Caja (tipo de movimiento) migrados a Select de shadcn.
+- **[verificación]** typecheck web OK; páginas de tablas sirven 200.
+
 <!-- Plantilla para próximas entradas:
 ## AAAA-MM-DD — Título
 - **[tipo]** descripción   (tipo ∈ decisión/infra/db/backend/app/web/seguridad/pendiente/fix)

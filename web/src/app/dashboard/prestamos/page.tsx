@@ -5,23 +5,15 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { CreateLoanDialog } from '@/components/create-loan-dialog';
 import { PayDialog } from '@/components/pay-dialog';
+import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { PageHeader } from '@/components/page-header';
+import { DataTable, type Column } from '@/components/ui/data-table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { fetchLoans, fetchRoutes, type Loan, type Route } from '@/lib/graphql';
 import { getSocket } from '@/lib/socket';
 import { money } from '@/lib/utils';
-import { Radio, Search } from 'lucide-react';
+import { Radio } from 'lucide-react';
 
 const statusVariant: Record<string, 'default' | 'success' | 'warning' | 'destructive'> = {
   ACTIVE: 'default',
@@ -35,7 +27,6 @@ export default function PrestamosPage() {
   const [loans, setLoans] = useState<Loan[]>([]);
   const [routes, setRoutes] = useState<Route[]>([]);
   const [routeId, setRouteId] = useState('');
-  const [q, setQ] = useState('');
   const [live, setLive] = useState(false);
 
   const load = useCallback(() => {
@@ -66,35 +57,59 @@ export default function PrestamosPage() {
     };
   }, [load]);
 
-  const filtered = loans.filter((l) => (l.clientName ?? '').toLowerCase().includes(q.toLowerCase()));
+  const columns: Column<Loan>[] = [
+    {
+      key: 'clientName',
+      header: 'Cliente',
+      sortable: true,
+      sortValue: (l) => l.clientName ?? '',
+      render: (l) => (
+        <div>
+          <p className="font-medium">{l.clientName ?? '—'}</p>
+          {l.routeName ? <p className="text-xs text-muted-foreground">{l.routeName}</p> : null}
+        </div>
+      ),
+    },
+    { key: 'status', header: 'Estado', sortable: true, sortValue: (l) => l.status, render: (l) => <Badge variant={statusVariant[l.status] ?? 'secondary'}>{l.status}</Badge> },
+    { key: 'totalDue', header: 'Total', sortable: true, sortValue: (l) => l.totalDue, render: (l) => money(l.totalDue) },
+    { key: 'paidAmount', header: 'Pagado', sortable: true, sortValue: (l) => l.paidAmount, render: (l) => <span className="text-emerald-600">{money(l.paidAmount)}</span> },
+    { key: 'balance', header: 'Saldo', sortable: true, sortValue: (l) => l.balance, render: (l) => <span className="font-semibold">{money(l.balance)}</span> },
+    {
+      key: 'actions',
+      header: '',
+      className: 'text-right',
+      render: (l) => (
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" size="sm" onClick={() => router.push(`/dashboard/loan/${l.id}`)}>
+            Ver
+          </Button>
+          <PayDialog loan={l} onPaid={load} />
+        </div>
+      ),
+    },
+  ];
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6">
       <PageHeader
         title="Préstamos"
-        description="La cartera de créditos: cada préstamo con su cliente, ruta, total a pagar, abonado y saldo. Crea nuevos créditos, búscalos y registra abonos. Se actualiza en tiempo real."
+        description="La cartera de créditos: cada préstamo con su cliente, ruta, total a pagar, abonado y saldo. Crea nuevos créditos, búscalos, ordénalos y registra abonos. Se actualiza en tiempo real."
         actions={
           <Badge variant={live ? 'success' : 'secondary'} className="gap-1">
             <Radio className="h-3 w-3" /> {live ? 'En vivo' : 'Desconectado'}
           </Badge>
         }
       />
-
-      <Card>
-        <CardHeader className="flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <CardTitle className="text-xl">Cartera de créditos</CardTitle>
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="Buscar cliente…"
-                className="h-9 w-44 border border-input bg-background pl-8 pr-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              />
-            </div>
+      <DataTable
+        rows={loans}
+        columns={columns}
+        search={(l) => l.clientName ?? ''}
+        searchPlaceholder="Buscar cliente…"
+        empty="No hay créditos."
+        toolbar={
+          <div className="flex items-center gap-2">
             <Select value={routeId || 'all'} onValueChange={(v) => setRouteId(v === 'all' ? '' : v)}>
-              <SelectTrigger className="h-9 w-44"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-11 w-44"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas las rutas</SelectItem>
                 {routes.map((r) => (
@@ -104,50 +119,8 @@ export default function PrestamosPage() {
             </Select>
             <CreateLoanDialog onCreated={load} />
           </div>
-        </CardHeader>
-        <CardContent>
-          {filtered.length === 0 ? (
-            <div className="py-12 text-center text-sm text-muted-foreground">No hay créditos.</div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Total a pagar</TableHead>
-                  <TableHead>Pagado</TableHead>
-                  <TableHead>Saldo</TableHead>
-                  <TableHead className="text-right">Acción</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map((l) => (
-                  <TableRow key={l.id}>
-                    <TableCell>
-                      <p className="font-medium">{l.clientName ?? '—'}</p>
-                      {l.routeName ? <p className="text-xs text-muted-foreground">{l.routeName}</p> : null}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={statusVariant[l.status] ?? 'secondary'}>{l.status}</Badge>
-                    </TableCell>
-                    <TableCell>{money(l.totalDue)}</TableCell>
-                    <TableCell className="text-emerald-600">{money(l.paidAmount)}</TableCell>
-                    <TableCell className="font-semibold">{money(l.balance)}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="sm" onClick={() => router.push(`/dashboard/loan/${l.id}`)}>
-                          Ver
-                        </Button>
-                        <PayDialog loan={l} onPaid={load} />
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+        }
+      />
     </div>
   );
 }

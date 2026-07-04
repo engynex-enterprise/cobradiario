@@ -11,7 +11,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { CurrencyInput } from '@/components/ui/currency-input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
@@ -33,7 +33,7 @@ export function CreateLoanDialog({ onCreated }: { onCreated: () => void }) {
   const [clientId, setClientId] = useState('');
   const [productId, setProductId] = useState('');
   const [routeId, setRouteId] = useState('none');
-  const [principal, setPrincipal] = useState('100000');
+  const [principal, setPrincipal] = useState(100000);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -56,7 +56,7 @@ export function CreateLoanDialog({ onCreated }: { onCreated: () => void }) {
       await createLoan({
         clientId,
         productId,
-        principal: Number(principal),
+        principal,
         routeId: routeId !== 'none' ? routeId : undefined,
       });
       toast.success('Crédito creado');
@@ -123,9 +123,9 @@ export function CreateLoanDialog({ onCreated }: { onCreated: () => void }) {
           </div>
           <div className="space-y-2">
             <Label>Monto (capital)</Label>
-            <Input type="number" min={1} value={principal} onChange={(e) => setPrincipal(e.target.value)} required />
+            <CurrencyInput value={principal} onValueChange={setPrincipal} />
           </div>
-          <Button type="submit" className="w-full" disabled={loading || !clientId || !productId}>
+          <Button type="submit" className="w-full" disabled={loading || !clientId || !productId || principal <= 0}>
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
             Crear crédito
           </Button>
