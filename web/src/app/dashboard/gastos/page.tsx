@@ -18,6 +18,26 @@ import { Plus, Receipt, Trash2, TrendingUp, Wallet } from 'lucide-react';
 
 const CATEGORIES = ['Transporte', 'Oficina', 'Sueldos', 'Servicios', 'Otro'];
 
+const MODULE_INFO = {
+  summary: 'El registro de los egresos operativos del negocio: transporte, oficina, sueldos, servicios y otros.',
+  purpose:
+    'Controla en qué se gasta la plata para calcular la ganancia neta real (recaudo de intereses/cargos menos gastos).',
+  how: [
+    'Registra un gasto con "Nuevo gasto": categoría, monto y una nota opcional.',
+    'Los KPIs muestran el gasto del día, la ganancia neta y lo recaudado.',
+    'Busca por categoría, nota o quién lo registró.',
+    'El menú (⋮) permite eliminar un gasto mal registrado.',
+  ],
+  technical:
+    'Cada Expense descuenta en el cálculo de financialSummary.netProfit = (interés + cargos + mora recaudados) − expensesTotal del período. Queda asociado al autor (authorName) y a una ruta opcional.',
+  plain:
+    'Es el control de "en qué se me va la plata": "Hoy gasté $20.000 en gasolina para la ruta y $50.000 en el sueldo del cobrador". Al final del día, la app resta esos gastos de lo que ganaste para decirte cuánto quedó limpio.',
+  tips: [
+    'Registra los gastos el mismo día para que la ganancia neta sea fiel.',
+    'Usa categorías consistentes para poder analizar en qué gastas más.',
+  ],
+};
+
 export default function GastosPage() {
   const [items, setItems] = useState<Expense[]>([]);
   const [summary, setSummary] = useState<FinancialSummary | null>(null);
@@ -59,6 +79,7 @@ export default function GastosPage() {
       <PageHeader
         title="Gastos"
         description="Egresos operativos del negocio (transporte, oficina, sueldos, servicios…). Se descuentan de la ganancia neta del período."
+        info={MODULE_INFO}
         actions={<NewExpenseSheet open={open} setOpen={setOpen} onCreated={load} />}
       />
 

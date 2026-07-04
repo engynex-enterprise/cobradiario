@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
+import { ModuleInfoButton, type ModuleInfo } from '@/components/module-info';
 
 export interface SectionTab {
   key: string;
@@ -23,6 +24,7 @@ export function PageHeader({
   description,
   icon: Icon,
   actions,
+  info,
   tabs,
   active,
   onSelect,
@@ -31,6 +33,7 @@ export function PageHeader({
   description?: string;
   icon?: LucideIcon;
   actions?: ReactNode;
+  info?: ModuleInfo;
   tabs?: SectionTab[];
   active?: string;
   onSelect?: (key: string) => void;
@@ -51,7 +54,12 @@ export function PageHeader({
             {description && <p className="truncate text-sm text-muted-foreground">{description}</p>}
           </div>
         </div>
-        {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
+        {(actions || info) && (
+          <div className="flex shrink-0 items-center gap-2">
+            {actions}
+            {info && <ModuleInfoButton info={info} moduleTitle={title} />}
+          </div>
+        )}
       </div>
 
       {tabs && tabs.length > 0 && (

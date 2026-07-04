@@ -18,6 +18,26 @@ const methodLabel: Record<string, string> = {
   OTHER: 'Otro',
 };
 
+const MODULE_INFO = {
+  summary: 'El historial de todos los abonos recibidos en cualquier crédito: monto, método, cobrador y fecha.',
+  purpose:
+    'Da trazabilidad total del dinero que entra: quién pagó, cuánto, cómo y quién lo recibió. Es la auditoría del recaudo.',
+  how: [
+    'Cada fila es un abono ya aplicado a un crédito.',
+    'Busca por cliente o cobrador y ordena por monto o fecha.',
+    'El total arriba a la derecha suma los abonos mostrados.',
+    'El menú (⋮) → "Ver crédito" abre el préstamo al que pertenece el abono.',
+  ],
+  technical:
+    'Cada Payment se reparte (allocation) entre las cuotas del crédito por orden: primero mora y cargos, luego interés y capital. Se registra con clientRequestId idempotente y emite el evento payment.registered por WebSocket, que refresca esta lista en vivo.',
+  plain:
+    'Es el recibo de caja del negocio: "Hoy Ana abonó $15.000 en efectivo, se los recibió Luis a las 10 a.m.". Aquí queda la constancia de cada pago para que nada se pierda ni se cobre dos veces.',
+  tips: [
+    'Filtra mentalmente por cobrador para cuadrar la caja de cada uno al cierre.',
+    'Si un abono se ve mal, entra a "Ver crédito" para revisar el plan de pagos.',
+  ],
+};
+
 export default function PagosPage() {
   const router = useRouter();
   const [items, setItems] = useState<PaymentFeedItem[]>([]);
@@ -58,6 +78,7 @@ export default function PagosPage() {
       <PageHeader
         title="Pagos"
         description="Historial de abonos recibidos en todos los créditos: monto, método, cobrador y fecha. Cada abono se descuenta del saldo del crédito y alimenta la caja del cobrador."
+        info={MODULE_INFO}
         actions={
           <span className="text-sm text-muted-foreground">
             Total: <span className="font-semibold text-foreground">{money(total)}</span>

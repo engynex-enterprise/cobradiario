@@ -45,7 +45,9 @@ export class OpsService {
     } else if (filter === DueFilter.UPCOMING) {
       where = { status: { in: ['PENDING', 'PARTIAL'] }, dueDate: { gt: endToday, lte: in7 } };
     } else {
-      where = { status: { in: ['PENDING', 'PARTIAL', 'OVERDUE'] }, dueDate: { gte: startToday, lt: endToday } };
+      // Incluye PAID para que las cuotas ya cobradas hoy sigan visibles y la
+      // meta/indicadores del día reflejen el avance (no desaparezcan al pagarse).
+      where = { status: { in: ['PENDING', 'PARTIAL', 'OVERDUE', 'PAID'] }, dueDate: { gte: startToday, lt: endToday } };
     }
 
     const rows = await this.prisma.forTenant(tenantId).installment.findMany({

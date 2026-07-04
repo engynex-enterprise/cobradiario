@@ -253,6 +253,40 @@ export function registerPayment(input: {
   );
 }
 
+export type ManagementType = 'CALL' | 'VISIT' | 'SMS' | 'WHATSAPP' | 'EMAIL' | 'OTHER';
+export interface Management {
+  id: string;
+  loanId: string;
+  authorName: string;
+  type: ManagementType;
+  result?: string;
+  note?: string;
+  promiseAmount?: number;
+  promiseDate?: string;
+  createdAt: string;
+}
+export function createManagement(input: {
+  loanId: string;
+  type: ManagementType;
+  result?: string;
+  note?: string;
+  promiseAmount?: number;
+  promiseDate?: string;
+}) {
+  return gql<{ createManagement: Management }>(
+    `mutation($i: CreateManagementInput!) {
+      createManagement(input: $i) { id loanId authorName type result note promiseAmount promiseDate createdAt }
+    }`,
+    { i: input },
+  );
+}
+export function fetchManagements(loanId: string) {
+  return gql<{ managements: Management[] }>(
+    `query($loanId: ID!) { managements(loanId: $loanId) { id loanId authorName type result note promiseAmount promiseDate createdAt } }`,
+    { loanId },
+  );
+}
+
 export interface Installment {
   id: string;
   sequence: number;

@@ -18,6 +18,26 @@ import {
 import { createClient, deleteClient, fetchClients, updateClient, type Client } from '@/lib/graphql';
 import { Pencil, Plus, Trash2, UserRound } from 'lucide-react';
 
+const MODULE_INFO = {
+  summary: 'El directorio de todas las personas a las que les prestas: sus datos de contacto y ubicación.',
+  purpose:
+    'Centraliza a tus deudores para poder crearles créditos, ubicarlos en las rutas de cobro y contactarlos rápidamente.',
+  how: [
+    'Crea un cliente con "Nuevo cliente" (nombre, documento, teléfono, dirección y ciudad).',
+    'Busca por nombre, documento o ciudad; ordena por nombre o ciudad.',
+    'El menú (⋮) de cada fila permite editar sus datos o eliminarlo.',
+    'Un cliente con créditos activos no se puede eliminar (se protege la cartera).',
+  ],
+  technical:
+    'Cada Client vive aislado por tenant (RLS). "Eliminar" hace un soft-delete (marca deletedAt) y valida que no tenga Loans en estado ACTIVE/DEFAULTED/PENDING_APPROVAL antes de archivar.',
+  plain:
+    'Es tu agenda de contactos de negocio: "Ana Pérez, vive en la calle 10, teléfono 300…". Antes de prestarle a alguien, primero lo registras aquí; luego, al crear el crédito, solo lo eliges de la lista.',
+  tips: [
+    'Registra el teléfono: te sirve para recordatorios y gestiones de cobro.',
+    'La ciudad y dirección ayudan a armar las rutas del cobrador.',
+  ],
+};
+
 export default function ClientesPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [open, setOpen] = useState(false);
@@ -60,6 +80,7 @@ export default function ClientesPage() {
       <PageHeader
         title="Clientes"
         description="Directorio de deudores. Registra a cada persona a la que le prestas: sus datos de contacto y ubicación se usan al crear créditos y en las rutas de cobro."
+        info={MODULE_INFO}
         actions={<ClientDrawer open={open} setOpen={setOpen} onSaved={load} />}
       />
       <DataTable

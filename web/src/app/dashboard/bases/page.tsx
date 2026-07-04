@@ -16,6 +16,26 @@ import { createBaseMovement, deleteBaseMovement, fetchBaseMovements, type BaseMo
 import { formatDate, money } from '@/lib/utils';
 import { LogIn, LogOut, Plus, Trash2 } from 'lucide-react';
 
+const MODULE_INFO = {
+  summary: 'El control del efectivo con el que arranca y cierra el cobrador: la "base" que recibe para dar cambio/prestar y la que entrega al final.',
+  purpose:
+    'Cuadra la caja del cobrador separando el dinero de la operación (base) del dinero recaudado, para saber cuánto efectivo debe entregar al cierre.',
+  how: [
+    'Registra "Base recibida" cuando entregas efectivo al cobrador para arrancar el día.',
+    'Registra "Base entregada" cuando el cobrador devuelve el efectivo sobrante.',
+    'Los KPIs suman el total recibido y entregado.',
+    'El menú (⋮) permite eliminar un movimiento mal registrado.',
+  ],
+  technical:
+    'Cada BaseMovement es de tipo RECEIVED o DELIVERED y alimenta las líneas basesReceived / basesDelivered del resumen financiero, sin mezclarse con abonos ni gastos.',
+  plain:
+    'Imagina que le das $100.000 al cobrador en la mañana para que tenga con qué dar vueltas: eso es una "base recibida". Al final del día te devuelve lo que no usó: "base entregada". Así sabes que el efectivo cuadra y no se confunde con lo que cobró.',
+  tips: [
+    'Registra la base al inicio de la jornada para que el arqueo de caja cuadre.',
+    'La base no es ingreso del negocio: es solo efectivo operativo que va y vuelve.',
+  ],
+};
+
 export default function BasesPage() {
   const [items, setItems] = useState<BaseMovement[]>([]);
   const [open, setOpen] = useState(false);
@@ -58,6 +78,7 @@ export default function BasesPage() {
       <PageHeader
         title="Bases"
         description="Efectivo que el cobrador recibe para prestar/dar cambio y el que entrega al cierre. Alimenta las líneas de Bases del resumen financiero."
+        info={MODULE_INFO}
         actions={<NewBaseSheet open={open} setOpen={setOpen} onCreated={load} />}
       />
 
