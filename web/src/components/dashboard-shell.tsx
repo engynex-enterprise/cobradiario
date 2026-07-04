@@ -7,14 +7,25 @@ import { useAuth } from '@/components/auth-provider';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { cn } from '@/lib/utils';
 import {
-  Wallet,
+  Home,
   Users,
+  HandCoins,
+  Banknote,
+  CalendarCheck,
+  ArrowLeftRight,
+  Receipt,
   Coins,
-  BarChart3,
+  Scale,
+  Layers,
+  Route,
   Network,
   Package,
+  Tags,
+  BellRing,
   Bell,
-  Settings,
+  MessageCircle,
+  BarChart3,
+  UserRound,
   Landmark,
   LogOut,
   type LucideIcon,
@@ -28,11 +39,40 @@ interface NavItem {
 
 const NAV: { section: string; items: NavItem[] }[] = [
   {
-    section: 'Operación',
+    section: 'Principal',
     items: [
-      { href: '/dashboard', label: 'Cartera', icon: Wallet },
+      { href: '/dashboard', label: 'Inicio', icon: Home },
       { href: '/dashboard/clientes', label: 'Clientes', icon: Users },
+      { href: '/dashboard/prestamos', label: 'Préstamos', icon: HandCoins },
+      { href: '/dashboard/pagos', label: 'Pagos', icon: Banknote },
+      { href: '/dashboard/cobro', label: 'Cobro del día', icon: CalendarCheck },
+    ],
+  },
+  {
+    section: 'Finanzas',
+    items: [
+      { href: '/dashboard/movimientos', label: 'Movimientos', icon: ArrowLeftRight },
+      { href: '/dashboard/gastos', label: 'Gastos', icon: Receipt },
       { href: '/dashboard/caja', label: 'Caja', icon: Coins },
+      { href: '/dashboard/balances', label: 'Balances', icon: Scale },
+      { href: '/dashboard/bases', label: 'Bases', icon: Layers },
+    ],
+  },
+  {
+    section: 'Gestión',
+    items: [
+      { href: '/dashboard/rutas', label: 'Rutas', icon: Route },
+      { href: '/dashboard/equipo', label: 'Equipo', icon: Network },
+      { href: '/dashboard/productos', label: 'Productos', icon: Package },
+      { href: '/dashboard/etiquetas', label: 'Etiquetas', icon: Tags },
+    ],
+  },
+  {
+    section: 'Comunicación',
+    items: [
+      { href: '/dashboard/recordatorios', label: 'Recordatorios', icon: BellRing },
+      { href: '/dashboard/notificaciones', label: 'Notificaciones', icon: Bell },
+      { href: '/dashboard/chat', label: 'Chat', icon: MessageCircle },
     ],
   },
   {
@@ -40,20 +80,17 @@ const NAV: { section: string; items: NavItem[] }[] = [
     items: [{ href: '/dashboard/reportes', label: 'Reportes', icon: BarChart3 }],
   },
   {
-    section: 'Administración',
-    items: [
-      { href: '/dashboard/equipo', label: 'Equipo y rutas', icon: Network },
-      { href: '/dashboard/productos', label: 'Productos', icon: Package },
-      { href: '/dashboard/notificaciones', label: 'Notificaciones', icon: Bell },
-      { href: '/dashboard/ajustes', label: 'Ajustes', icon: Settings },
-    ],
+    section: 'Cuenta',
+    items: [{ href: '/dashboard/perfil', label: 'Perfil', icon: UserRound }],
   },
 ];
 
 const FLAT = NAV.flatMap((g) => g.items);
 
 function isActive(pathname: string, href: string) {
-  if (href === '/dashboard') return pathname === '/dashboard' || pathname.startsWith('/dashboard/loan');
+  if (href === '/dashboard') return pathname === '/dashboard';
+  if (href === '/dashboard/prestamos')
+    return pathname.startsWith('/dashboard/prestamos') || pathname.startsWith('/dashboard/loan');
   return pathname === href || pathname.startsWith(href + '/');
 }
 
@@ -70,7 +107,6 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
-      {/* Header */}
       <header className="shadow-header flex h-16 shrink-0 items-center gap-2 border-b-2 border-border bg-card px-4">
         <Link href="/dashboard" className="flex items-center gap-2.5">
           <span className="flex size-9 items-center justify-center bg-primary text-primary-foreground">
@@ -98,7 +134,6 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      {/* Cuerpo: sidebar + contenido */}
       <div className="flex min-h-0 flex-1">
         <aside className="hidden w-60 shrink-0 flex-col border-r-2 border-border bg-sidebar md:flex">
           <nav className="flex-1 space-y-4 overflow-y-auto p-3">
@@ -115,13 +150,13 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                       key={item.href}
                       href={item.href}
                       className={cn(
-                        'flex items-center gap-3 border-2 px-3 py-2.5 text-[13px] font-bold uppercase tracking-wide transition-colors',
+                        'flex items-center gap-3 border-2 px-3 py-2 text-[13px] font-bold uppercase tracking-wide transition-colors',
                         active
                           ? 'border-sky-300 bg-accent text-accent-foreground'
                           : 'border-transparent text-sidebar-foreground hover:bg-muted hover:text-foreground',
                       )}
                     >
-                      <Icon className="size-5 shrink-0" />
+                      <Icon className="size-[18px] shrink-0" />
                       <span className="truncate">{item.label}</span>
                     </Link>
                   );
@@ -135,7 +170,6 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           </div>
         </aside>
 
-        {/* Nav horizontal en móvil */}
         <div className="flex min-w-0 flex-1 flex-col">
           <nav className="flex gap-1 overflow-x-auto border-b-2 border-border bg-card px-2 py-1.5 md:hidden">
             {FLAT.map((item) => {

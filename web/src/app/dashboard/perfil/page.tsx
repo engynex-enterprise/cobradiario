@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Moon, Sun, LogOut, UserRound, Building2 } from 'lucide-react';
 
-export default function AjustesPage() {
+export default function PerfilPage() {
   const { user, signOut } = useAuth();
   const { theme, setTheme } = useTheme();
   const router = useRouter();
@@ -18,12 +18,12 @@ export default function AjustesPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 p-4 sm:p-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Ajustes</h1>
+      <h1 className="text-2xl font-semibold tracking-tight">Perfil</h1>
 
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
-            <UserRound className="h-5 w-5" /> Perfil
+            <UserRound className="h-5 w-5" /> Mi cuenta
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
@@ -51,18 +51,10 @@ export default function AjustesPage() {
         </CardHeader>
         <CardContent>
           <div className="flex gap-2">
-            <Button
-              variant={mounted && theme === 'light' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setTheme('light')}
-            >
+            <Button variant={mounted && theme === 'light' ? 'default' : 'outline'} size="sm" onClick={() => setTheme('light')}>
               <Sun className="h-4 w-4" /> Claro
             </Button>
-            <Button
-              variant={mounted && theme === 'dark' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setTheme('dark')}
-            >
+            <Button variant={mounted && theme === 'dark' ? 'default' : 'outline'} size="sm" onClick={() => setTheme('dark')}>
               <Moon className="h-4 w-4" /> Oscuro
             </Button>
           </div>
@@ -75,13 +67,7 @@ export default function AjustesPage() {
             <p className="font-semibold">Cerrar sesión</p>
             <p className="text-sm text-muted-foreground">Salir de tu cuenta en este dispositivo.</p>
           </div>
-          <Button
-            variant="destructive"
-            onClick={() => {
-              signOut();
-              router.replace('/login');
-            }}
-          >
+          <Button variant="destructive" onClick={() => { signOut(); router.replace('/login'); }}>
             <LogOut className="h-4 w-4" /> Salir
           </Button>
         </CardContent>

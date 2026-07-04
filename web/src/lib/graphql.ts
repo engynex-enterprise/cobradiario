@@ -125,6 +125,71 @@ export function markNotificationRead(id: string) {
   );
 }
 
+// --- Operaciones (feeds) ---
+export interface PaymentFeedItem {
+  id: string;
+  loanId: string;
+  clientName?: string;
+  amount: number;
+  method: string;
+  collectorName?: string;
+  paidAt: string;
+}
+export function fetchRecentPayments() {
+  return gql<{ recentPayments: PaymentFeedItem[] }>(
+    `{ recentPayments { id loanId clientName amount method collectorName paidAt } }`,
+  );
+}
+
+export interface DueInstallment {
+  id: string;
+  loanId: string;
+  clientName?: string;
+  routeName?: string;
+  sequence: number;
+  status: string;
+  dueDate: string;
+  amount: number;
+  lateFee: number;
+  paidAmount: number;
+}
+export function fetchDueInstallments(filter: 'TODAY' | 'OVERDUE' | 'UPCOMING') {
+  return gql<{ dueInstallments: DueInstallment[] }>(
+    `query($f: DueFilter!) {
+      dueInstallments(filter: $f) { id loanId clientName routeName sequence status dueDate amount lateFee paidAmount }
+    }`,
+    { f: filter },
+  );
+}
+
+export interface CashMovementFeedItem {
+  id: string;
+  type: string;
+  amount: number;
+  note?: string;
+  collectorName?: string;
+  createdAt: string;
+}
+export function fetchCashMovements(type?: string) {
+  return gql<{ cashMovements: CashMovementFeedItem[] }>(
+    `query($t: CashMovementType) { cashMovements(type: $t) { id type amount note collectorName createdAt } }`,
+    { t: type },
+  );
+}
+
+export interface ReminderItem {
+  id: string;
+  type: string;
+  status: string;
+  runAt: string;
+  sentAt?: string;
+}
+export function fetchReminders() {
+  return gql<{ reminders: ReminderItem[] }>(
+    `{ reminders { id type status runAt sentAt } }`,
+  );
+}
+
 export function createLoan(input: {
   clientId: string;
   productId: string;

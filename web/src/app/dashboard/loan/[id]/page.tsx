@@ -51,7 +51,7 @@ export default function LoanDetailPage() {
 
   return (
     <div className="mx-auto max-w-5xl p-4 sm:p-6">
-      <Button variant="ghost" size="sm" className="mb-4" onClick={() => router.push('/dashboard')}>
+      <Button variant="ghost" size="sm" className="mb-4" onClick={() => router.push('/dashboard/prestamos')}>
         <ArrowLeft className="h-4 w-4" /> Volver a la cartera
       </Button>
 

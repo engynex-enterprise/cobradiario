@@ -237,6 +237,20 @@ Bitácora de decisiones y cambios estructurales. Formato: fecha · tipo · descr
 - **[verificación]** typecheck web OK; 8 páginas del panel sirven 200; operaciones nuevas
   probadas contra el servidor (crear cliente/producto, notificaciones).
 
+## 2026-07-04 — Menú completo de plataforma (19 secciones)
+
+- **[backend]** `OpsModule` con feeds enriquecidos: `recentPayments`, `dueInstallments(TODAY/
+  OVERDUE/UPCOMING)`, `cashMovements(type?)`, `reminders` (todos con `forTenant`/RLS).
+- **[web]** Sidebar reorganizado en 6 secciones (Principal · Finanzas · Gestión · Comunicación ·
+  Análisis · Cuenta). Páginas nuevas reales: **Inicio** (overview + accesos rápidos), **Préstamos**
+  (cartera con búsqueda + filtro ruta), **Pagos** (feed), **Cobro del día** (tabs Hoy/Vencidas/
+  Próximas), **Movimientos** y **Gastos** (movimientos de caja), **Rutas** (dedicada), **Equipo**
+  (solo usuarios), **Recordatorios**, **Perfil**. Placeholders honestos: **Balances, Bases,
+  Etiquetas, Chat** (`ComingSoon`).
+- **[web]** Detalle de crédito y navegación apuntan a las nuevas rutas.
+- **[verificación]** ops queries probadas contra el servidor; typecheck api+web OK; las 19
+  secciones del panel sirven 200.
+
 <!-- Plantilla para próximas entradas:
 ## AAAA-MM-DD — Título
 - **[tipo]** descripción   (tipo ∈ decisión/infra/db/backend/app/web/seguridad/pendiente/fix)
