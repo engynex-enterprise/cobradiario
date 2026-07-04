@@ -69,6 +69,27 @@ async function main(): Promise<void> {
     },
   });
 
+  // --- Producto con mora diaria (para demostrar cálculo de mora) ---
+  await prisma.creditProduct.upsert({
+    where: { id: 'demo-product-mora' },
+    update: {},
+    create: {
+      id: 'demo-product-mora',
+      tenantId: tenant.id,
+      name: 'Diario 20% con mora 1%/día',
+      interestMethod: 'FLAT',
+      interestRate: 0.2,
+      rateBasis: 'PER_LOAN',
+      frequency: 'DAILY',
+      termCount: 20,
+      graceDays: 0,
+      lateFeeType: 'DAILY_PERCENT',
+      lateFeeValue: 0.01, // 1% del saldo de la cuota por día de atraso
+      roundingMode: 'NEAREST',
+      roundTo: 100,
+    },
+  });
+
   // --- Ruta + asignación de cobrador ---
   const route = await prisma.route.upsert({
     where: { tenantId_code: { tenantId: tenant.id, code: 'R-01' } },

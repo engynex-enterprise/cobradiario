@@ -55,6 +55,38 @@ Bitácora de decisiones y cambios estructurales. Formato: fecha · tipo · descr
 - **[pendiente]** Refresh automático de token (401→refresh) en el cliente web; detalle de crédito
   con plan de cuotas; rutas/cobradores; gráficas.
 
+## 2026-07-03 — App móvil del cobrador (Expo + React Native)
+
+- **[app]** `@cobradiario/app` con Expo SDK 57 / RN 0.86 / Expo Router: login, ruta del día
+  (cartera), registro de abonos y realtime. Tokens en expo-secure-store; guard de sesión.
+- **[app/offline]** Cola de abonos offline-first (`offline-queue.ts`) en AsyncStorage con
+  `clientRequestId` único → se apoya en la idempotencia del backend para no duplicar cobros;
+  drena al recuperar señal (errores de red se reintentan, de negocio se descartan).
+- **[app/realtime]** Suscripción a `payment.registered` (Socket.IO con JWT) → refresca cartera.
+- **[verificación]** `tsc --noEmit` limpio; `expo export --platform ios` empaqueta 1580 módulos
+  (bundle Hermes OK) — verificación de bundle sin dispositivo.
+- **[pendiente]** Modal propio para abono en Android (hoy `Alert.prompt` es iOS-only); NetInfo
+  para auto-flush; geolocalización y push. Con esto los 3 clientes (web+móvil+API) están sobre
+  la misma base verificada.
+
+## 2026-07-03 — Jobs BullMQ: mora nocturna + recordatorios + notificaciones/push
+
+- **[backend]** Colas BullMQ (Redis): `maintenance` (barrido de mora + recordatorios) y `push`.
+  `BullModule.forRootAsync` con conexión parseada de `REDIS_URL`.
+- **[backend]** `NotificationsModule`: crear notificación (persist + realtime `notification`),
+  `myNotifications`, `markNotificationRead`, `registerDeviceToken`; envío push vía Expo Push API
+  en `PushProcessor` (cola `push`).
+- **[backend]** `MaintenanceModule`: `runOverdueSweep` (marca cuotas OVERDUE + calcula mora con
+  `calcLateFee`, notifica créditos que caen en mora) y `runDueReminders` (avisa cuotas próximas,
+  con dedup vía tabla `Reminder`). Worker + `MaintenanceScheduler` con cron repetible
+  (mora 02:00, recordatorios 07:00). Mutations admin para disparo manual.
+- **[db/seed]** Nuevo producto `demo-product-mora` (DAILY_PERCENT 1%/día) para demostrar mora.
+- **[verificación]** End-to-end vía BullMQ real: crédito con cuotas vencidas → `runOverdueSweep`
+  encola job → worker marca 6 cuotas OVERDUE con mora correcta (360/300/240… = 6.000×1%×días) +
+  notificación LOAN_OVERDUE. Idempotencia OK (2º barrido no duplica aviso). Recordatorios OK.
+- **[pendiente]** Barrido particionado por tenant respetando su timezone; reintentos/backoff y
+  panel de estado de colas; push real requiere device tokens de la app (infra lista).
+
 <!-- Plantilla para próximas entradas:
 ## AAAA-MM-DD — Título
 - **[tipo]** descripción   (tipo ∈ decisión/infra/db/backend/app/web/seguridad/pendiente/fix)

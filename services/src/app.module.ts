@@ -4,6 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { BullModule } from '@nestjs/bullmq';
 import { join } from 'node:path';
 import configuration from './config/configuration';
 import { PrismaModule } from './prisma/prisma.module';
@@ -14,6 +15,8 @@ import { ClientsModule } from './clients/clients.module';
 import { LoansModule } from './loans/loans.module';
 import { PaymentsModule } from './payments/payments.module';
 import { ProductsModule } from './products/products.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { MaintenanceModule } from './maintenance/maintenance.module';
 import { GqlAuthGuard } from './common/guards/gql-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { GqlThrottlerGuard } from './common/guards/gql-throttler.guard';
@@ -24,6 +27,23 @@ import { GqlThrottlerGuard } from './common/guards/gql-throttler.guard';
 
     // Rate limiting global (defensa ante fuerza bruta / abuso).
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
+
+    // Colas BullMQ (Redis) para jobs: mora nocturna, recordatorios, push.
+    BullModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => {
+        const url = new URL(config.get<string>('redis.url')!);
+        return {
+          connection: {
+            host: url.hostname,
+            port: Number(url.port || 6379),
+            username: url.username || undefined,
+            password: url.password || undefined,
+            maxRetriesPerRequest: null, // requerido por BullMQ workers
+          },
+        };
+      },
+    }),
 
     GraphQLModule.forRootAsync<ApolloDriverConfig>({
       driver: ApolloDriver,
@@ -53,6 +73,8 @@ import { GqlThrottlerGuard } from './common/guards/gql-throttler.guard';
     LoansModule,
     PaymentsModule,
     ProductsModule,
+    NotificationsModule,
+    MaintenanceModule,
   ],
   providers: [
     // Orden importa: autenticación → autorización por rol → rate limit.

@@ -56,6 +56,11 @@ A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date
 """
 scalar DateTime
 
+type EnqueuedJob {
+  jobId: String!
+  queue: String!
+}
+
 enum Frequency {
   BIWEEKLY
   CUSTOM
@@ -127,9 +132,42 @@ type Mutation {
   createLoan(input: CreateLoanInput!): Loan!
   login(input: LoginInput!): AuthPayload!
   logout(input: RefreshInput!): Boolean!
+  markNotificationRead(id: ID!): Boolean!
   refreshToken(input: RefreshInput!): AuthPayload!
   register(input: RegisterInput!): AuthPayload!
+  registerDeviceToken(platform: String!, token: String!): Boolean!
   registerPayment(input: RegisterPaymentInput!): RegisterPaymentResult!
+  runDueReminders(withinDays: Int! = 1): EnqueuedJob!
+  runOverdueSweep: EnqueuedJob!
+}
+
+type Notification {
+  body: String!
+  channel: NotificationChannel!
+  createdAt: DateTime!
+  data: String
+  id: ID!
+  readAt: DateTime
+  title: String!
+  type: NotificationType!
+}
+
+enum NotificationChannel {
+  EMAIL
+  IN_APP
+  PUSH
+  SMS
+  WHATSAPP
+}
+
+enum NotificationType {
+  CASHBOX_CLOSED
+  LOAN_APPROVED
+  LOAN_OVERDUE
+  PAYMENT_DUE
+  PAYMENT_RECEIVED
+  ROUTE_ASSIGNED
+  SYSTEM
 }
 
 type Payment {
@@ -164,6 +202,7 @@ type Query {
   loan(id: ID!): Loan!
   loans(routeId: ID): [Loan!]!
   me: AuthUser!
+  myNotifications: [Notification!]!
   payments(loanId: ID!): [Payment!]!
 }
 
