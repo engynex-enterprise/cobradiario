@@ -3,16 +3,17 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   createLoan,
   fetchClients,
@@ -31,7 +32,7 @@ export function CreateLoanDialog({ onCreated }: { onCreated: () => void }) {
   const [routes, setRoutes] = useState<Route[]>([]);
   const [clientId, setClientId] = useState('');
   const [productId, setProductId] = useState('');
-  const [routeId, setRouteId] = useState('');
+  const [routeId, setRouteId] = useState('none');
   const [principal, setPrincipal] = useState('100000');
   const [loading, setLoading] = useState(false);
 
@@ -52,7 +53,12 @@ export function CreateLoanDialog({ onCreated }: { onCreated: () => void }) {
     e.preventDefault();
     setLoading(true);
     try {
-      await createLoan({ clientId, productId, principal: Number(principal), routeId: routeId || undefined });
+      await createLoan({
+        clientId,
+        productId,
+        principal: Number(principal),
+        routeId: routeId !== 'none' ? routeId : undefined,
+      });
       toast.success('Crédito creado');
       setOpen(false);
       onCreated();
@@ -64,81 +70,67 @@ export function CreateLoanDialog({ onCreated }: { onCreated: () => void }) {
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
         <Button>
           <Plus className="h-4 w-4" /> Nuevo crédito
         </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Nuevo crédito</DialogTitle>
-          <DialogDescription>El plan de cuotas se calcula con el producto elegido.</DialogDescription>
-        </DialogHeader>
+      </SheetTrigger>
+      <SheetContent>
+        <SheetHeader>
+          <SheetTitle>Nuevo crédito</SheetTitle>
+          <SheetDescription>El plan de cuotas se calcula con el producto elegido.</SheetDescription>
+        </SheetHeader>
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="client">Cliente</Label>
-            <select
-              id="client"
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-              value={clientId}
-              onChange={(e) => setClientId(e.target.value)}
-              required
-            >
-              {clients.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.fullName} {c.documentId ? `· ${c.documentId}` : ''}
-                </option>
-              ))}
-            </select>
+            <Label>Cliente</Label>
+            <Select value={clientId} onValueChange={setClientId}>
+              <SelectTrigger><SelectValue placeholder="Elige un cliente" /></SelectTrigger>
+              <SelectContent>
+                {clients.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.fullName}
+                    {c.documentId ? ` · ${c.documentId}` : ''}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="product">Producto de crédito</Label>
-            <select
-              id="product"
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-              value={productId}
-              onChange={(e) => setProductId(e.target.value)}
-              required
-            >
-              {products.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name} ({Math.round(p.interestRate * 100)}% · {p.termCount} cuotas)
-                </option>
-              ))}
-            </select>
+            <Label>Producto de crédito</Label>
+            <Select value={productId} onValueChange={setProductId}>
+              <SelectTrigger><SelectValue placeholder="Elige un producto" /></SelectTrigger>
+              <SelectContent>
+                {products.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name} ({Math.round(p.interestRate * 100)}% · {p.termCount} cuotas)
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="route">Ruta (opcional)</Label>
-            <select
-              id="route"
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-              value={routeId}
-              onChange={(e) => setRouteId(e.target.value)}
-            >
-              <option value="">Sin ruta</option>
-              {routes.map((r) => (
-                <option key={r.id} value={r.id}>{r.name}</option>
-              ))}
-            </select>
+            <Label>Ruta (opcional)</Label>
+            <Select value={routeId} onValueChange={setRouteId}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Sin ruta</SelectItem>
+                {routes.map((r) => (
+                  <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="principal">Monto (capital)</Label>
-            <Input
-              id="principal"
-              type="number"
-              min={1}
-              value={principal}
-              onChange={(e) => setPrincipal(e.target.value)}
-              required
-            />
+            <Label>Monto (capital)</Label>
+            <Input type="number" min={1} value={principal} onChange={(e) => setPrincipal(e.target.value)} required />
           </div>
           <Button type="submit" className="w-full" disabled={loading || !clientId || !productId}>
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
             Crear crédito
           </Button>
         </form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }

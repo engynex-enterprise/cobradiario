@@ -15,6 +15,7 @@ import {
   type TeamMember,
 } from '@/lib/graphql';
 import { PageHeader } from '@/components/page-header';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MapPin, Plus } from 'lucide-react';
 
 export default function RutasPage() {
@@ -98,16 +99,14 @@ export default function RutasPage() {
               <p className="text-xs text-muted-foreground">
                 Cobradores: {r.collectors.map((c) => c.fullName).join(', ') || '—'}
               </p>
-              <select
-                className="h-9 w-full border border-input bg-background px-2 text-sm"
-                defaultValue=""
-                onChange={(e) => assign(r.id, e.target.value)}
-              >
-                <option value="">+ Asignar cobrador…</option>
-                {collectors.map((c) => (
-                  <option key={c.id} value={c.id}>{c.fullName}</option>
-                ))}
-              </select>
+              <Select onValueChange={(v) => assign(r.id, v)}>
+                <SelectTrigger className="h-9"><SelectValue placeholder="+ Asignar cobrador…" /></SelectTrigger>
+                <SelectContent>
+                  {collectors.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.fullName}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </CardContent>
           </Card>
         ))}

@@ -17,6 +17,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { PageHeader } from '@/components/page-header';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { fetchLoans, fetchRoutes, type Loan, type Route } from '@/lib/graphql';
 import { getSocket } from '@/lib/socket';
 import { money } from '@/lib/utils';
@@ -92,16 +93,15 @@ export default function PrestamosPage() {
                 className="h-9 w-44 border border-input bg-background pl-8 pr-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
             </div>
-            <select
-              className="h-9 border border-input bg-background px-2 text-sm"
-              value={routeId}
-              onChange={(e) => setRouteId(e.target.value)}
-            >
-              <option value="">Todas las rutas</option>
-              {routes.map((r) => (
-                <option key={r.id} value={r.id}>{r.name}</option>
-              ))}
-            </select>
+            <Select value={routeId || 'all'} onValueChange={(v) => setRouteId(v === 'all' ? '' : v)}>
+              <SelectTrigger className="h-9 w-44"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas las rutas</SelectItem>
+                {routes.map((r) => (
+                  <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <CreateLoanDialog onCreated={load} />
           </div>
         </CardHeader>

@@ -263,6 +263,22 @@ Bitácora de decisiones y cambios estructurales. Formato: fecha · tipo · descr
   Productos, Recordatorios, Notificaciones, Reportes, Perfil.
 - **[verificación]** typecheck web OK; 19 secciones sirven 200; sin errores en dev.
 
+## 2026-07-04 — Migración a Tailwind v4 + tema Duolingo + shadcn (selects/drawers)
+
+- **[web/build]** Migrada la web de Tailwind v3 → **v4**: `@import "tailwindcss"` + `@theme inline`
+  en `globals.css`, PostCSS `@tailwindcss/postcss`, `tw-animate-css`, sin `tailwind.config.ts`.
+  Mismo motor que orus-pos.
+- **[web/tema]** Tema **Duolingo** (`.pos-duo` de orus) como estilo global: verde `#58cc02`, fuente
+  **Nunito**, radius 1rem, **botones 3D chunky**, cards/inputs borde 2px, badges píldora, foco azul,
+  dark `#131f24`. CSS por `data-slot`.
+- **[web/componentes]** **Select** de shadcn (Radix) reemplaza todos los `<select>` nativos
+  (préstamos, crear crédito, productos, rutas, equipo). Nuevo **Sheet (drawer)**; formularios de
+  creación (crédito, cliente, producto) ahora son **drawers**; abono/confirmaciones siguen **modales**.
+- **[verificación]** typecheck web OK; páginas 200; CSS compilado contiene `--primary:#58cc02` y las
+  utilidades v4 (`.bg-primary`) se generan.
+- **[pendiente]** Swap literal de Radix → `@base-ui/react` (shadcn base-nova) si se exige identidad
+  a nivel de librería (no solo visual).
+
 <!-- Plantilla para próximas entradas:
 ## AAAA-MM-DD — Título
 - **[tipo]** descripción   (tipo ∈ decisión/infra/db/backend/app/web/seguridad/pendiente/fix)

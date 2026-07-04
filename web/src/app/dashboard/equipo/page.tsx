@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { PageHeader } from '@/components/page-header';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { createTeamMember, fetchTeam, type TeamMember } from '@/lib/graphql';
 import { UserPlus } from 'lucide-react';
 
@@ -88,15 +89,14 @@ function NewMember({ onCreated }: { onCreated: () => void }) {
         <form onSubmit={submit} className="space-y-3">
           <div className="grid grid-cols-2 gap-2">
             <Input placeholder="Nombre" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
-            <select
-              className="flex h-10 rounded-md border border-input bg-background px-3 text-sm"
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-            >
-              {ROLES.map((r) => (
-                <option key={r} value={r}>{r}</option>
-              ))}
-            </select>
+            <Select value={role} onValueChange={setRole}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {ROLES.map((r) => (
+                  <SelectItem key={r} value={r}>{r}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <Input type="email" placeholder="Correo" value={email} onChange={(e) => setEmail(e.target.value)} required />
           <Input type="password" placeholder="Contraseña (mín. 8)" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} />

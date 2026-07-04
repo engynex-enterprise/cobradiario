@@ -2,19 +2,21 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 import { createCreditProduct, fetchProducts, type Product } from '@/lib/graphql';
 import { Plus, Package } from 'lucide-react';
 
@@ -43,13 +45,11 @@ export default function ProductosPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Productos de crédito</h1>
-          <p className="text-sm text-muted-foreground">Plantillas de interés, plazo y mora.</p>
-        </div>
-        <NewProductDialog onCreated={load} />
-      </div>
+      <PageHeader
+        title="Productos de crédito"
+        description="Plantillas configurables de interés, plazo y mora. Al crear un crédito eliges un producto y sus términos se aplican y quedan congelados en ese crédito."
+        actions={<NewProductDrawer onCreated={load} />}
+      />
 
       <div className="grid gap-4 sm:grid-cols-2">
         {products.map((p) => (
@@ -75,7 +75,16 @@ export default function ProductosPage() {
   );
 }
 
-function NewProductDialog({ onCreated }: { onCreated: () => void }) {
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      {children}
+    </div>
+  );
+}
+
+function NewProductDrawer({ onCreated }: { onCreated: () => void }) {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [f, setF] = useState({
@@ -90,6 +99,7 @@ function NewProductDialog({ onCreated }: { onCreated: () => void }) {
     lateFeeValue: '0',
     roundTo: '100',
   });
+  const set = (k: keyof typeof f, v: string) => setF((s) => ({ ...s, [k]: v }));
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -117,87 +127,95 @@ function NewProductDialog({ onCreated }: { onCreated: () => void }) {
     }
   }
 
-  const Select = ({
-    label,
-    value,
-    onChange,
-    options,
-  }: {
-    label: string;
-    value: string;
-    onChange: (v: string) => void;
-    options: [string, string][];
-  }) => (
-    <div className="space-y-2">
-      <Label>{label}</Label>
-      <select
-        className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-      >
-        {options.map(([v, l]) => (
-          <option key={v} value={v}>{l}</option>
-        ))}
-      </select>
-    </div>
-  );
-
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
         <Button>
           <Plus className="h-4 w-4" /> Nuevo producto
         </Button>
-      </DialogTrigger>
-      <DialogContent className="max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" /> Nuevo producto de crédito
-          </DialogTitle>
-          <DialogDescription>Configura interés, frecuencia, plazo y mora.</DialogDescription>
-        </DialogHeader>
+      </SheetTrigger>
+      <SheetContent>
+        <SheetHeader>
+          <SheetTitle className="flex items-center gap-2">
+            <Package className="h-5 w-5" /> Nuevo producto
+          </SheetTitle>
+          <SheetDescription>Configura interés, frecuencia, plazo y mora.</SheetDescription>
+        </SheetHeader>
         <form onSubmit={submit} className="space-y-3">
-          <div className="space-y-2">
-            <Label>Nombre</Label>
-            <Input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} required placeholder="Diario 20% / 20 cuotas" />
+          <Field label="Nombre">
+            <Input value={f.name} onChange={(e) => set('name', e.target.value)} required placeholder="Diario 20% / 20 cuotas" />
+          </Field>
+          <div className="grid grid-cols-2 gap-2">
+            <Field label="Método">
+              <Select value={f.interestMethod} onValueChange={(v) => set('interestMethod', v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="FLAT">Interés fijo</SelectItem>
+                  <SelectItem value="DECLINING_BALANCE">Saldo decreciente</SelectItem>
+                  <SelectItem value="CUSTOM">Personalizado</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Interés (%)">
+              <Input type="number" value={f.interestRate} onChange={(e) => set('interestRate', e.target.value)} />
+            </Field>
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <Select label="Método" value={f.interestMethod} onChange={(v) => setF({ ...f, interestMethod: v })} options={[['FLAT', 'Interés fijo'], ['DECLINING_BALANCE', 'Saldo decreciente'], ['CUSTOM', 'Personalizado']]} />
-            <div className="space-y-2">
-              <Label>Interés (%)</Label>
-              <Input type="number" value={f.interestRate} onChange={(e) => setF({ ...f, interestRate: e.target.value })} />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <Select label="Base de tasa" value={f.rateBasis} onChange={(v) => setF({ ...f, rateBasis: v })} options={[['PER_LOAN', 'Por crédito'], ['PER_PERIOD', 'Por período'], ['ANNUAL', 'Anual']]} />
-            <Select label="Frecuencia" value={f.frequency} onChange={(v) => setF({ ...f, frequency: v })} options={[['DAILY', 'Diario'], ['WEEKLY', 'Semanal'], ['BIWEEKLY', 'Quincenal'], ['MONTHLY', 'Mensual']]} />
+            <Field label="Base de tasa">
+              <Select value={f.rateBasis} onValueChange={(v) => set('rateBasis', v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="PER_LOAN">Por crédito</SelectItem>
+                  <SelectItem value="PER_PERIOD">Por período</SelectItem>
+                  <SelectItem value="ANNUAL">Anual</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Frecuencia">
+              <Select value={f.frequency} onValueChange={(v) => set('frequency', v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="DAILY">Diario</SelectItem>
+                  <SelectItem value="WEEKLY">Semanal</SelectItem>
+                  <SelectItem value="BIWEEKLY">Quincenal</SelectItem>
+                  <SelectItem value="MONTHLY">Mensual</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
           </div>
           <div className="grid grid-cols-3 gap-2">
-            <div className="space-y-2">
-              <Label>Cuotas</Label>
-              <Input type="number" value={f.termCount} onChange={(e) => setF({ ...f, termCount: e.target.value })} />
-            </div>
-            <div className="space-y-2">
-              <Label>Gracia (días)</Label>
-              <Input type="number" value={f.graceDays} onChange={(e) => setF({ ...f, graceDays: e.target.value })} />
-            </div>
-            <div className="space-y-2">
-              <Label>Redondeo</Label>
-              <Input type="number" value={f.roundTo} onChange={(e) => setF({ ...f, roundTo: e.target.value })} />
-            </div>
+            <Field label="Cuotas">
+              <Input type="number" value={f.termCount} onChange={(e) => set('termCount', e.target.value)} />
+            </Field>
+            <Field label="Gracia (días)">
+              <Input type="number" value={f.graceDays} onChange={(e) => set('graceDays', e.target.value)} />
+            </Field>
+            <Field label="Redondeo">
+              <Input type="number" value={f.roundTo} onChange={(e) => set('roundTo', e.target.value)} />
+            </Field>
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <Select label="Mora" value={f.lateFeeType} onChange={(v) => setF({ ...f, lateFeeType: v })} options={[['NONE', 'Sin mora'], ['FIXED', 'Fija'], ['PERCENT_OF_INSTALLMENT', '% de la cuota'], ['PERCENT_OF_BALANCE', '% del saldo'], ['DAILY_PERCENT', '% diario']]} />
-            <div className="space-y-2">
-              <Label>Valor mora</Label>
-              <Input type="number" value={f.lateFeeValue} onChange={(e) => setF({ ...f, lateFeeValue: e.target.value })} disabled={f.lateFeeType === 'NONE'} />
-            </div>
+            <Field label="Mora">
+              <Select value={f.lateFeeType} onValueChange={(v) => set('lateFeeType', v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="NONE">Sin mora</SelectItem>
+                  <SelectItem value="FIXED">Fija</SelectItem>
+                  <SelectItem value="PERCENT_OF_INSTALLMENT">% de la cuota</SelectItem>
+                  <SelectItem value="PERCENT_OF_BALANCE">% del saldo</SelectItem>
+                  <SelectItem value="DAILY_PERCENT">% diario</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Valor mora">
+              <Input type="number" value={f.lateFeeValue} onChange={(e) => set('lateFeeValue', e.target.value)} disabled={f.lateFeeType === 'NONE'} />
+            </Field>
           </div>
           <Button type="submit" className="w-full" disabled={saving || !f.name}>
             Crear producto
           </Button>
         </form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }
