@@ -83,6 +83,20 @@ input CreateLoanInput {
   routeId: ID
 }
 
+input CreateProductInput {
+  frequency: Frequency! = DAILY
+  graceDays: Int! = 0
+  interestMethod: InterestMethod! = FLAT
+  interestRate: Float! = 0.2
+  lateFeeType: LateFeeType! = NONE
+  lateFeeValue: Float! = 0
+  name: String!
+  rateBasis: RateBasis! = PER_LOAN
+  roundTo: Float! = 1
+  roundingMode: RoundingMode! = NEAREST
+  termCount: Int! = 20
+}
+
 type CreditProduct {
   frequency: Frequency!
   id: ID!
@@ -136,6 +150,14 @@ enum InterestMethod {
   FLAT
 }
 
+enum LateFeeType {
+  DAILY_PERCENT
+  FIXED
+  NONE
+  PERCENT_OF_BALANCE
+  PERCENT_OF_INSTALLMENT
+}
+
 type Loan {
   balance: Float!
   clientId: ID!
@@ -172,6 +194,7 @@ type Mutation {
   addCashMovement(input: AddCashMovementInput!): CashBox!
   closeCashBox(input: CloseCashBoxInput!): CashBox!
   createClient(input: CreateClientInput!): Client!
+  createCreditProduct(input: CreateProductInput!): CreditProduct!
   createLoan(input: CreateLoanInput!): Loan!
   login(input: LoginInput!): AuthPayload!
   logout(input: RefreshInput!): Boolean!
@@ -256,6 +279,12 @@ type Query {
   payments(loanId: ID!): [Payment!]!
 }
 
+enum RateBasis {
+  ANNUAL
+  PER_LOAN
+  PER_PERIOD
+}
+
 input RefreshInput {
   refreshToken: String!
 }
@@ -284,6 +313,13 @@ type RegisterPaymentResult {
   leftover: Float!
   loan: Loan!
   payment: Payment!
+}
+
+enum RoundingMode {
+  DOWN
+  NEAREST
+  NONE
+  UP
 }
 
 enum TenantType {

@@ -119,6 +119,21 @@ Bitácora de decisiones y cambios estructurales. Formato: fecha · tipo · descr
 - **[nota]** El bypass es un GUC; como todo se parametriza con Prisma (sin SQL concatenado) no es
   alcanzable por inyección. Endurecimiento futuro: conexión de sistema separada en vez de GUC.
 
+## 2026-07-03 — Tests e2e automatizados + CI (GitHub Actions)
+
+- **[test]** Suite e2e del backend (`services/test/app.e2e-spec.ts`) contra la app real
+  (GraphQL/HTTP) y Postgres con RLS, en DB separada `cobradiario_test` (globalSetup crea+migra).
+  Cubre: auth (register/login/me/credenciales inválidas/sin token), **aislamiento multi-tenant**,
+  ciclo crédito (producto→cliente→crédito→abono) + **idempotencia**, y **arqueo de caja**.
+  6/6 verdes. Junto a los 23 unit del motor → **29 tests**.
+- **[backend]** Nuevo mutation `createCreditProduct` (OWNER/ADMIN) — necesario para los tests y
+  para gestionar productos desde la web/app.
+- **[ci]** `.github/workflows/ci.yml`: Postgres 17 + Redis de servicio; install → prisma generate
+  → build motor → unit tests → migrate (crea RLS/app_user) → typecheck (api+web) → e2e → build
+  (api+web). Hace realidad el pipeline de `05-devops-cicd.md`.
+- **[pendiente]** Lint (falta config eslint) fuera de CI por ahora; más cobertura (mora/reminders
+  como jobs); tests de la web (Playwright) y de la app.
+
 <!-- Plantilla para próximas entradas:
 ## AAAA-MM-DD — Título
 - **[tipo]** descripción   (tipo ∈ decisión/infra/db/backend/app/web/seguridad/pendiente/fix)

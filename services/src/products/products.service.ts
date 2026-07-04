@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ProductModel } from './products.models';
+import { CreateProductInput } from './products.inputs';
 
 @Injectable()
 export class ProductsService {
@@ -13,6 +14,13 @@ export class ProductsService {
       orderBy: { name: 'asc' },
     });
     return rows.map(toProductModel);
+  }
+
+  async create(tenantId: string, input: CreateProductInput): Promise<ProductModel> {
+    const created = await this.prisma.forTenant(tenantId).creditProduct.create({
+      data: { tenantId, ...input },
+    });
+    return toProductModel(created);
   }
 }
 
