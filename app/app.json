@@ -30,7 +30,9 @@
     ],
     "extra": {
       "apiUrl": "https://cobradiario-api-bbe66556-0221-403c-aad1-befdd59cd3e3.fly.dev/graphql",
-      "wsUrl": "https://cobradiario-api-bbe66556-0221-403c-aad1-befdd59cd3e3.fly.dev"
+      "wsUrl": "https://cobradiario-api-bbe66556-0221-403c-aad1-befdd59cd3e3.fly.dev",
+      "posthogKey": "phc_kAqvZDKvj8KdhPVGKrPz4bdsNjBRnpfBBFiquanxccU3",
+      "posthogHost": "https://us.i.posthog.com"
     }
   }
 }

@@ -2,9 +2,14 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import posthog from 'posthog-js';
 import { tokens } from '@/lib/api';
 import { login as apiLogin, loginWithGoogle as apiLoginWithGoogle, register as apiRegister, acceptInvitation as apiAcceptInvitation, fetchMyPermissions, type AuthUser } from '@/lib/graphql';
 import { disconnectSocket } from '@/lib/socket';
+
+function identify(u: AuthUser) {
+  if (posthog.__loaded) posthog.identify(u.id, { email: u.email, name: u.fullName, role: u.role, tenantId: u.tenantId });
+}
 
 interface AuthCtx {
   user: AuthUser | null;
@@ -35,7 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const raw = typeof window !== 'undefined' ? localStorage.getItem(USER_KEY) : null;
-    if (raw && tokens.access) { setUser(JSON.parse(raw)); loadPermissions(); }
+    if (raw && tokens.access) { const u = JSON.parse(raw) as AuthUser; setUser(u); identify(u); loadPermissions(); }
     setLoading(false);
   }, []);
 
@@ -57,6 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     tokens.set(login.accessToken, login.refreshToken);
     localStorage.setItem(USER_KEY, JSON.stringify(login.user));
     setUser(login.user);
+    identify(login.user);
     loadPermissions();
     router.push('/dashboard');
   }
@@ -66,6 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     tokens.set(loginWithGoogle.accessToken, loginWithGoogle.refreshToken);
     localStorage.setItem(USER_KEY, JSON.stringify(loginWithGoogle.user));
     setUser(loginWithGoogle.user);
+    identify(loginWithGoogle.user);
     loadPermissions();
     router.push('/dashboard');
   }
@@ -81,6 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     tokens.set(acceptInvitation.accessToken, acceptInvitation.refreshToken);
     localStorage.setItem(USER_KEY, JSON.stringify(acceptInvitation.user));
     setUser(acceptInvitation.user);
+    identify(acceptInvitation.user);
     loadPermissions();
     router.push('/dashboard');
   }
@@ -89,6 +97,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     tokens.clear();
     localStorage.removeItem(USER_KEY);
     disconnectSocket();
+    if (posthog.__loaded) posthog.reset();
     setUser(null);
     setPermissions([]);
     router.push('/login');

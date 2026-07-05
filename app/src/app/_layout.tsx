@@ -11,6 +11,7 @@ import {
   Nunito_800ExtraBold,
 } from '@expo-google-fonts/nunito';
 import { AuthProvider } from '@/lib/auth';
+import { AnalyticsProvider } from '@/lib/analytics';
 
 // Mapea fontWeight → variante Nunito (RN no selecciona el peso en fuentes custom).
 const FAMILY: Record<string, string> = {
@@ -50,10 +51,12 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <AuthProvider>
-        <StatusBar style="auto" />
-        <Stack screenOptions={{ headerShown: false }} />
-      </AuthProvider>
+      <AnalyticsProvider>
+        <AuthProvider>
+          <StatusBar style="auto" />
+          <Stack screenOptions={{ headerShown: false }} />
+        </AuthProvider>
+      </AnalyticsProvider>
     </SafeAreaProvider>
   );
 }
