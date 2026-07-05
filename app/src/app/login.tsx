@@ -72,7 +72,10 @@ export default function Login() {
             <Text style={styles.buttonText}>Iniciar sesión</Text>
           )}
         </TouchableOpacity>
-        <Text style={styles.hint}>Demo: cobrador@demo.com / Password123</Text>
+
+        <TouchableOpacity onPress={() => router.push('/register' as never)}>
+          <Text style={styles.link}>¿No tienes cuenta? Crear cuenta</Text>
+        </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
   );
@@ -106,5 +109,5 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: { opacity: 0.6 },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
-  hint: { fontSize: 12, color: colors.muted, textAlign: 'center', marginTop: 12 },
+  link: { color: colors.primaryDark, fontSize: 14, fontWeight: '700', textAlign: 'center', marginTop: 16 },
 });

@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { tokens, setOnAuthExpired } from './api';
-import { login as apiLogin, fetchMyPermissions, type AuthUser } from './graphql';
+import { login as apiLogin, loginWithGoogle as apiLoginWithGoogle, register as apiRegister, fetchMyPermissions, type AuthUser } from './graphql';
 import { disconnectSocket } from './socket';
 
 interface AuthCtx {
@@ -10,6 +10,8 @@ interface AuthCtx {
   permissions: string[];
   can: (permission: string) => boolean;
   signIn: (email: string, password: string) => Promise<void>;
+  signInWithGoogle: (insforgeAccessToken: string) => Promise<void>;
+  signUp: (input: { tenantName: string; fullName: string; email: string; password: string; phone?: string }) => Promise<{ email: string; message: string }>;
   signOut: () => Promise<void>;
   updateUser: (patch: Partial<AuthUser>) => Promise<void>;
 }
@@ -54,6 +56,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loadPermissions();
   }
 
+  async function signInWithGoogle(insforgeAccessToken: string) {
+    const { loginWithGoogle } = await apiLoginWithGoogle(insforgeAccessToken);
+    await tokens.set(loginWithGoogle.accessToken, loginWithGoogle.refreshToken);
+    await AsyncStorage.setItem(USER_KEY, JSON.stringify(loginWithGoogle.user));
+    setUser(loginWithGoogle.user);
+    loadPermissions();
+  }
+
+  async function signUp(input: { tenantName: string; fullName: string; email: string; password: string; phone?: string }) {
+    const { register } = await apiRegister(input);
+    // No inicia sesión: la cuenta requiere confirmación por correo.
+    return { email: register.email, message: register.message };
+  }
+
   async function signOut() {
     await tokens.clear();
     await AsyncStorage.removeItem(USER_KEY);
@@ -71,7 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   }
 
-  return <Ctx.Provider value={{ user, ready, permissions, can, signIn, signOut, updateUser }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ user, ready, permissions, can, signIn, signInWithGoogle, signUp, signOut, updateUser }}>{children}</Ctx.Provider>;
 }
 
 export function useAuth() {

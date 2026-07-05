@@ -13,6 +13,36 @@ export function fetchMyPermissions() {
   return gql<{ myPermissions: string[] }>(`{ myPermissions }`);
 }
 
+export function register(input: { tenantName: string; fullName: string; email: string; password: string; phone?: string }) {
+  return gql<{ register: { ok: boolean; email: string; message: string } }>(
+    `mutation($i: RegisterInput!) { register(input: $i) { ok email message } }`,
+    { i: input },
+  );
+}
+
+export function verifyEmail(token: string) {
+  return gql<{ verifyEmail: { ok: boolean; message: string } }>(
+    `mutation($t: String!) { verifyEmail(token: $t) { ok message } }`,
+    { t: token },
+  );
+}
+
+export function resendVerification(email: string) {
+  return gql<{ resendVerification: { ok: boolean; message: string } }>(
+    `mutation($e: String!) { resendVerification(email: $e) { ok message } }`,
+    { e: email },
+  );
+}
+
+export function loginWithGoogle(insforgeAccessToken: string) {
+  return gql<{ loginWithGoogle: { accessToken: string; refreshToken: string; user: AuthUser } }>(
+    `mutation($t: String!) {
+      loginWithGoogle(insforgeAccessToken: $t) { accessToken refreshToken user { id email fullName role tenantId } }
+    }`,
+    { t: insforgeAccessToken },
+  );
+}
+
 export function updateProfile(input: { fullName?: string; phone?: string }) {
   return gql<{ updateProfile: AuthUser }>(
     `mutation($i: UpdateProfileInput!) {
