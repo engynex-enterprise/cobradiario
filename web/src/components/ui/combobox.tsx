@@ -1,12 +1,14 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Check, ChevronsUpDown, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAnchoredPopover, getPopoverContainer } from '@/components/ui/use-anchored-popover';
 
 /**
  * Dropdown con buscador (estilo shadcn combobox, sin cmdk).
- * Permite escribir valores nuevos si `allowCustom` (útil para ciudad/barrio).
+ * El panel se renderiza en un portal con posición automática (no lo recorta el drawer).
  */
 export function Combobox({
   value,
@@ -29,17 +31,13 @@ export function Combobox({
   disabled?: boolean;
   disabledHint?: string;
 }) {
-  const [open, setOpen] = useState(false);
+  const { open, setOpen, triggerRef, contentRef, style, reposition } = useAnchoredPopover();
   const [q, setQ] = useState('');
-  const ref = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!open) return;
-    const onDown = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
-    document.addEventListener('mousedown', onDown);
-    setTimeout(() => inputRef.current?.focus(), 20);
-    return () => document.removeEventListener('mousedown', onDown);
+    if (open) setTimeout(() => inputRef.current?.focus(), 20);
+    else setQ('');
   }, [open]);
 
   const filtered = useMemo(() => {
@@ -47,6 +45,9 @@ export function Combobox({
     const base = t ? options.filter((o) => o.toLowerCase().includes(t)) : options;
     return base.slice(0, 100);
   }, [q, options]);
+
+  // Recoloca al cambiar el alto (filtrar / botón "usar…").
+  useEffect(() => { if (open) reposition(); }, [filtered.length, open, reposition]);
 
   const showAdd = allowCustom && q.trim() && !options.some((o) => o.toLowerCase() === q.trim().toLowerCase());
 
@@ -57,11 +58,12 @@ export function Combobox({
   }
 
   return (
-    <div ref={ref} className="relative">
+    <>
       <button
+        ref={triggerRef}
         type="button"
         disabled={disabled}
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => setOpen(!open)}
         className={cn(
           'flex h-11 w-full items-center justify-between gap-2 rounded-xl border-2 border-border bg-background px-3 text-sm outline-none transition-colors focus:border-primary/40 disabled:opacity-50',
           !value && 'text-muted-foreground',
@@ -70,9 +72,16 @@ export function Combobox({
         <span className="truncate">{value || placeholder}</span>
         <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
       </button>
+      {disabled && disabledHint && <p className="mt-1 text-[11px] text-muted-foreground">{disabledHint}</p>}
 
-      {open && !disabled && (
-        <div className="absolute z-50 mt-1 w-full overflow-hidden rounded-xl border-2 border-border bg-popover shadow-soft-lg">
+      {open && !disabled && getPopoverContainer(triggerRef.current) && createPortal(
+        <div
+          ref={contentRef}
+          style={style}
+          onPointerDown={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+          className="z-[80] w-56 overflow-hidden rounded-xl border-2 border-border bg-popover shadow-soft-lg"
+        >
           <div className="flex items-center gap-2 border-b-2 border-border px-3">
             <Search className="size-4 text-muted-foreground" />
             <input
@@ -97,7 +106,7 @@ export function Combobox({
                     value === o && 'bg-accent/60',
                   )}
                 >
-                  <Check className={cn('size-4', value === o ? 'opacity-100 text-primary' : 'opacity-0')} />
+                  <Check className={cn('size-4', value === o ? 'text-primary opacity-100' : 'opacity-0')} />
                   {o}
                 </button>
               ))
@@ -112,9 +121,9 @@ export function Combobox({
               </button>
             )}
           </div>
-        </div>
+        </div>,
+        getPopoverContainer(triggerRef.current)!,
       )}
-      {disabled && disabledHint && <p className="mt-1 text-[11px] text-muted-foreground">{disabledHint}</p>}
-    </div>
+    </>
   );
 }

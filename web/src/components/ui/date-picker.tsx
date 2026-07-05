@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { CalendarDays } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
+import { useAnchoredPopover, getPopoverContainer } from '@/components/ui/use-anchored-popover';
 
 /** Convierte 'YYYY-MM-DD' a Date local (sin corrimiento por zona horaria). */
 function parse(value?: string): Date | undefined {
@@ -16,7 +17,7 @@ function fmtISO(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-/** Selector de fecha estilo shadcn (calendario en popover). value/onChange en 'YYYY-MM-DD'. */
+/** Selector de fecha estilo shadcn (calendario en popover, posición automática). */
 export function DatePicker({
   value,
   onChange,
@@ -32,26 +33,19 @@ export function DatePicker({
   toYear?: number;
   disableFuture?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const { open, setOpen, triggerRef, contentRef, style } = useAnchoredPopover();
   const selected = parse(value);
-
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
-    document.addEventListener('mousedown', onDown);
-    return () => document.removeEventListener('mousedown', onDown);
-  }, [open]);
 
   const label = selected
     ? selected.toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' })
     : placeholder;
 
   return (
-    <div ref={ref} className="relative">
+    <>
       <button
+        ref={triggerRef}
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => setOpen(!open)}
         className={cn(
           'flex h-11 w-full items-center gap-2 rounded-xl border-2 border-border bg-background px-3 text-sm outline-none transition-colors focus:border-primary/40',
           !selected && 'text-muted-foreground',
@@ -60,8 +54,14 @@ export function DatePicker({
         <CalendarDays className="size-4 shrink-0 opacity-60" />
         <span className="truncate capitalize">{label}</span>
       </button>
-      {open && (
-        <div className="absolute z-50 mt-1 rounded-xl border-2 border-border bg-popover shadow-soft-lg">
+      {open && getPopoverContainer(triggerRef.current) && createPortal(
+        <div
+          ref={contentRef}
+          style={style}
+          onPointerDown={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+          className="z-[80] rounded-xl border-2 border-border bg-popover shadow-soft-lg"
+        >
           <Calendar
             mode="single"
             selected={selected}
@@ -72,8 +72,9 @@ export function DatePicker({
             disabled={disableFuture ? { after: new Date() } : undefined}
             onSelect={(d?: Date) => { if (d) { onChange(fmtISO(d)); setOpen(false); } }}
           />
-        </div>
+        </div>,
+        getPopoverContainer(triggerRef.current)!,
       )}
-    </div>
+    </>
   );
 }
