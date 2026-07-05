@@ -21,17 +21,56 @@ export interface Loan {
   createdAt: string;
 }
 
-export interface Client {
+export interface ClientGuarantor {
   id: string;
   fullName: string;
   documentId?: string;
   phone?: string;
   address?: string;
+  relationship?: string;
+  notes?: string;
+}
+
+export interface Client {
+  id: string;
+  fullName: string;
+  documentId?: string;
+  documentType?: string;
+  phone?: string;
+  phone2?: string;
+  email?: string;
+  address?: string;
+  neighborhood?: string;
   city?: string;
+  occupation?: string;
+  birthDate?: string;
+  latitude?: number;
+  longitude?: number;
+  notes?: string;
   loansCount?: number;
   activeLoans?: number;
   totalBalance?: number;
+  guarantors?: ClientGuarantor[];
 }
+
+export interface ClientInput {
+  fullName: string;
+  documentId?: string;
+  documentType?: string;
+  phone?: string;
+  phone2?: string;
+  email?: string;
+  address?: string;
+  neighborhood?: string;
+  city?: string;
+  occupation?: string;
+  birthDate?: string;
+  latitude?: number;
+  longitude?: number;
+  notes?: string;
+}
+
+const CLIENT_FIELDS = `id fullName documentId documentType phone phone2 email address neighborhood city occupation birthDate latitude longitude notes loansCount activeLoans totalBalance guarantors { id fullName documentId phone address relationship notes }`;
 
 export interface Product {
   id: string;
@@ -65,38 +104,19 @@ export function fetchLoans(routeId?: string) {
 }
 
 export function fetchClients() {
-  return gql<{ clients: Client[] }>(
-    `{ clients { id fullName documentId phone address city loansCount activeLoans totalBalance } }`,
-  );
+  return gql<{ clients: Client[] }>(`{ clients { ${CLIENT_FIELDS} } }`);
 }
 
-export function createClient(input: {
-  fullName: string;
-  documentId?: string;
-  phone?: string;
-  address?: string;
-  city?: string;
-}) {
+export function createClient(input: ClientInput) {
   return gql<{ createClient: Client }>(
-    `mutation($i: CreateClientInput!) {
-      createClient(input: $i) { id fullName documentId phone address city }
-    }`,
+    `mutation($i: CreateClientInput!) { createClient(input: $i) { ${CLIENT_FIELDS} } }`,
     { i: input },
   );
 }
 
-export function updateClient(input: {
-  id: string;
-  fullName?: string;
-  documentId?: string;
-  phone?: string;
-  address?: string;
-  city?: string;
-}) {
+export function updateClient(input: Partial<ClientInput> & { id: string }) {
   return gql<{ updateClient: Client }>(
-    `mutation($i: UpdateClientInput!) {
-      updateClient(input: $i) { id fullName documentId phone address city }
-    }`,
+    `mutation($i: UpdateClientInput!) { updateClient(input: $i) { ${CLIENT_FIELDS} } }`,
     { i: input },
   );
 }
@@ -106,6 +126,28 @@ export function deleteClient(id: string) {
     `mutation($id: ID!) { deleteClient(id: $id) { id } }`,
     { id },
   );
+}
+
+// --- Fiadores (a nivel de cliente) ---
+const GUARANTOR_FIELDS = `id fullName documentId phone address relationship notes`;
+export function addGuarantor(input: {
+  clientId: string; fullName: string; documentId?: string; phone?: string; address?: string; relationship?: string; notes?: string;
+}) {
+  return gql<{ addGuarantor: ClientGuarantor }>(
+    `mutation($i: CreateGuarantorInput!) { addGuarantor(input: $i) { ${GUARANTOR_FIELDS} } }`,
+    { i: input },
+  );
+}
+export function updateGuarantor(input: {
+  id: string; fullName?: string; documentId?: string; phone?: string; address?: string; relationship?: string; notes?: string;
+}) {
+  return gql<{ updateGuarantor: ClientGuarantor }>(
+    `mutation($i: UpdateGuarantorInput!) { updateGuarantor(input: $i) { ${GUARANTOR_FIELDS} } }`,
+    { i: input },
+  );
+}
+export function deleteGuarantor(id: string) {
+  return gql<{ deleteGuarantor: string }>(`mutation($id: ID!) { deleteGuarantor(id: $id) }`, { id });
 }
 
 export function fetchProducts() {

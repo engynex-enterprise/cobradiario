@@ -93,14 +93,34 @@ enum CashMovementType {
 type Client {
   activeLoans: Int!
   address: String
+  birthDate: DateTime
   city: String
   createdAt: DateTime!
   documentId: String
+  documentType: String
+  email: String
+  fullName: String!
+  guarantors: [ClientGuarantor!]!
+  id: ID!
+  latitude: Float
+  loansCount: Int!
+  longitude: Float
+  neighborhood: String
+  notes: String
+  occupation: String
+  phone: String
+  phone2: String
+  totalBalance: Float!
+}
+
+type ClientGuarantor {
+  address: String
+  documentId: String
   fullName: String!
   id: ID!
-  loansCount: Int!
+  notes: String
   phone: String
-  totalBalance: Float!
+  relationship: String
 }
 
 input CloseCashBoxInput {
@@ -137,10 +157,19 @@ input CreateBaseMovementInput {
 
 input CreateClientInput {
   address: String
+  birthDate: DateTime
   city: String
   documentId: String
+  documentType: String
+  email: String
   fullName: String!
+  latitude: Float
+  longitude: Float
+  neighborhood: String
+  notes: String
+  occupation: String
   phone: String
+  phone2: String
 }
 
 input CreateExpenseInput {
@@ -148,6 +177,16 @@ input CreateExpenseInput {
   category: String!
   note: String
   routeId: ID
+}
+
+input CreateGuarantorInput {
+  address: String
+  clientId: ID!
+  documentId: String
+  fullName: String!
+  notes: String
+  phone: String
+  relationship: String
 }
 
 input CreateLoanInput {
@@ -427,6 +466,7 @@ type MethodAmount {
 
 type Mutation {
   addCashMovement(input: AddCashMovementInput!): CashBox!
+  addGuarantor(input: CreateGuarantorInput!): ClientGuarantor!
   assignCollector(input: AssignCollectorInput!): Route!
   closeCashBox(input: CloseCashBoxInput!): CashBox!
   createBaseMovement(input: CreateBaseMovementInput!): BaseMovement!
@@ -441,6 +481,7 @@ type Mutation {
   deleteBaseMovement(id: ID!): ID!
   deleteClient(id: ID!): Client!
   deleteExpense(id: ID!): ID!
+  deleteGuarantor(id: ID!): ID!
   deleteTag(id: ID!): Boolean!
   login(input: LoginInput!): AuthPayload!
   logout(input: RefreshInput!): Boolean!
@@ -454,6 +495,7 @@ type Mutation {
   runOverdueSweep: EnqueuedJob!
   sendMessage(input: SendMessageInput!): Message!
   updateClient(input: UpdateClientInput!): Client!
+  updateGuarantor(input: UpdateGuarantorInput!): ClientGuarantor!
   updateInstallment(input: UpdateInstallmentInput!): Loan!
   updateProfile(input: UpdateProfileInput!): AuthUser!
   updateTag(input: UpdateTagInput!): Tag
@@ -651,11 +693,30 @@ enum TenantType {
 
 input UpdateClientInput {
   address: String
+  birthDate: DateTime
   city: String
+  documentId: String
+  documentType: String
+  email: String
+  fullName: String
+  id: ID!
+  latitude: Float
+  longitude: Float
+  neighborhood: String
+  notes: String
+  occupation: String
+  phone: String
+  phone2: String
+}
+
+input UpdateGuarantorInput {
+  address: String
   documentId: String
   fullName: String
   id: ID!
+  notes: String
   phone: String
+  relationship: String
 }
 
 input UpdateInstallmentInput {

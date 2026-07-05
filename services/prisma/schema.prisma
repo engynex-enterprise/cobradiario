@@ -177,6 +177,7 @@ model Tenant {
   users          User[]
   memberships    Membership[]
   clients        Client[]
+  guarantors     Guarantor[]
   routes         Route[]
   creditProducts CreditProduct[]
   loans          Loan[]
@@ -279,10 +280,15 @@ model Client {
   tenantId     String
   fullName     String
   documentId   String? // cédula / identificación
+  documentType String? // CC, CE, NIT, PASSPORT…
   phone        String?
+  phone2       String? // teléfono alterno
   email        String?
   address      String?
+  neighborhood String? // barrio / vecindario
   city         String?
+  occupation   String? // ocupación / negocio
+  birthDate    DateTime?
   latitude     Float?
   longitude    Float?
   photoUrl     String?
@@ -294,12 +300,37 @@ model Client {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  loans  Loan[]
+  tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  loans      Loan[]
+  guarantors Guarantor[]
 
   @@unique([tenantId, documentId])
   @@index([tenantId, fullName])
   @@map("clients")
+}
+
+// Fiadores / codeudores de un cliente (varios por cliente).
+model Guarantor {
+  id           String    @id @default(cuid())
+  tenantId     String
+  clientId     String
+  fullName     String
+  documentId   String?
+  phone        String?
+  address      String?
+  relationship String? // parentesco / relación con el cliente
+  notes        String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([clientId])
+  @@map("guarantors")
 }
 
 // ----------------------------------------------------------------------------

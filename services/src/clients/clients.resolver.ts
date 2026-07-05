@@ -1,8 +1,10 @@
 import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { UserRole } from '@prisma/client';
 import { ClientsService } from './clients.service';
-import { ClientModel } from './clients.models';
-import { CreateClientInput, UpdateClientInput } from './clients.inputs';
+import { ClientModel, ClientGuarantorModel } from './clients.models';
+import {
+  CreateClientInput, UpdateClientInput, CreateGuarantorInput, UpdateGuarantorInput,
+} from './clients.inputs';
 import { CurrentUser, Roles } from '../common/decorators';
 import { AuthContext } from '../common/types';
 
@@ -40,5 +42,32 @@ export class ClientsResolver {
     @Args('id', { type: () => ID }) id: string,
   ): Promise<ClientModel> {
     return this.clients.remove(user.tenantId, id);
+  }
+
+  @Roles(UserRole.OWNER, UserRole.ADMIN, UserRole.MANAGER, UserRole.COLLECTOR)
+  @Mutation(() => ClientGuarantorModel)
+  addGuarantor(
+    @CurrentUser() user: AuthContext,
+    @Args('input') input: CreateGuarantorInput,
+  ): Promise<ClientGuarantorModel> {
+    return this.clients.addGuarantor(user.tenantId, input);
+  }
+
+  @Roles(UserRole.OWNER, UserRole.ADMIN, UserRole.MANAGER, UserRole.COLLECTOR)
+  @Mutation(() => ClientGuarantorModel)
+  updateGuarantor(
+    @CurrentUser() user: AuthContext,
+    @Args('input') input: UpdateGuarantorInput,
+  ): Promise<ClientGuarantorModel> {
+    return this.clients.updateGuarantor(user.tenantId, input);
+  }
+
+  @Roles(UserRole.OWNER, UserRole.ADMIN, UserRole.MANAGER)
+  @Mutation(() => ID)
+  deleteGuarantor(
+    @CurrentUser() user: AuthContext,
+    @Args('id', { type: () => ID }) id: string,
+  ): Promise<string> {
+    return this.clients.removeGuarantor(user.tenantId, id);
   }
 }

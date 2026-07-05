@@ -1,8 +1,10 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateClientInput, UpdateClientInput } from './clients.inputs';
-import { ClientModel } from './clients.models';
+import {
+  CreateClientInput, UpdateClientInput, CreateGuarantorInput, UpdateGuarantorInput,
+} from './clients.inputs';
+import { ClientModel, ClientGuarantorModel } from './clients.models';
 
 @Injectable()
 export class ClientsService {
@@ -13,7 +15,8 @@ export class ClientsService {
     const rows = await db.client.findMany({
       where: { deletedAt: null },
       orderBy: { fullName: 'asc' },
-      take: 100,
+      include: { guarantors: { where: { deletedAt: null }, orderBy: { createdAt: 'asc' } } },
+      take: 200,
     });
 
     // Agregados de cartera por cliente (créditos, activos y saldo pendiente).
@@ -53,7 +56,11 @@ export class ClientsService {
     const { id, ...data } = input;
     const db = this.prisma.forTenant(tenantId);
     await db.client.findFirstOrThrow({ where: { id, deletedAt: null } });
-    const updated = await db.client.update({ where: { id }, data });
+    const updated = await db.client.update({
+      where: { id },
+      data,
+      include: { guarantors: { where: { deletedAt: null }, orderBy: { createdAt: 'asc' } } },
+    });
     return toClientModel(updated);
   }
 
@@ -69,23 +76,71 @@ export class ClientsService {
     await db.client.update({ where: { id }, data: { deletedAt: new Date() } });
     return toClientModel(client);
   }
+
+  // ---- Fiadores ----
+
+  async addGuarantor(tenantId: string, input: CreateGuarantorInput): Promise<ClientGuarantorModel> {
+    const { clientId, ...data } = input;
+    const db = this.prisma.forTenant(tenantId);
+    await db.client.findFirstOrThrow({ where: { id: clientId, deletedAt: null } });
+    const created = await db.guarantor.create({ data: { tenantId, clientId, ...data } });
+    return toGuarantorModel(created);
+  }
+
+  async updateGuarantor(tenantId: string, input: UpdateGuarantorInput): Promise<ClientGuarantorModel> {
+    const { id, ...data } = input;
+    const db = this.prisma.forTenant(tenantId);
+    await db.guarantor.findFirstOrThrow({ where: { id, deletedAt: null } });
+    const updated = await db.guarantor.update({ where: { id }, data });
+    return toGuarantorModel(updated);
+  }
+
+  async removeGuarantor(tenantId: string, id: string): Promise<string> {
+    const db = this.prisma.forTenant(tenantId);
+    await db.guarantor.findFirstOrThrow({ where: { id, deletedAt: null } });
+    await db.guarantor.update({ where: { id }, data: { deletedAt: new Date() } });
+    return id;
+  }
+}
+
+function toGuarantorModel(g: Prisma.GuarantorGetPayload<object>): ClientGuarantorModel {
+  return {
+    id: g.id,
+    fullName: g.fullName,
+    documentId: g.documentId ?? undefined,
+    phone: g.phone ?? undefined,
+    address: g.address ?? undefined,
+    relationship: g.relationship ?? undefined,
+    notes: g.notes ?? undefined,
+  };
 }
 
 function toClientModel(
-  c: Prisma.ClientGetPayload<object>,
+  c: Prisma.ClientGetPayload<{ include: { guarantors: true } }> | Prisma.ClientGetPayload<object>,
   stats?: { loansCount: number; activeLoans: number; totalBalance: number },
 ): ClientModel {
+  const guarantors = 'guarantors' in c && Array.isArray(c.guarantors) ? c.guarantors.map(toGuarantorModel) : [];
   return {
     id: c.id,
     fullName: c.fullName,
     documentId: c.documentId ?? undefined,
+    documentType: c.documentType ?? undefined,
     phone: c.phone ?? undefined,
+    phone2: c.phone2 ?? undefined,
+    email: c.email ?? undefined,
     address: c.address ?? undefined,
+    neighborhood: c.neighborhood ?? undefined,
     city: c.city ?? undefined,
+    occupation: c.occupation ?? undefined,
+    birthDate: c.birthDate ?? undefined,
+    latitude: c.latitude ?? undefined,
+    longitude: c.longitude ?? undefined,
+    notes: c.notes ?? undefined,
     createdAt: c.createdAt,
     loansCount: stats?.loansCount ?? 0,
     activeLoans: stats?.activeLoans ?? 0,
     totalBalance: stats?.totalBalance ?? 0,
+    guarantors,
   };
 }
 
