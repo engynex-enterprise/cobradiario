@@ -35,11 +35,14 @@ export function ImageUpload({
   value,
   onChange,
   hint,
+  onUpload,
 }: {
   label: string;
   value?: string;
-  onChange: (dataUrl?: string) => void;
+  onChange: (url?: string) => void;
   hint?: string;
+  /** Si se pasa, sube la imagen y devuelve su URL; si no, se guarda el data URL. */
+  onUpload?: (dataUrl: string) => Promise<string>;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
@@ -49,7 +52,8 @@ export function ImageUpload({
     if (!file) return;
     setLoading(true);
     try {
-      onChange(await fileToCompressedDataUrl(file));
+      const dataUrl = await fileToCompressedDataUrl(file);
+      onChange(onUpload ? await onUpload(dataUrl) : dataUrl);
     } catch {
       // silencioso; el usuario puede reintentar
     } finally {

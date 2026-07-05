@@ -8,10 +8,12 @@ import { Eraser, PenLine } from 'lucide-react';
  * Controlado por `value`/`onChange`. Si ya hay firma, se muestra como imagen
  * con opción de rehacer.
  */
-export function SignaturePad({ value, onChange }: { value?: string; onChange: (dataUrl?: string) => void }) {
+export function SignaturePad({ value, onChange, onUpload }: { value?: string; onChange: (url?: string) => void; onUpload?: (dataUrl: string) => Promise<string> }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawing = useRef(false);
   const dirty = useRef(false);
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(!value);
 
   useEffect(() => {
@@ -54,9 +56,18 @@ export function SignaturePad({ value, onChange }: { value?: string; onChange: (d
   function end() {
     if (!drawing.current) return;
     drawing.current = false;
-    if (dirty.current) onChange(canvasRef.current!.toDataURL('image/png'));
+    if (!dirty.current) return;
+    const dataUrl = canvasRef.current!.toDataURL('image/png');
+    if (!onUpload) { onChange(dataUrl); return; }
+    // Sube tras una breve pausa (evita subir en cada trazo).
+    clearTimeout(timer.current);
+    timer.current = setTimeout(async () => {
+      setSaving(true);
+      try { onChange(await onUpload(dataUrl)); } catch { /* reintentar dibujando */ } finally { setSaving(false); }
+    }, 700);
   }
   function clear() {
+    clearTimeout(timer.current);
     const canvas = canvasRef.current;
     if (canvas) canvas.getContext('2d')!.clearRect(0, 0, canvas.width, canvas.height);
     dirty.current = false;
@@ -87,9 +98,12 @@ export function SignaturePad({ value, onChange }: { value?: string; onChange: (d
         onPointerLeave={end}
         className="h-32 w-full touch-none rounded-xl border-2 border-dashed border-border bg-white"
       />
-      <button type="button" onClick={clear} className="inline-flex items-center gap-1.5 text-sm font-bold text-muted-foreground hover:text-foreground">
-        <Eraser className="h-4 w-4" /> Borrar
-      </button>
+      <div className="flex items-center gap-3">
+        <button type="button" onClick={clear} className="inline-flex items-center gap-1.5 text-sm font-bold text-muted-foreground hover:text-foreground">
+          <Eraser className="h-4 w-4" /> Borrar
+        </button>
+        {saving && <span className="text-xs text-muted-foreground">Guardando…</span>}
+      </div>
     </div>
   );
 }

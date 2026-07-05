@@ -532,6 +532,7 @@ type Mutation {
   updateInstallment(input: UpdateInstallmentInput!): Loan!
   updateProfile(input: UpdateProfileInput!): AuthUser!
   updateTag(input: UpdateTagInput!): Tag
+  uploadImage(dataUrl: String!, folder: String): UploadResult!
 }
 
 type Notification {
@@ -774,6 +775,11 @@ input UpdateTagInput {
   color: String
   id: ID!
   name: String
+}
+
+type UploadResult {
+  key: String!
+  url: String!
 }
 
 enum UserRole {

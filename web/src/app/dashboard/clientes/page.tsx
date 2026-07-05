@@ -19,7 +19,7 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import {
-  createClient, deleteClient, fetchClient, fetchClients, fetchLoans, updateClient,
+  createClient, deleteClient, fetchClient, fetchClients, fetchLoans, updateClient, uploadImage,
   addGuarantor, updateGuarantor, deleteGuarantor,
   type Client, type ClientInput, type ClientGuarantor, type ClientReference, type Loan,
 } from '@/lib/graphql';
@@ -36,6 +36,9 @@ function waNumber(phone: string) {
   const d = phone.replace(/\D/g, '');
   return d.startsWith('57') ? d : `57${d}`;
 }
+
+/** Sube una imagen a InsForge (vía backend) y devuelve su URL pública. */
+const uploadClientImage = (dataUrl: string) => uploadImage(dataUrl, 'clients').then((d) => d.uploadImage.url);
 
 /** Color/etiqueta del score crediticio (estilo DataCrédito). */
 function riskStyle(risk?: string): { label: string; badge: 'success' | 'warning' | 'destructive' | 'secondary'; bar: string; text: string } {
@@ -473,15 +476,15 @@ function ClientDrawer({
 
             <FormSection title="Documentos y foto">
               <div className="grid grid-cols-2 gap-3">
-                <ImageUpload label="Foto de la persona" value={form.photoUrl} onChange={setImg('photoUrl')} />
-                <ImageUpload label="Selfie con documento" value={form.selfieWithDocUrl} onChange={setImg('selfieWithDocUrl')} hint="Persona sosteniendo el documento junto a la cara" />
-                <ImageUpload label="Documento (frente)" value={form.documentFrontUrl} onChange={setImg('documentFrontUrl')} />
-                <ImageUpload label="Documento (reverso)" value={form.documentBackUrl} onChange={setImg('documentBackUrl')} />
+                <ImageUpload label="Foto de la persona" value={form.photoUrl} onChange={setImg('photoUrl')} onUpload={uploadClientImage} />
+                <ImageUpload label="Selfie con documento" value={form.selfieWithDocUrl} onChange={setImg('selfieWithDocUrl')} onUpload={uploadClientImage} hint="Persona sosteniendo el documento junto a la cara" />
+                <ImageUpload label="Documento (frente)" value={form.documentFrontUrl} onChange={setImg('documentFrontUrl')} onUpload={uploadClientImage} />
+                <ImageUpload label="Documento (reverso)" value={form.documentBackUrl} onChange={setImg('documentBackUrl')} onUpload={uploadClientImage} />
               </div>
             </FormSection>
 
             <FormSection title="Firma digital">
-              <SignaturePad value={form.signatureUrl} onChange={setImg('signatureUrl')} />
+              <SignaturePad value={form.signatureUrl} onChange={setImg('signatureUrl')} onUpload={uploadClientImage} />
             </FormSection>
 
             <FormSection title="Referencias personales">

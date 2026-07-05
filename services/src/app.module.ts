@@ -27,6 +27,7 @@ import { ChatModule } from './chat/chat.module';
 import { ManagementsModule } from './managements/managements.module';
 import { ExpensesModule } from './expenses/expenses.module';
 import { BasesModule } from './bases/bases.module';
+import { StorageModule } from './storage/storage.module';
 import { GqlAuthGuard } from './common/guards/gql-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { GqlThrottlerGuard } from './common/guards/gql-throttler.guard';
@@ -95,6 +96,7 @@ import { GqlThrottlerGuard } from './common/guards/gql-throttler.guard';
     ManagementsModule,
     ExpensesModule,
     BasesModule,
+    StorageModule,
   ],
   providers: [
     // Orden importa: autenticación → autorización por rol → rate limit.

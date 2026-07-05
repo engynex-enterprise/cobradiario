@@ -156,6 +156,14 @@ export function updateClient(input: Partial<ClientInput> & { id: string }) {
   );
 }
 
+/** Sube una imagen (data URL) a InsForge vía el backend y devuelve su URL pública. */
+export function uploadImage(dataUrl: string, folder = 'misc') {
+  return gql<{ uploadImage: { url: string; key: string } }>(
+    `mutation($d: String!, $f: String) { uploadImage(dataUrl: $d, folder: $f) { url key } }`,
+    { d: dataUrl, f: folder },
+  );
+}
+
 export function deleteClient(id: string) {
   return gql<{ deleteClient: { id: string } }>(
     `mutation($id: ID!) { deleteClient(id: $id) { id } }`,
