@@ -278,3 +278,31 @@ textarea:focus-visible {
   border-radius: 9999px;
   font-weight: 700;
 }
+
+/* ── Calendario (react-day-picker v10) — tema Duolingo ─────────────────── */
+.rdp-duo {
+  --rdp-accent-color: #58cc02;              /* día seleccionado */
+  --rdp-accent-background-color: #e9f9e0;   /* hover / rango */
+  --rdp-today-color: #58cc02;
+  --rdp-font-family: inherit;
+  --rdp-day-width: 2.25rem;
+  --rdp-day-height: 2.25rem;
+  --rdp-day_button-width: 2.25rem;
+  --rdp-day_button-height: 2.25rem;
+  --rdp-day_button-border-radius: 0.75rem;
+  --rdp-selected-border: 2px solid #58cc02;
+  --rdp-nav_button-width: 2rem;
+  --rdp-nav_button-height: 2rem;
+  color: var(--foreground);
+}
+.rdp-duo .rdp-day_button:hover { background-color: var(--accent); }
+.rdp-duo .rdp-selected .rdp-day_button { color: #fff; }
+.rdp-duo .rdp-dropdowns select {
+  border: 2px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 0.15rem 0.35rem;
+  background: var(--background);
+  color: var(--foreground);
+  font-weight: 700;
+}
+.night .rdp-duo, .dark .rdp-duo { --rdp-accent-background-color: color-mix(in oklab, #58cc02 25%, transparent); }

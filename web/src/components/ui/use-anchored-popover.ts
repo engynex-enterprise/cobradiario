@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 
 /**
  * Posiciona un popover en un portal (fixed, relativo al viewport) anclado a un
@@ -13,7 +13,8 @@ export function useAnchoredPopover() {
   const contentRef = useRef<HTMLDivElement>(null);
   const [style, setStyle] = useState<CSSProperties>({ position: 'fixed', visibility: 'hidden' });
 
-  const reposition = () => {
+  // useCallback estable (deps vacías): evita bucles cuando se usa en deps de efectos.
+  const reposition = useCallback(() => {
     const t = triggerRef.current?.getBoundingClientRect();
     if (!t) return;
     const c = contentRef.current?.getBoundingClientRect();
@@ -29,8 +30,12 @@ export function useAnchoredPopover() {
     let left = t.left;
     if (left + cw > vw - 8) left = Math.max(8, vw - 8 - cw);
     s.left = Math.round(Math.max(8, left));
-    setStyle(s);
-  };
+    // Solo actualiza si cambió (evita renders/bucles innecesarios).
+    setStyle((prev) => {
+      if (prev.top === s.top && prev.bottom === s.bottom && prev.left === s.left && prev.minWidth === s.minWidth && prev.visibility === s.visibility) return prev;
+      return s;
+    });
+  }, []);
 
   useLayoutEffect(() => {
     if (!open) { setStyle({ position: 'fixed', visibility: 'hidden' }); return; }

@@ -87,6 +87,50 @@ export class AuthService {
     );
   }
 
+  /**
+   * Login con Google vía InsForge (arquitectura híbrida): el cliente hace el
+   * OAuth con InsForge y nos manda su accessToken; aquí lo validamos contra
+   * InsForge, resolvemos el usuario por correo y emitimos NUESTROS tokens.
+   * El usuario debe existir ya (creado/invitado por un admin).
+   */
+  async loginWithGoogle(insforgeAccessToken: string, meta?: TokenMeta): Promise<AuthPayload> {
+    const base = process.env.INSFORGE_URL;
+    if (!base) throw new UnauthorizedException('InsForge no está configurado en el servidor');
+
+    let email: string | undefined;
+    try {
+      const res = await fetch(`${base}/api/auth/sessions/current`, {
+        headers: { Authorization: `Bearer ${insforgeAccessToken}` },
+      });
+      if (res.ok) {
+        const body = (await res.json()) as { user?: { email?: string }; email?: string };
+        const raw = body?.user?.email ?? body?.email;
+        email = raw?.toLowerCase().trim();
+      }
+    } catch {
+      /* red/parse → se trata como no válido abajo */
+    }
+    if (!email) throw new UnauthorizedException('No se pudo validar la sesión de Google');
+
+    const user = await this.prisma.system().user.findFirst({
+      where: { email, isActive: true, deletedAt: null },
+      include: { memberships: { where: { status: 'ACTIVE' }, orderBy: { createdAt: 'asc' } } },
+    });
+    if (!user) {
+      throw new UnauthorizedException(
+        'Este correo de Google no está registrado. Pide a un administrador que cree tu usuario.',
+      );
+    }
+
+    const role = user.memberships[0]?.role ?? UserRole.VIEWER;
+    await this.prisma.system().user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
+    return this.issueTokens(
+      { id: user.id, tenantId: user.tenantId, email: user.email, fullName: user.fullName },
+      role,
+      meta,
+    );
+  }
+
   // --- Refresh con rotación + detección de reuso ---
   async refresh(rawToken: string, meta?: TokenMeta): Promise<AuthPayload> {
     let payload: { sub: string; tid: string; jti: string; fid: string };

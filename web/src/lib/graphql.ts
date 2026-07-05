@@ -131,6 +131,16 @@ export function fetchLoans(routeId?: string) {
   );
 }
 
+/** Login híbrido con Google: valida el token de InsForge en el backend y emite nuestros JWT. */
+export function loginWithGoogle(insforgeAccessToken: string) {
+  return gql<{ loginWithGoogle: { accessToken: string; refreshToken: string; user: AuthUser } }>(
+    `mutation($t: String!) {
+      loginWithGoogle(insforgeAccessToken: $t) { accessToken refreshToken user { id email fullName role tenantId } }
+    }`,
+    { t: insforgeAccessToken },
+  );
+}
+
 export function fetchClients() {
   return gql<{ clients: Client[] }>(`{ clients { ${CLIENT_FIELDS} } }`);
 }

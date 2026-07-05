@@ -27,6 +27,12 @@ export class AuthResolver {
     return this.auth.refresh(input.refreshToken, metaFrom(ctx));
   }
 
+  @Public()
+  @Mutation(() => AuthPayload)
+  loginWithGoogle(@Args('insforgeAccessToken') insforgeAccessToken: string, @Context() ctx: any): Promise<AuthPayload> {
+    return this.auth.loginWithGoogle(insforgeAccessToken, metaFrom(ctx));
+  }
+
   @Mutation(() => Boolean)
   logout(@Args('input') input: RefreshInput): Promise<boolean> {
     return this.auth.logout(input.refreshToken);

@@ -517,6 +517,7 @@ type Mutation {
   deleteGuarantor(id: ID!): ID!
   deleteTag(id: ID!): Boolean!
   login(input: LoginInput!): AuthPayload!
+  loginWithGoogle(insforgeAccessToken: String!): AuthPayload!
   logout(input: RefreshInput!): Boolean!
   markNotificationRead(id: ID!): Boolean!
   openCashBox(input: OpenCashBoxInput!): CashBox!
