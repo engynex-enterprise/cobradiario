@@ -35,3 +35,24 @@ export class AuthPayload {
   @Field(() => AuthUser)
   user!: AuthUser;
 }
+
+@ObjectType()
+export class RegisterResponse {
+  @Field()
+  ok!: boolean;
+
+  @Field()
+  email!: string;
+
+  @Field()
+  message!: string;
+}
+
+@ObjectType()
+export class SimpleResult {
+  @Field()
+  ok!: boolean;
+
+  @Field()
+  message!: string;
+}

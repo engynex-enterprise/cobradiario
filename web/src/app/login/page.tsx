@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useAuth } from '@/components/auth-provider';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,7 @@ import { Landmark, Loader2, HandCoins, Route, Wallet, ShieldCheck } from 'lucide
 
 export default function LoginPage() {
   const { signIn } = useAuth();
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -22,7 +24,13 @@ export default function LoginPage() {
     try {
       await signIn(email, password);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Error al iniciar sesión');
+      const msg = err instanceof Error ? err.message : 'Error al iniciar sesión';
+      if (msg.includes('EMAIL_NOT_VERIFIED') || msg.toLowerCase().includes('confirmar tu correo')) {
+        toast.error('Debes confirmar tu correo para entrar.');
+        router.push(`/verificar?email=${encodeURIComponent(email)}`);
+        return;
+      }
+      toast.error(msg);
     } finally {
       setLoading(false);
     }

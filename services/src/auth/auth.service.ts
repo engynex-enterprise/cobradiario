@@ -1,13 +1,14 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Prisma, UserRole } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
-import { createHash, randomUUID } from 'node:crypto';
+import { createHash, randomUUID, randomBytes } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
+import { MailService } from '../mail/mail.service';
 import { AccessTokenPayload } from '../common/types';
 import { LoginInput, RegisterInput } from './dto/auth.inputs';
-import { AuthPayload } from './dto/auth.models';
+import { AuthPayload, RegisterResponse, SimpleResult } from './dto/auth.models';
 
 @Injectable()
 export class AuthService {
@@ -15,17 +16,20 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
+    private readonly mail: MailService,
   ) {}
 
-  // --- Registro: crea tenant + usuario OWNER + membership en una transacción ---
-  async register(input: RegisterInput, meta?: TokenMeta): Promise<AuthPayload> {
+  // --- Registro: crea tenant + usuario OWNER (sin confirmar) + envía correo de verificación ---
+  async register(input: RegisterInput): Promise<RegisterResponse> {
     const email = input.email.toLowerCase().trim();
     const rounds = this.config.get<number>('jwt.bcryptRounds')!;
     const passwordHash = await bcrypt.hash(input.password, rounds);
+    const rawToken = randomBytes(32).toString('hex');
+    const tokenHash = this.hashToken(rawToken);
+    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
     const user = await this.prisma
       .$transaction(async (tx) => {
-        // Registro: crea tenant/usuario antes de existir contexto de tenant → bypass RLS.
         await tx.$executeRaw`SELECT set_config('app.bypass_rls', 'on', true)`;
         const tenant = await tx.tenant.create({
           data: { name: input.tenantName, type: input.tenantType },
@@ -37,6 +41,8 @@ export class AuthService {
             phone: input.phone,
             fullName: input.fullName,
             passwordHash,
+            emailVerifyTokenHash: tokenHash,
+            emailVerifyExpiresAt: expires,
           },
         });
         await tx.membership.create({
@@ -51,11 +57,51 @@ export class AuthService {
         throw e;
       });
 
-    return this.issueTokens(
-      { id: user.id, tenantId: user.tenantId, email, fullName: user.fullName },
-      UserRole.OWNER,
-      meta,
-    );
+    await this.sendVerification(email, user.fullName, rawToken);
+    return {
+      ok: true,
+      email,
+      message: 'Cuenta creada. Te enviamos un correo para confirmarla.',
+    };
+  }
+
+  /** Reenvía el correo de confirmación. Respuesta genérica (no filtra existencia). */
+  async resendVerification(rawEmail: string): Promise<SimpleResult> {
+    const email = rawEmail.toLowerCase().trim();
+    const user = await this.prisma.system().user.findFirst({
+      where: { email, isActive: true, deletedAt: null, emailVerifiedAt: null },
+    });
+    if (user) {
+      const rawToken = randomBytes(32).toString('hex');
+      await this.prisma.system().user.update({
+        where: { id: user.id },
+        data: { emailVerifyTokenHash: this.hashToken(rawToken), emailVerifyExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) },
+      });
+      await this.sendVerification(email, user.fullName, rawToken);
+    }
+    return { ok: true, message: 'Si la cuenta existe y no está confirmada, te reenviamos el correo.' };
+  }
+
+  /** Confirma la cuenta con el token del correo. */
+  async verifyEmail(rawToken: string): Promise<SimpleResult> {
+    const tokenHash = this.hashToken(rawToken);
+    const user = await this.prisma.system().user.findFirst({
+      where: { emailVerifyTokenHash: tokenHash, deletedAt: null },
+    });
+    if (!user || !user.emailVerifyExpiresAt || user.emailVerifyExpiresAt < new Date()) {
+      throw new BadRequestException('El enlace de confirmación es inválido o expiró. Solicita uno nuevo.');
+    }
+    await this.prisma.system().user.update({
+      where: { id: user.id },
+      data: { emailVerifiedAt: new Date(), emailVerifyTokenHash: null, emailVerifyExpiresAt: null },
+    });
+    return { ok: true, message: '¡Cuenta confirmada! Ya puedes iniciar sesión.' };
+  }
+
+  private async sendVerification(email: string, fullName: string, rawToken: string): Promise<void> {
+    const base = process.env.WEB_APP_URL ?? 'http://localhost:3000';
+    const link = `${base}/verificar?token=${rawToken}`;
+    await this.mail.sendVerification(email, fullName, link);
   }
 
   // --- Login ---
@@ -72,6 +118,9 @@ export class AuthService {
     const ok = await bcrypt.compare(input.password, hash);
     if (!user || !ok) {
       throw new UnauthorizedException('Credenciales inválidas');
+    }
+    if (!user.emailVerifiedAt) {
+      throw new UnauthorizedException('EMAIL_NOT_VERIFIED: Debes confirmar tu correo antes de iniciar sesión.');
     }
 
     const role = user.memberships[0]?.role ?? UserRole.VIEWER;
@@ -123,7 +172,11 @@ export class AuthService {
     }
 
     const role = user.memberships[0]?.role ?? UserRole.VIEWER;
-    await this.prisma.system().user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
+    // Google ya verifica el correo → marcar la cuenta como confirmada.
+    await this.prisma.system().user.update({
+      where: { id: user.id },
+      data: { lastLoginAt: new Date(), ...(user.emailVerifiedAt ? {} : { emailVerifiedAt: new Date() }) },
+    });
     return this.issueTokens(
       { id: user.id, tenantId: user.tenantId, email: user.email, fullName: user.fullName },
       role,

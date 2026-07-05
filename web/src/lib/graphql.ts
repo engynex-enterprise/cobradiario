@@ -131,13 +131,29 @@ export function fetchLoans(routeId?: string) {
   );
 }
 
-/** Registro: crea tenant + usuario OWNER y devuelve la sesión. */
+/** Registro: crea tenant + usuario OWNER (sin confirmar) y envía correo de verificación. */
 export function register(input: { tenantName: string; fullName: string; email: string; password: string; phone?: string }) {
-  return gql<{ register: { accessToken: string; refreshToken: string; user: AuthUser } }>(
+  return gql<{ register: { ok: boolean; email: string; message: string } }>(
     `mutation($i: RegisterInput!) {
-      register(input: $i) { accessToken refreshToken user { id email fullName role tenantId } }
+      register(input: $i) { ok email message }
     }`,
     { i: { ...input, tenantType: 'INDIVIDUAL' } },
+  );
+}
+
+/** Confirma la cuenta con el token del correo. */
+export function verifyEmail(token: string) {
+  return gql<{ verifyEmail: { ok: boolean; message: string } }>(
+    `mutation($t: String!) { verifyEmail(token: $t) { ok message } }`,
+    { t: token },
+  );
+}
+
+/** Reenvía el correo de confirmación. */
+export function resendVerification(email: string) {
+  return gql<{ resendVerification: { ok: boolean; message: string } }>(
+    `mutation($e: String!) { resendVerification(email: $e) { ok message } }`,
+    { e: email },
   );
 }
 

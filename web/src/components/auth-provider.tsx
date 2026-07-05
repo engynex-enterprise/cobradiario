@@ -11,7 +11,7 @@ interface AuthCtx {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signInWithGoogle: (insforgeAccessToken: string) => Promise<void>;
-  signUp: (input: { tenantName: string; fullName: string; email: string; password: string; phone?: string }) => Promise<void>;
+  signUp: (input: { tenantName: string; fullName: string; email: string; password: string; phone?: string }) => Promise<{ email: string; message: string }>;
   signOut: () => void;
 }
 
@@ -59,10 +59,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function signUp(input: { tenantName: string; fullName: string; email: string; password: string; phone?: string }) {
     const { register } = await apiRegister(input);
-    tokens.set(register.accessToken, register.refreshToken);
-    localStorage.setItem(USER_KEY, JSON.stringify(register.user));
-    setUser(register.user);
-    router.push('/dashboard');
+    // No inicia sesión: la cuenta requiere confirmación por correo.
+    return { email: register.email, message: register.message };
   }
 
   function signOut() {

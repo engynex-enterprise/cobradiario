@@ -1,7 +1,7 @@
 import { Args, Context, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { AuthService } from './auth.service';
 import { LoginInput, RefreshInput, RegisterInput, UpdateProfileInput } from './dto/auth.inputs';
-import { AuthPayload, AuthUser } from './dto/auth.models';
+import { AuthPayload, AuthUser, RegisterResponse, SimpleResult } from './dto/auth.models';
 import { CurrentUser, Public } from '../common/decorators';
 import { AuthContext } from '../common/types';
 
@@ -10,9 +10,21 @@ export class AuthResolver {
   constructor(private readonly auth: AuthService) {}
 
   @Public()
-  @Mutation(() => AuthPayload)
-  register(@Args('input') input: RegisterInput, @Context() ctx: any): Promise<AuthPayload> {
-    return this.auth.register(input, metaFrom(ctx));
+  @Mutation(() => RegisterResponse)
+  register(@Args('input') input: RegisterInput): Promise<RegisterResponse> {
+    return this.auth.register(input);
+  }
+
+  @Public()
+  @Mutation(() => SimpleResult)
+  verifyEmail(@Args('token') token: string): Promise<SimpleResult> {
+    return this.auth.verifyEmail(token);
+  }
+
+  @Public()
+  @Mutation(() => SimpleResult)
+  resendVerification(@Args('email') email: string): Promise<SimpleResult> {
+    return this.auth.resendVerification(email);
   }
 
   @Public()

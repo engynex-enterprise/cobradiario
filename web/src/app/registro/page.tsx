@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useAuth } from '@/components/auth-provider';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,7 @@ import { Landmark, Loader2 } from 'lucide-react';
 
 export default function RegistroPage() {
   const { signUp } = useAuth();
+  const router = useRouter();
   const [form, setForm] = useState({ tenantName: '', fullName: '', email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => setForm((f) => ({ ...f, [k]: e.target.value }));
@@ -20,8 +22,8 @@ export default function RegistroPage() {
     if (form.password.length < 8) { toast.error('La contraseña debe tener al menos 8 caracteres'); return; }
     setLoading(true);
     try {
-      await signUp(form);
-      toast.success('¡Cuenta creada! Bienvenido 🎉');
+      const { email } = await signUp(form);
+      router.push(`/verificar?email=${encodeURIComponent(email)}`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'No se pudo crear la cuenta');
     } finally {
