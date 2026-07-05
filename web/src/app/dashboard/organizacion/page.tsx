@@ -1,10 +1,11 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import Link from 'next/link';
+import { Suspense, useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { useAuth } from '@/components/auth-provider';
 import { ModuleInfoButton } from '@/components/module-info';
+import { SettingsShell, SETTINGS_SECTIONS } from '@/components/settings-shell';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -20,10 +21,7 @@ import {
   type Organization, type OrgMember, type OrgInvitation, type OrgAuditLog, type OrgUpdate, type Product,
 } from '@/lib/graphql';
 import { formatDate, cn } from '@/lib/utils';
-import {
-  Building2, Users, MailPlus, Trash2, Loader2, Shield, UserPlus, X, Check,
-  SlidersHorizontal, Coins, Bell, ScrollText, Route, Package, Tags, CreditCard,
-} from 'lucide-react';
+import { MailPlus, Trash2, Loader2, UserPlus, X, Check } from 'lucide-react';
 
 const ROLES = [
   { value: 'OWNER', label: 'Dueño' }, { value: 'ADMIN', label: 'Administrador' },
@@ -33,24 +31,6 @@ const roleLabel = (r: string) => ROLES.find((x) => x.value === r)?.label ?? r;
 const CURRENCIES = ['COP', 'USD', 'MXN', 'PEN', 'CLP', 'ARS', 'EUR'];
 const LANGUAGES = [{ v: 'es', l: 'Español' }, { v: 'en', l: 'English' }];
 const TIMEZONES = ['America/Bogota', 'America/Mexico_City', 'America/Lima', 'America/Santiago', 'America/Argentina/Buenos_Aires', 'America/New_York'];
-
-// Módulos que se enlazan desde el sub-sidebar de ajustes.
-const MODULES = [
-  { href: '/dashboard/rutas', icon: Route, label: 'Rutas' },
-  { href: '/dashboard/productos', icon: Package, label: 'Productos' },
-  { href: '/dashboard/etiquetas', icon: Tags, label: 'Etiquetas' },
-  { href: '/dashboard/planes', icon: CreditCard, label: 'Planes y facturación' },
-];
-
-type Tab = 'general' | 'finanzas' | 'notificaciones' | 'miembros' | 'roles' | 'auditoria';
-const TABS: { key: Tab; label: string; icon: typeof Users; admin?: boolean }[] = [
-  { key: 'general', label: 'General', icon: SlidersHorizontal },
-  { key: 'finanzas', label: 'Políticas', icon: Coins },
-  { key: 'notificaciones', label: 'Notificaciones', icon: Bell },
-  { key: 'miembros', label: 'Miembros', icon: Users },
-  { key: 'roles', label: 'Roles y permisos', icon: Shield },
-  { key: 'auditoria', label: 'Auditoría', icon: ScrollText, admin: true },
-];
 
 const MODULE_INFO = {
   summary: 'El centro de configuración de tu organización (empresa): ajustes generales, finanzas, notificaciones, miembros, roles, auditoría y todos los módulos del negocio.',
@@ -68,9 +48,21 @@ const MODULE_INFO = {
 };
 
 export default function OrganizacionPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">Cargando…</div>}>
+      <OrgSettings />
+    </Suspense>
+  );
+}
+
+function OrgSettings() {
   const { user } = useAuth();
   const canManage = user?.role === 'OWNER' || user?.role === 'ADMIN';
-  const [tab, setTab] = useState<Tab>('general');
+  const sp = useSearchParams();
+  const sParam = sp.get('s') ?? 'general';
+  const tab = (SETTINGS_SECTIONS.some((s) => s.key === sParam) ? sParam : 'general') as
+    'general' | 'politicas' | 'notificaciones' | 'miembros' | 'roles' | 'auditoria';
+  const active = SETTINGS_SECTIONS.find((s) => s.key === tab)!;
   const [org, setOrg] = useState<Organization | null>(null);
   const [members, setMembers] = useState<OrgMember[]>([]);
   const [invites, setInvites] = useState<OrgInvitation[]>([]);
@@ -98,94 +90,51 @@ export default function OrganizacionPage() {
     catch (e) { toast.error(e instanceof Error ? e.message : 'Error'); throw e; }
   }
 
-  const visibleTabs = TABS.filter((t) => !t.admin || canManage);
-  const active = visibleTabs.find((t) => t.key === tab) ?? visibleTabs[0];
+  const isOrg = org?.type === 'ORGANIZATION';
 
   return (
-    <div className="flex min-h-[calc(100dvh-4rem)]">
-      {/* Sub-sidebar pegado al sidebar principal (izquierda) */}
-      <aside className="sticky top-0 hidden h-[calc(100dvh-4rem)] w-56 shrink-0 flex-col border-r-2 border-border bg-sidebar md:flex">
-        <div className="flex items-center gap-2.5 border-b-2 border-sidebar-border p-4">
-          <span className="flex size-9 items-center justify-center rounded-2xl bg-primary/10 text-primary"><Building2 className="size-5" /></span>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-extrabold">{org?.name ?? 'Organización'}</p>
-            <p className="text-[11px] text-muted-foreground">Ajustes</p>
+    <SettingsShell active={tab} title={org?.name ?? (isOrg ? 'Organización' : 'Ajustes')}>
+      <div className="space-y-6 p-4 sm:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <span className="flex size-9 items-center justify-center rounded-2xl bg-accent text-accent-foreground"><active.icon className="size-5" /></span>
+            <div><h1 className="text-lg font-extrabold tracking-tight">{active.label}</h1><p className="text-sm text-muted-foreground">{isOrg ? 'Organización' : 'Mi negocio'}</p></div>
+          </div>
+          <div className="flex items-center gap-2">
+            {tab === 'miembros' && canManage && <Button onClick={() => setInviteOpen(true)}><MailPlus className="h-4 w-4" /> Invitar</Button>}
+            <ModuleInfoButton info={MODULE_INFO} moduleTitle="Ajustes" />
           </div>
         </div>
-        <nav className="flex-1 space-y-0.5 overflow-y-auto p-2">
-          {visibleTabs.map((t) => (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              className={cn(
-                'flex w-full items-center gap-3 rounded-xl border-2 px-3 py-2.5 text-[13px] font-bold transition-colors',
-                tab === t.key ? 'border-sky-300 bg-accent text-accent-foreground' : 'border-transparent text-foreground/70 hover:bg-muted hover:text-foreground',
-              )}
-            >
-              <t.icon className="size-5 shrink-0" />
-              <span className="flex-1 text-left">{t.label}</span>
-            </button>
-          ))}
-          <p className="px-3 pb-1 pt-4 text-[10px] font-extrabold uppercase tracking-wide text-muted-foreground">Módulos</p>
-          {MODULES.map((m) => (
-            <Link key={m.href} href={m.href} className="flex w-full items-center gap-3 rounded-xl border-2 border-transparent px-3 py-2.5 text-[13px] font-bold text-foreground/70 transition-colors hover:bg-muted hover:text-foreground">
-              <m.icon className="size-5 shrink-0" />
-              <span className="flex-1 text-left">{m.label}</span>
-            </Link>
-          ))}
-        </nav>
-      </aside>
 
-      {/* Contenido */}
-      <div className="min-w-0 flex-1">
-        {/* Nav horizontal en móvil */}
-        <nav className="flex gap-1 overflow-x-auto border-b-2 border-border bg-card px-2 py-2 md:hidden">
-          {visibleTabs.map((t) => (
-            <button key={t.key} onClick={() => setTab(t.key)} className={cn('whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-bold uppercase', tab === t.key ? 'bg-accent text-accent-foreground' : 'text-muted-foreground')}>{t.label}</button>
-          ))}
-          {MODULES.map((m) => (
-            <Link key={m.href} href={m.href} className="whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-bold uppercase text-muted-foreground">{m.label}</Link>
-          ))}
-        </nav>
-
-        <div className="space-y-6 p-4 sm:p-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5">
-              <span className="flex size-9 items-center justify-center rounded-2xl bg-accent text-accent-foreground"><active.icon className="size-5" /></span>
-              <div><h1 className="text-lg font-extrabold tracking-tight">{active.label}</h1><p className="text-sm text-muted-foreground">Organización</p></div>
-            </div>
-            <div className="flex items-center gap-2">
-              {tab === 'miembros' && canManage && <Button onClick={() => setInviteOpen(true)}><MailPlus className="h-4 w-4" /> Invitar</Button>}
-              <ModuleInfoButton info={MODULE_INFO} moduleTitle="Organización" />
-            </div>
-          </div>
-
-          {!org ? (
-            <div className="py-12 text-center text-sm text-muted-foreground">Cargando…</div>
-          ) : (
-            <>
-              {tab === 'general' && <GeneralTab org={org} canManage={canManage} onSave={save} />}
-              {tab === 'finanzas' && <FinanzasTab org={org} canManage={canManage} onSave={save} />}
-              {tab === 'notificaciones' && <NotificacionesTab org={org} canManage={canManage} onSave={save} />}
-              {tab === 'roles' && <RolesTab />}
-              {tab === 'auditoria' && canManage && <AuditoriaTab logs={logs} />}
-              {tab === 'miembros' && (
-                <MiembrosTab
-                  org={org} members={members} invites={invites} canManage={canManage} currentUserId={user?.id}
-                  onRemove={setToRemove}
-                  onRole={async (m, role) => { try { const { updateMemberRole: rows } = await updateMemberRole(m.id, role); setMembers(rows); toast.success('Rol actualizado'); } catch (e) { toast.error(e instanceof Error ? e.message : 'Error'); } }}
-                  onCancelInvite={async (inv) => { try { await cancelInvitation(inv.id); setInvites((xs) => xs.filter((x) => x.id !== inv.id)); toast.success('Invitación cancelada'); } catch (e) { toast.error(e instanceof Error ? e.message : 'Error'); } }}
-                />
-              )}
-            </>
-          )}
-        </div>
+        {!org ? (
+          <div className="py-12 text-center text-sm text-muted-foreground">Cargando…</div>
+        ) : (
+          <>
+            {tab === 'general' && <GeneralTab org={org} canManage={canManage} onSave={save} />}
+            {tab === 'politicas' && <FinanzasTab org={org} canManage={canManage} onSave={save} />}
+            {tab === 'notificaciones' && <NotificacionesTab org={org} canManage={canManage} onSave={save} />}
+            {tab === 'roles' && <RolesTab />}
+            {tab === 'auditoria' && (canManage ? <AuditoriaTab logs={logs} /> : <NoPerm />)}
+            {tab === 'miembros' && (
+              <MiembrosTab
+                org={org} members={members} invites={invites} canManage={canManage} currentUserId={user?.id}
+                onInvite={() => setInviteOpen(true)} onRemove={setToRemove}
+                onRole={async (m, role) => { try { const { updateMemberRole: rows } = await updateMemberRole(m.id, role); setMembers(rows); toast.success('Rol actualizado'); } catch (e) { toast.error(e instanceof Error ? e.message : 'Error'); } }}
+                onCancelInvite={async (inv) => { try { await cancelInvitation(inv.id); setInvites((xs) => xs.filter((x) => x.id !== inv.id)); toast.success('Invitación cancelada'); } catch (e) { toast.error(e instanceof Error ? e.message : 'Error'); } }}
+              />
+            )}
+          </>
+        )}
       </div>
 
       <InviteDialog open={inviteOpen} onClose={() => setInviteOpen(false)} onInvited={load} />
       <ConfirmDialog open={toRemove !== null} onOpenChange={(v) => !v && setToRemove(null)} title="Eliminar miembro" description={`Se dará de baja a "${toRemove?.fullName ?? ''}".`} onConfirm={confirmRemove} />
-    </div>
+    </SettingsShell>
   );
+}
+
+function NoPerm() {
+  return <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">No tienes permiso para ver esta sección.</CardContent></Card>;
 }
 
 // ---------- General ----------
@@ -383,12 +332,19 @@ function AuditoriaTab({ logs }: { logs: OrgAuditLog[] }) {
 }
 
 // ---------- Miembros ----------
-function MiembrosTab({ org, members, invites, canManage, currentUserId, onRemove, onRole, onCancelInvite }: {
+function MiembrosTab({ org, members, invites, canManage, currentUserId, onInvite, onRemove, onRole, onCancelInvite }: {
   org: Organization; members: OrgMember[]; invites: OrgInvitation[]; canManage: boolean; currentUserId?: string;
-  onRemove: (m: OrgMember) => void; onRole: (m: OrgMember, role: string) => void; onCancelInvite: (inv: OrgInvitation) => void;
+  onInvite: () => void; onRemove: (m: OrgMember) => void; onRole: (m: OrgMember, role: string) => void; onCancelInvite: (inv: OrgInvitation) => void;
 }) {
+  const solo = org.type !== 'ORGANIZATION' && members.length <= 1;
   return (
     <div className="space-y-4">
+      {solo && (
+        <Card className="border-primary/30 bg-primary/5"><CardContent className="flex flex-wrap items-center justify-between gap-3 p-5">
+          <div><p className="font-extrabold">Trabajas solo 👤</p><p className="text-sm text-muted-foreground">Invita a tu equipo (cobradores, admins) y tu espacio personal se convierte en una organización.</p></div>
+          {canManage && <Button onClick={onInvite}><MailPlus className="h-4 w-4" /> Invitar a mi equipo</Button>}
+        </CardContent></Card>
+      )}
       <p className="text-sm text-muted-foreground">{org.memberCount} miembro(s)</p>
       <Card><CardContent className="space-y-2 p-5">
         {members.map((m) => (

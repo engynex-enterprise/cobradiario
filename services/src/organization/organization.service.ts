@@ -194,6 +194,10 @@ export class OrganizationService {
     });
 
     const org = await db.tenant.findFirstOrThrow({ where: { id: tenantId } });
+    // Invitar a alguien convierte el espacio personal en una organización.
+    if (org.type !== 'ORGANIZATION') {
+      await db.tenant.update({ where: { id: tenantId }, data: { type: 'ORGANIZATION' } });
+    }
     const base = process.env.WEB_APP_URL ?? 'http://localhost:3000';
     const link = `${base}/invitacion?token=${rawToken}`;
     await this.mail.sendOrgInvite(email, org.name, inviterName, roleLabel(input.role), link);
