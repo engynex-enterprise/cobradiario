@@ -18,7 +18,7 @@ function fmtDate(iso: string) {
 
 export default function Inicio() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, can } = useAuth();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [due, setDue] = useState<DueInstallment[]>([]);
   const [pending, setPending] = useState(0);
@@ -78,9 +78,9 @@ export default function Inicio() {
 
       <Text style={styles.sectionLabel}>Acciones rápidas</Text>
       <View style={styles.quickRow}>
-        <Quick icon="person-add" label="Cliente" onPress={() => router.push('/(app)/nuevo-cliente' as never)} />
-        <Quick icon="calendar-number" label="Cobro" onPress={() => router.push('/(app)/cobro' as never)} />
-        <Quick icon="receipt" label="Gasto" onPress={() => router.push('/(app)/gastos' as never)} />
+        {can('manage_clients') && <Quick icon="person-add" label="Cliente" onPress={() => router.push('/(app)/nuevo-cliente' as never)} />}
+        {can('view_portfolio') && <Quick icon="calendar-number" label="Cobro" onPress={() => router.push('/(app)/cobro' as never)} />}
+        {can('register_payments') && <Quick icon="receipt" label="Gasto" onPress={() => router.push('/(app)/gastos' as never)} />}
       </View>
 
       <View style={styles.sectionRow}>

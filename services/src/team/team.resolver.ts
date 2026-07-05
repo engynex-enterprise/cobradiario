@@ -3,7 +3,7 @@ import { UserRole } from '@prisma/client';
 import { TeamService } from './team.service';
 import { TeamMemberModel } from './team.models';
 import { CreateTeamMemberInput } from './team.inputs';
-import { CurrentUser, Roles } from '../common/decorators';
+import { CurrentUser, Roles, RequirePermissions } from '../common/decorators';
 import { AuthContext } from '../common/types';
 
 @Resolver(() => TeamMemberModel)
@@ -17,6 +17,7 @@ export class TeamResolver {
   }
 
   @Roles(UserRole.OWNER, UserRole.ADMIN)
+  @RequirePermissions('manage_members')
   @Mutation(() => TeamMemberModel)
   createTeamMember(
     @CurrentUser() user: AuthContext,

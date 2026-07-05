@@ -33,10 +33,13 @@ import { OrganizationModule } from './organization/organization.module';
 import { AppController } from './app.controller';
 import { GqlAuthGuard } from './common/guards/gql-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
+import { PermissionsGuard } from './common/guards/permissions.guard';
 import { GqlThrottlerGuard } from './common/guards/gql-throttler.guard';
+import { CommonModule } from './common/common.module';
 
 @Module({
   imports: [
+    CommonModule,
     ConfigModule.forRoot({ isGlobal: true, load: [configuration] }),
 
     // Rate limiting global (defensa ante fuerza bruta / abuso).
@@ -105,9 +108,10 @@ import { GqlThrottlerGuard } from './common/guards/gql-throttler.guard';
   ],
   controllers: [AppController],
   providers: [
-    // Orden importa: autenticación → autorización por rol → rate limit.
+    // Orden importa: autenticación → rol → permiso → rate limit.
     { provide: APP_GUARD, useClass: GqlAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
+    { provide: APP_GUARD, useClass: PermissionsGuard },
     { provide: APP_GUARD, useClass: GqlThrottlerGuard },
   ],
 })

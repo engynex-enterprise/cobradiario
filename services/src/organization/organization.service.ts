@@ -5,6 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
 import { OrganizationModel, OrgMemberModel, OrgInvitationModel, OrgAuditLogModel, OrgRoleModel } from './organization.models';
 import { InviteMemberInput, UpdateMemberRoleInput, UpdateOrganizationInput } from './organization.inputs';
+import { SYSTEM_ROLES, sanitizePermissions } from '../common/permissions';
 
 interface OrgSettings {
   language?: string;
@@ -234,8 +235,8 @@ export class OrganizationService {
 
   async createRole(tenantId: string, name: string, permissions: string[]): Promise<OrgRoleModel[]> {
     const db = this.prisma.forTenant(tenantId);
-    const key = slugify(name) + '-' + Math.random().toString(36).slice(2, 6);
-    await db.role.create({ data: { tenantId, key, name: name.trim(), permissions: sanitizePerms(permissions), isSystem: false } });
+    const key = slugify(name) + '-' + randomBytes(3).toString('hex');
+    await db.role.create({ data: { tenantId, key, name: name.trim(), permissions: sanitizePermissions(permissions), isSystem: false } });
     return this.roles(tenantId);
   }
 
@@ -243,7 +244,7 @@ export class OrganizationService {
     const db = this.prisma.forTenant(tenantId);
     const role = await db.role.findFirstOrThrow({ where: { id } });
     const data: Record<string, unknown> = {};
-    if (permissions !== undefined) data.permissions = sanitizePerms(permissions);
+    if (permissions !== undefined) data.permissions = sanitizePermissions(permissions);
     if (name !== undefined && !role.isSystem) data.name = name.trim(); // no renombrar roles del sistema
     await db.role.update({ where: { id }, data });
     return this.roles(tenantId);
@@ -258,22 +259,6 @@ export class OrganizationService {
   }
 }
 
-// Catálogo de permisos disponibles (claves) y roles base.
-export const PERMISSIONS = [
-  'view_portfolio', 'register_payments', 'manage_loans', 'manage_clients',
-  'manage_routes', 'view_finance', 'manage_members', 'org_settings', 'delete_members',
-];
-const ALL = PERMISSIONS;
-const SYSTEM_ROLES = [
-  { key: 'owner', name: 'Dueño', permissions: ALL },
-  { key: 'admin', name: 'Administrador', permissions: ALL },
-  { key: 'manager', name: 'Supervisor', permissions: ['view_portfolio', 'register_payments', 'manage_loans', 'manage_clients', 'manage_routes', 'view_finance'] },
-  { key: 'collector', name: 'Cobrador', permissions: ['view_portfolio', 'register_payments', 'manage_loans', 'manage_clients'] },
-  { key: 'viewer', name: 'Consulta', permissions: ['view_portfolio'] },
-];
-function sanitizePerms(perms: string[]): string[] {
-  return [...new Set(perms.filter((p) => PERMISSIONS.includes(p)))];
-}
 function slugify(s: string): string {
   return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'rol';
 }

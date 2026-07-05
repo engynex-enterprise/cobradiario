@@ -3,7 +3,7 @@ import { UserRole } from '@prisma/client';
 import { CashBoxService } from './cashbox.service';
 import { CashBoxModel } from './cashbox.models';
 import { AddCashMovementInput, CloseCashBoxInput, OpenCashBoxInput } from './cashbox.inputs';
-import { CurrentUser, Roles } from '../common/decorators';
+import { CurrentUser, Roles, RequirePermissions } from '../common/decorators';
 import { AuthContext } from '../common/types';
 
 @Resolver(() => CashBoxModel)
@@ -16,6 +16,7 @@ export class CashBoxResolver {
   }
 
   @Roles(UserRole.OWNER, UserRole.ADMIN, UserRole.MANAGER, UserRole.COLLECTOR)
+  @RequirePermissions('register_payments')
   @Mutation(() => CashBoxModel)
   openCashBox(
     @CurrentUser() user: AuthContext,
@@ -25,6 +26,7 @@ export class CashBoxResolver {
   }
 
   @Roles(UserRole.OWNER, UserRole.ADMIN, UserRole.MANAGER, UserRole.COLLECTOR)
+  @RequirePermissions('register_payments')
   @Mutation(() => CashBoxModel)
   addCashMovement(
     @CurrentUser() user: AuthContext,
@@ -34,6 +36,7 @@ export class CashBoxResolver {
   }
 
   @Roles(UserRole.OWNER, UserRole.ADMIN, UserRole.MANAGER, UserRole.COLLECTOR)
+  @RequirePermissions('register_payments')
   @Mutation(() => CashBoxModel)
   closeCashBox(
     @CurrentUser() user: AuthContext,

@@ -5,7 +5,7 @@ import { ClientModel, ClientGuarantorModel } from './clients.models';
 import {
   CreateClientInput, UpdateClientInput, CreateGuarantorInput, UpdateGuarantorInput,
 } from './clients.inputs';
-import { CurrentUser, Roles } from '../common/decorators';
+import { CurrentUser, Roles, RequirePermissions } from '../common/decorators';
 import { AuthContext } from '../common/types';
 
 @Resolver(() => ClientModel)
@@ -26,6 +26,7 @@ export class ClientsResolver {
   }
 
   @Roles(UserRole.OWNER, UserRole.ADMIN, UserRole.MANAGER, UserRole.COLLECTOR)
+  @RequirePermissions('manage_clients')
   @Mutation(() => ClientModel)
   createClient(
     @CurrentUser() user: AuthContext,
@@ -35,6 +36,7 @@ export class ClientsResolver {
   }
 
   @Roles(UserRole.OWNER, UserRole.ADMIN, UserRole.MANAGER, UserRole.COLLECTOR)
+  @RequirePermissions('manage_clients')
   @Mutation(() => ClientModel)
   updateClient(
     @CurrentUser() user: AuthContext,
@@ -44,6 +46,7 @@ export class ClientsResolver {
   }
 
   @Roles(UserRole.OWNER, UserRole.ADMIN, UserRole.MANAGER)
+  @RequirePermissions('manage_clients')
   @Mutation(() => ClientModel)
   deleteClient(
     @CurrentUser() user: AuthContext,
@@ -53,6 +56,7 @@ export class ClientsResolver {
   }
 
   @Roles(UserRole.OWNER, UserRole.ADMIN, UserRole.MANAGER, UserRole.COLLECTOR)
+  @RequirePermissions('manage_clients')
   @Mutation(() => ClientGuarantorModel)
   addGuarantor(
     @CurrentUser() user: AuthContext,
@@ -62,6 +66,7 @@ export class ClientsResolver {
   }
 
   @Roles(UserRole.OWNER, UserRole.ADMIN, UserRole.MANAGER, UserRole.COLLECTOR)
+  @RequirePermissions('manage_clients')
   @Mutation(() => ClientGuarantorModel)
   updateGuarantor(
     @CurrentUser() user: AuthContext,
@@ -71,6 +76,7 @@ export class ClientsResolver {
   }
 
   @Roles(UserRole.OWNER, UserRole.ADMIN, UserRole.MANAGER)
+  @RequirePermissions('manage_clients')
   @Mutation(() => ID)
   deleteGuarantor(
     @CurrentUser() user: AuthContext,

@@ -15,6 +15,7 @@ import {
   type Payment,
 } from '@/lib/graphql';
 import { enqueuePayment, flushQueue, pendingCount } from '@/lib/offline-queue';
+import { useAuth } from '@/lib/auth';
 import { money } from '@/lib/format';
 import { colors } from '@/lib/theme';
 import { AbonoModal } from '@/components/abono-modal';
@@ -51,6 +52,7 @@ function fmtFull(iso?: string) {
 export default function LoanDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { can } = useAuth();
   const insets = useSafeAreaInsets();
   const [loan, setLoan] = useState<LoanDetail | null>(null);
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -160,9 +162,9 @@ export default function LoanDetailScreen() {
             <FilterChip label="Todas" color={colors.accentText} bg={colors.accent} active={filter === 'ALL'} onPress={() => setFilter('ALL')} />
           </View>
           <ScrollView contentContainerStyle={{ padding: 16, gap: 10, paddingBottom: 110 }}>
-            {filtered.length === 0 ? <Text style={styles.empty}>Sin cuotas en este filtro.</Text> : filtered.map((it) => <InstallmentCard key={it.id} it={it} onEdit={it.paidAmount === 0 ? () => setEditInst(it) : undefined} />)}
+            {filtered.length === 0 ? <Text style={styles.empty}>Sin cuotas en este filtro.</Text> : filtered.map((it) => <InstallmentCard key={it.id} it={it} onEdit={it.paidAmount === 0 && can('manage_loans') ? () => setEditInst(it) : undefined} />)}
           </ScrollView>
-          <FloatingBtn icon="cash-outline" label="Abonar" onPress={() => setAbono(true)} bottom={insets.bottom} />
+          {can('register_payments') && <FloatingBtn icon="cash-outline" label="Abonar" onPress={() => setAbono(true)} bottom={insets.bottom} />}
         </>
       )}
 
@@ -227,7 +229,7 @@ export default function LoanDetailScreen() {
               })}
             </ScrollView>
           )}
-          <FloatingBtn icon="add" label="Nueva gestión" onPress={() => setGestion(true)} bottom={insets.bottom} />
+          {can('manage_loans') && <FloatingBtn icon="add" label="Nueva gestión" onPress={() => setGestion(true)} bottom={insets.bottom} />}
         </>
       )}
 

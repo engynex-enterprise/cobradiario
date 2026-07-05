@@ -4,6 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { fetchClients, fetchLoans, type Client, type Loan } from '@/lib/graphql';
+import { useAuth } from '@/lib/auth';
 import { money } from '@/lib/format';
 import { colors, initials } from '@/lib/theme';
 
@@ -19,6 +20,7 @@ function fmtDate(iso?: string) {
 export default function ClienteDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { can } = useAuth();
   const insets = useSafeAreaInsets();
   const [client, setClient] = useState<Client | null>(null);
   const [loans, setLoans] = useState<Loan[]>([]);
@@ -59,8 +61,8 @@ export default function ClienteDetail() {
         {/* Acciones rápidas */}
         <View style={styles.quickRow}>
           <Quick icon="call" label="Llamar" onPress={() => {}} />
-          <Quick icon="create" label="Editar" onPress={() => {}} />
-          <Quick icon="add-circle" label="Prestar" primary onPress={() => router.push(`/(app)/nuevo-credito?clientId=${id}` as never)} />
+          {can('manage_clients') && <Quick icon="create" label="Editar" onPress={() => {}} />}
+          {can('manage_loans') && <Quick icon="add-circle" label="Prestar" primary onPress={() => router.push(`/(app)/nuevo-credito?clientId=${id}` as never)} />}
         </View>
 
         {/* Sección créditos */}
@@ -118,10 +120,12 @@ export default function ClienteDetail() {
           })
         )}
 
-        <TouchableOpacity style={styles.newLoanBtn} activeOpacity={0.85} onPress={() => router.push(`/(app)/nuevo-credito?clientId=${id}` as never)}>
-          <Ionicons name="add-circle-outline" size={20} color="#fff" />
-          <Text style={styles.newLoanText}>Crear crédito</Text>
-        </TouchableOpacity>
+        {can('manage_loans') && (
+          <TouchableOpacity style={styles.newLoanBtn} activeOpacity={0.85} onPress={() => router.push(`/(app)/nuevo-credito?clientId=${id}` as never)}>
+            <Ionicons name="add-circle-outline" size={20} color="#fff" />
+            <Text style={styles.newLoanText}>Crear crédito</Text>
+          </TouchableOpacity>
+        )}
       </ScrollView>
     </View>
   );

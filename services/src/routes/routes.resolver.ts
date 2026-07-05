@@ -3,7 +3,7 @@ import { UserRole } from '@prisma/client';
 import { RoutesService } from './routes.service';
 import { RouteModel } from './routes.models';
 import { AssignCollectorInput, CreateRouteInput } from './routes.inputs';
-import { CurrentUser, Roles } from '../common/decorators';
+import { CurrentUser, Roles, RequirePermissions } from '../common/decorators';
 import { AuthContext } from '../common/types';
 
 @Resolver(() => RouteModel)
@@ -16,6 +16,7 @@ export class RoutesResolver {
   }
 
   @Roles(UserRole.OWNER, UserRole.ADMIN, UserRole.MANAGER)
+  @RequirePermissions('manage_routes')
   @Mutation(() => RouteModel)
   createRoute(
     @CurrentUser() user: AuthContext,
@@ -25,6 +26,7 @@ export class RoutesResolver {
   }
 
   @Roles(UserRole.OWNER, UserRole.ADMIN, UserRole.MANAGER)
+  @RequirePermissions('manage_routes')
   @Mutation(() => RouteModel)
   assignCollector(
     @CurrentUser() user: AuthContext,

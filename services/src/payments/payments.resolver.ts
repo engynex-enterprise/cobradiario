@@ -3,7 +3,7 @@ import { UserRole } from '@prisma/client';
 import { PaymentsService } from './payments.service';
 import { PaymentModel, RegisterPaymentResult } from './payments.models';
 import { RegisterPaymentInput } from './payments.inputs';
-import { CurrentUser, Roles } from '../common/decorators';
+import { CurrentUser, Roles, RequirePermissions } from '../common/decorators';
 import { AuthContext } from '../common/types';
 
 @Resolver(() => PaymentModel)
@@ -20,6 +20,7 @@ export class PaymentsResolver {
 
   // Cobradores y roles superiores pueden registrar abonos.
   @Roles(UserRole.OWNER, UserRole.ADMIN, UserRole.MANAGER, UserRole.COLLECTOR)
+  @RequirePermissions('register_payments')
   @Mutation(() => RegisterPaymentResult)
   registerPayment(
     @CurrentUser() user: AuthContext,

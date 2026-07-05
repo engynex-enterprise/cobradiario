@@ -3,7 +3,7 @@ import { UserRole } from '@prisma/client';
 import { ProductsService } from './products.service';
 import { ProductModel } from './products.models';
 import { CreateProductInput } from './products.inputs';
-import { CurrentUser, Roles } from '../common/decorators';
+import { CurrentUser, Roles, RequirePermissions } from '../common/decorators';
 import { AuthContext } from '../common/types';
 
 @Resolver(() => ProductModel)
@@ -16,6 +16,7 @@ export class ProductsResolver {
   }
 
   @Roles(UserRole.OWNER, UserRole.ADMIN)
+  @RequirePermissions('manage_routes')
   @Mutation(() => ProductModel)
   createCreditProduct(
     @CurrentUser() user: AuthContext,

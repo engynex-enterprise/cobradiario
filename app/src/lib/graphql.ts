@@ -9,6 +9,10 @@ export interface AuthUser {
   phone?: string;
 }
 
+export function fetchMyPermissions() {
+  return gql<{ myPermissions: string[] }>(`{ myPermissions }`);
+}
+
 export function updateProfile(input: { fullName?: string; phone?: string }) {
   return gql<{ updateProfile: AuthUser }>(
     `mutation($i: UpdateProfileInput!) {

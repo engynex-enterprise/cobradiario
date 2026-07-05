@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/page-header';
+import { useAuth } from '@/components/auth-provider';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -76,6 +77,7 @@ const MODULE_INFO = {
 
 export default function ClientesPage() {
   const router = useRouter();
+  const { can } = useAuth();
   const [clients, setClients] = useState<Client[]>([]);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Client | null>(null);
@@ -171,14 +173,14 @@ export default function ClientesPage() {
   ];
 
   const rowActions = (c: Client): RowAction<Client>[] => [
-    { label: 'Nuevo crédito', icon: HandCoins, onClick: () => setLoanFor(c) },
+    { label: 'Nuevo crédito', icon: HandCoins, onClick: () => setLoanFor(c), hidden: () => !can('manage_loans') },
     { label: 'Ver créditos', icon: Eye, onClick: () => setLoansOf(c), hidden: () => (c.loansCount ?? 0) === 0 },
     { label: 'Fiadores', icon: ShieldCheck, onClick: () => setGuarantorsOf(c) },
     { label: 'WhatsApp', icon: MessageCircle, onClick: () => window.open(`https://wa.me/${waNumber(c.phone!)}`, '_blank'), hidden: () => !c.phone },
     { label: 'Llamar', icon: Phone, onClick: () => window.open(`tel:${c.phone}`), hidden: () => !c.phone },
     { label: 'Copiar teléfono', icon: Copy, onClick: () => { navigator.clipboard.writeText(c.phone!); toast.success('Teléfono copiado'); }, hidden: () => !c.phone },
-    { label: 'Editar', icon: Pencil, onClick: () => setEditing(c) },
-    { label: 'Eliminar', icon: Trash2, danger: true, onClick: () => setToDelete(c) },
+    { label: 'Editar', icon: Pencil, onClick: () => setEditing(c), hidden: () => !can('manage_clients') },
+    { label: 'Eliminar', icon: Trash2, danger: true, onClick: () => setToDelete(c), hidden: () => !can('manage_clients') },
   ];
 
   async function confirmDelete() {
@@ -199,7 +201,7 @@ export default function ClientesPage() {
         title="Clientes"
         description="Directorio de deudores con ficha completa, fiadores, referencias y score de riesgo estilo DataCrédito."
         info={MODULE_INFO}
-        actions={<ClientDrawer open={open} setOpen={setOpen} onSaved={load} cityOptions={cityOptions} barriosByCity={barriosByCity} />}
+        actions={can('manage_clients') ? <ClientDrawer open={open} setOpen={setOpen} onSaved={load} cityOptions={cityOptions} barriosByCity={barriosByCity} /> : null}
       />
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

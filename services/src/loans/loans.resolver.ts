@@ -3,7 +3,7 @@ import { UserRole } from '@prisma/client';
 import { LoansService } from './loans.service';
 import { LoanModel } from './loans.models';
 import { CreateLoanInput, UpdateInstallmentInput } from './loans.inputs';
-import { CurrentUser, Roles } from '../common/decorators';
+import { CurrentUser, Roles, RequirePermissions } from '../common/decorators';
 import { AuthContext } from '../common/types';
 
 @Resolver(() => LoanModel)
@@ -27,6 +27,7 @@ export class LoansResolver {
   }
 
   @Roles(UserRole.OWNER, UserRole.ADMIN, UserRole.MANAGER, UserRole.COLLECTOR)
+  @RequirePermissions('manage_loans')
   @Mutation(() => LoanModel)
   createLoan(
     @CurrentUser() user: AuthContext,
@@ -36,6 +37,7 @@ export class LoansResolver {
   }
 
   @Roles(UserRole.OWNER, UserRole.ADMIN, UserRole.MANAGER, UserRole.COLLECTOR)
+  @RequirePermissions('manage_loans')
   @Mutation(() => LoanModel)
   updateInstallment(
     @CurrentUser() user: AuthContext,

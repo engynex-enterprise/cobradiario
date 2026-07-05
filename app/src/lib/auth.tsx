@@ -1,12 +1,14 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { tokens, setOnAuthExpired } from './api';
-import { login as apiLogin, type AuthUser } from './graphql';
+import { login as apiLogin, fetchMyPermissions, type AuthUser } from './graphql';
 import { disconnectSocket } from './socket';
 
 interface AuthCtx {
   user: AuthUser | null;
   ready: boolean;
+  permissions: string[];
+  can: (permission: string) => boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   updateUser: (patch: Partial<AuthUser>) => Promise<void>;
@@ -17,13 +19,20 @@ const USER_KEY = 'cd_user';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [permissions, setPermissions] = useState<string[]>([]);
   const [ready, setReady] = useState(false);
+
+  const loadPermissions = () => {
+    fetchMyPermissions().then((d) => setPermissions(d.myPermissions)).catch(() => setPermissions([]));
+  };
+  // OWNER es superusuario; el resto se rige por sus permisos efectivos.
+  const can = (permission: string) => user?.role === 'OWNER' || permissions.includes(permission);
 
   useEffect(() => {
     (async () => {
       const access = await tokens.load();
       const raw = await AsyncStorage.getItem(USER_KEY);
-      if (access && raw) setUser(JSON.parse(raw) as AuthUser);
+      if (access && raw) { setUser(JSON.parse(raw) as AuthUser); loadPermissions(); }
       setReady(true);
     })();
 
@@ -32,6 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       AsyncStorage.removeItem(USER_KEY);
       disconnectSocket();
       setUser(null);
+      setPermissions([]);
     });
     return () => setOnAuthExpired(null);
   }, []);
@@ -41,6 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await tokens.set(login.accessToken, login.refreshToken);
     await AsyncStorage.setItem(USER_KEY, JSON.stringify(login.user));
     setUser(login.user);
+    loadPermissions();
   }
 
   async function signOut() {
@@ -48,6 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await AsyncStorage.removeItem(USER_KEY);
     disconnectSocket();
     setUser(null);
+    setPermissions([]);
   }
 
   async function updateUser(patch: Partial<AuthUser>) {
@@ -59,7 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   }
 
-  return <Ctx.Provider value={{ user, ready, signIn, signOut, updateUser }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ user, ready, permissions, can, signIn, signOut, updateUser }}>{children}</Ctx.Provider>;
 }
 
 export function useAuth() {

@@ -3,12 +3,14 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { tokens } from '@/lib/api';
-import { login as apiLogin, loginWithGoogle as apiLoginWithGoogle, register as apiRegister, acceptInvitation as apiAcceptInvitation, type AuthUser } from '@/lib/graphql';
+import { login as apiLogin, loginWithGoogle as apiLoginWithGoogle, register as apiRegister, acceptInvitation as apiAcceptInvitation, fetchMyPermissions, type AuthUser } from '@/lib/graphql';
 import { disconnectSocket } from '@/lib/socket';
 
 interface AuthCtx {
   user: AuthUser | null;
   loading: boolean;
+  permissions: string[];
+  can: (permission: string) => boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signInWithGoogle: (insforgeAccessToken: string) => Promise<void>;
   signUp: (input: { tenantName: string; fullName: string; email: string; password: string; phone?: string }) => Promise<{ email: string; message: string }>;
@@ -21,12 +23,19 @@ const USER_KEY = 'cd_user';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [permissions, setPermissions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
+  const loadPermissions = () => {
+    fetchMyPermissions().then((d) => setPermissions(d.myPermissions)).catch(() => setPermissions([]));
+  };
+  // OWNER es superusuario; el resto se rige por sus permisos efectivos.
+  const can = (permission: string) => user?.role === 'OWNER' || permissions.includes(permission);
+
   useEffect(() => {
     const raw = typeof window !== 'undefined' ? localStorage.getItem(USER_KEY) : null;
-    if (raw && tokens.access) setUser(JSON.parse(raw));
+    if (raw && tokens.access) { setUser(JSON.parse(raw)); loadPermissions(); }
     setLoading(false);
   }, []);
 
@@ -36,6 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.removeItem(USER_KEY);
       disconnectSocket();
       setUser(null);
+      setPermissions([]);
       router.replace('/login');
     };
     window.addEventListener('auth:expired', onExpired);
@@ -47,6 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     tokens.set(login.accessToken, login.refreshToken);
     localStorage.setItem(USER_KEY, JSON.stringify(login.user));
     setUser(login.user);
+    loadPermissions();
     router.push('/dashboard');
   }
 
@@ -55,6 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     tokens.set(loginWithGoogle.accessToken, loginWithGoogle.refreshToken);
     localStorage.setItem(USER_KEY, JSON.stringify(loginWithGoogle.user));
     setUser(loginWithGoogle.user);
+    loadPermissions();
     router.push('/dashboard');
   }
 
@@ -69,6 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     tokens.set(acceptInvitation.accessToken, acceptInvitation.refreshToken);
     localStorage.setItem(USER_KEY, JSON.stringify(acceptInvitation.user));
     setUser(acceptInvitation.user);
+    loadPermissions();
     router.push('/dashboard');
   }
 
@@ -77,10 +90,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem(USER_KEY);
     disconnectSocket();
     setUser(null);
+    setPermissions([]);
     router.push('/login');
   }
 
-  return <Ctx.Provider value={{ user, loading, signIn, signInWithGoogle, signUp, acceptInvite, signOut }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ user, loading, permissions, can, signIn, signInWithGoogle, signUp, acceptInvite, signOut }}>{children}</Ctx.Provider>;
 }
 
 export function useAuth() {

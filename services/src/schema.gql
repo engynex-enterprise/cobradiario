@@ -720,6 +720,7 @@ type Query {
   messages(query: MessagesQueryInput): [Message!]!
   myNotifications: [Notification!]!
   myOpenCashBox: CashBox
+  myPermissions: [String!]!
   organization: Organization!
   organizationMembers: [OrgMember!]!
   payments(loanId: ID!): [Payment!]!

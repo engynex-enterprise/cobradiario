@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { CreateLoanDialog } from '@/components/create-loan-dialog';
 import { PayDialog } from '@/components/pay-dialog';
 import { PageHeader } from '@/components/page-header';
+import { useAuth } from '@/components/auth-provider';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -50,6 +51,7 @@ const MODULE_INFO = {
 
 export default function PrestamosPage() {
   const router = useRouter();
+  const { can } = useAuth();
   const [loans, setLoans] = useState<Loan[]>([]);
   const [routes, setRoutes] = useState<Route[]>([]);
   const [routeId, setRouteId] = useState('');
@@ -130,7 +132,7 @@ export default function PrestamosPage() {
       key: 'actions', header: '', className: 'text-right',
       render: (l) => (
         <div className="flex justify-end">
-          <PayDialog loan={l} onPaid={load} />
+          {can('register_payments') && <PayDialog loan={l} onPaid={load} />}
         </div>
       ),
     },
@@ -188,7 +190,7 @@ export default function PrestamosPage() {
                 ))}
               </SelectContent>
             </Select>
-            <CreateLoanDialog onCreated={load} />
+            {can('manage_loans') && <CreateLoanDialog onCreated={load} />}
           </div>
         }
       />

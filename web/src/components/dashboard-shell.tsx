@@ -13,40 +13,53 @@ import {
   PanelLeftClose, PanelLeftOpen, CreditCard, HelpCircle, Building2, type LucideIcon,
 } from 'lucide-react';
 
-type NavLink = { kind: 'link'; href: string; label: string; icon: LucideIcon; keywords?: string };
-type NavGroup = { kind: 'group'; label: string; icon: LucideIcon; children: { href: string; label: string }[] };
+type NavChild = { href: string; label: string; perm?: string };
+type NavLink = { kind: 'link'; href: string; label: string; icon: LucideIcon; keywords?: string; perm?: string };
+type NavGroup = { kind: 'group'; label: string; icon: LucideIcon; children: NavChild[] };
 type NavNode = NavLink | NavGroup;
 
+// `perm` = permiso requerido para ver el ítem (sin perm = visible para todos los autenticados).
 const NAV: NavNode[] = [
   { kind: 'link', href: '/dashboard', label: 'Inicio', icon: Home, keywords: 'home dashboard' },
-  { kind: 'link', href: '/dashboard/cobro', label: 'Cobro del día', icon: CalendarCheck, keywords: 'ruta hoy vencidas' },
+  { kind: 'link', href: '/dashboard/cobro', label: 'Cobro del día', icon: CalendarCheck, keywords: 'ruta hoy vencidas', perm: 'view_portfolio' },
   {
     kind: 'group', label: 'Cartera', icon: HandCoins,
     children: [
-      { href: '/dashboard/clientes', label: 'Clientes' },
-      { href: '/dashboard/prestamos', label: 'Préstamos' },
-      { href: '/dashboard/pagos', label: 'Pagos' },
-      { href: '/dashboard/recordatorios', label: 'Recordatorios' },
+      { href: '/dashboard/clientes', label: 'Clientes', perm: 'view_portfolio' },
+      { href: '/dashboard/prestamos', label: 'Préstamos', perm: 'view_portfolio' },
+      { href: '/dashboard/pagos', label: 'Pagos', perm: 'view_portfolio' },
+      { href: '/dashboard/recordatorios', label: 'Recordatorios', perm: 'view_portfolio' },
     ],
   },
   {
     kind: 'group', label: 'Caja y finanzas', icon: Wallet,
     children: [
-      { href: '/dashboard/caja', label: 'Caja' },
-      { href: '/dashboard/movimientos', label: 'Movimientos' },
-      { href: '/dashboard/gastos', label: 'Gastos' },
-      { href: '/dashboard/bases', label: 'Bases' },
+      { href: '/dashboard/caja', label: 'Caja', perm: 'register_payments' },
+      { href: '/dashboard/movimientos', label: 'Movimientos', perm: 'view_finance' },
+      { href: '/dashboard/gastos', label: 'Gastos', perm: 'register_payments' },
+      { href: '/dashboard/bases', label: 'Bases', perm: 'register_payments' },
     ],
   },
   {
     kind: 'group', label: 'Análisis', icon: BarChart3,
     children: [
-      { href: '/dashboard/balances', label: 'Balances' },
-      { href: '/dashboard/reportes', label: 'Reportes' },
+      { href: '/dashboard/balances', label: 'Balances', perm: 'view_finance' },
+      { href: '/dashboard/reportes', label: 'Reportes', perm: 'view_finance' },
     ],
   },
   // "Configuración" (Rutas, Equipo, Productos, Etiquetas, Planes) se movió a Organización.
 ];
+
+/** Filtra la navegación según los permisos efectivos del usuario. */
+function filterNav(nav: NavNode[], can: (p: string) => boolean): NavNode[] {
+  return nav
+    .map((node) => {
+      if (node.kind === 'link') return !node.perm || can(node.perm) ? node : null;
+      const children = node.children.filter((c) => !c.perm || can(c.perm));
+      return children.length ? { ...node, children } : null;
+    })
+    .filter((n): n is NavNode => n !== null);
+}
 
 const ICON_BY_HREF: Record<string, LucideIcon> = {
   '/dashboard/clientes': Users, '/dashboard/prestamos': HandCoins, '/dashboard/pagos': Banknote,
@@ -57,11 +70,14 @@ const ICON_BY_HREF: Record<string, LucideIcon> = {
   '/dashboard/planes': CreditCard,
 };
 
-const FLAT: { href: string; label: string; icon: LucideIcon; keywords: string }[] = NAV.flatMap((n) =>
-  n.kind === 'link'
-    ? [{ href: n.href, label: n.label, icon: n.icon, keywords: n.keywords ?? '' }]
-    : n.children.map((c) => ({ href: c.href, label: c.label, icon: ICON_BY_HREF[c.href] ?? Home, keywords: n.label.toLowerCase() })),
-);
+type FlatItem = { href: string; label: string; icon: LucideIcon; keywords: string };
+function flattenNav(nav: NavNode[]): FlatItem[] {
+  return nav.flatMap((n) =>
+    n.kind === 'link'
+      ? [{ href: n.href, label: n.label, icon: n.icon, keywords: n.keywords ?? '' }]
+      : n.children.map((c) => ({ href: c.href, label: c.label, icon: ICON_BY_HREF[c.href] ?? Home, keywords: n.label.toLowerCase() })),
+  );
+}
 
 function linkActive(pathname: string, href: string) {
   if (href === '/dashboard') return pathname === '/dashboard';
@@ -70,7 +86,7 @@ function linkActive(pathname: string, href: string) {
 }
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
-  const { user, loading, signOut } = useAuth();
+  const { user, loading, signOut, can } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
@@ -80,6 +96,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   }, [loading, user, router]);
 
   if (loading || !user) return null;
+
+  const visibleNav = filterNav(NAV, can);
+  const flat = flattenNav(visibleNav);
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
@@ -101,7 +120,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           </button>
         </div>
         <div className="flex flex-[2] justify-center">
-          <GlobalSearch />
+          <GlobalSearch items={flat} />
         </div>
         <div className="flex flex-1 items-center justify-end gap-1.5">
           <button title="Chat" onClick={() => router.push('/dashboard/chat')} className="flex size-11 items-center justify-center rounded-2xl text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground">
@@ -118,7 +137,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         {/* Sidebar único colapsable con grupos expandibles */}
         <aside className={cn('hidden shrink-0 flex-col border-r border-border bg-sidebar transition-[width] duration-200 md:flex', collapsed ? 'w-[4.5rem]' : 'w-72')}>
           <nav className="flex-1 space-y-1 overflow-y-auto overflow-x-hidden p-2">
-            {NAV.map((node) =>
+            {visibleNav.map((node) =>
               node.kind === 'link' ? (
                 <SidebarLink key={node.href} href={node.href} label={node.label} icon={node.icon} active={linkActive(pathname, node.href)} collapsed={collapsed} />
               ) : (
@@ -134,7 +153,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         <div className="flex min-w-0 flex-1 flex-col">
           {/* Nav horizontal en móvil */}
           <nav className="flex gap-1 overflow-x-auto border-b border-border bg-card px-2 py-1.5 md:hidden">
-            {FLAT.map((item) => (
+            {flat.map((item) => (
               <Link key={item.href} href={item.href} className={cn('whitespace-nowrap px-3 py-1.5 text-xs font-bold uppercase', linkActive(pathname, item.href) ? 'bg-accent text-accent-foreground' : 'text-muted-foreground')}>
                 {item.label}
               </Link>
@@ -266,7 +285,7 @@ function UserMenu({ name, email, role, collapsed, onLogout }: { name: string; em
 }
 
 /* Buscador global (paleta ⌘K) — igual que orus-pos */
-function GlobalSearch() {
+function GlobalSearch({ items }: { items: FlatItem[] }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState('');
@@ -275,9 +294,9 @@ function GlobalSearch() {
 
   const results = useMemo(() => {
     const t = q.trim().toLowerCase();
-    if (!t) return FLAT;
-    return FLAT.filter((i) => i.label.toLowerCase().includes(t) || i.keywords.includes(t));
-  }, [q]);
+    if (!t) return items;
+    return items.filter((i) => i.label.toLowerCase().includes(t) || i.keywords.includes(t));
+  }, [q, items]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

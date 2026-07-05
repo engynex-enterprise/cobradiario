@@ -3,10 +3,12 @@ import { FlatList, RefreshControl, StyleSheet, Text, TextInput, TouchableOpacity
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { fetchClients, type Client } from '@/lib/graphql';
+import { useAuth } from '@/lib/auth';
 import { colors } from '@/lib/theme';
 
 export default function Clientes() {
   const router = useRouter();
+  const { can } = useAuth();
   const [clients, setClients] = useState<Client[]>([]);
   const [q, setQ] = useState('');
 
@@ -26,9 +28,11 @@ export default function Clientes() {
           <Text style={styles.title}>Clientes</Text>
           <Text style={styles.count}>{clients.length} {clients.length === 1 ? 'cliente' : 'clientes'}</Text>
         </View>
-        <TouchableOpacity style={styles.addBtn} activeOpacity={0.85} onPress={() => router.push('/(app)/nuevo-cliente' as never)}>
-          <Ionicons name="add" size={24} color="#fff" />
-        </TouchableOpacity>
+        {can('manage_clients') && (
+          <TouchableOpacity style={styles.addBtn} activeOpacity={0.85} onPress={() => router.push('/(app)/nuevo-cliente' as never)}>
+            <Ionicons name="add" size={24} color="#fff" />
+          </TouchableOpacity>
+        )}
       </View>
       <View style={styles.searchWrap}>
         <TextInput

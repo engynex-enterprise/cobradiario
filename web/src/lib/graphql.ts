@@ -222,6 +222,10 @@ export function removeMember(userId: string) {
     { id: userId },
   );
 }
+export function fetchMyPermissions() {
+  return gql<{ myPermissions: string[] }>(`{ myPermissions }`);
+}
+
 const ROLE_FIELDS = `id key name permissions isSystem`;
 export function fetchRoles() {
   return gql<{ roles: OrgRole[] }>(`{ roles { ${ROLE_FIELDS} } }`);
