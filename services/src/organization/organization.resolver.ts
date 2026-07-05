@@ -1,7 +1,7 @@
 import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { UserRole } from '@prisma/client';
 import { OrganizationService } from './organization.service';
-import { OrganizationModel, OrgMemberModel, OrgInvitationModel } from './organization.models';
+import { OrganizationModel, OrgMemberModel, OrgInvitationModel, OrgAuditLogModel } from './organization.models';
 import { InviteMemberInput, UpdateMemberRoleInput, UpdateOrganizationInput } from './organization.inputs';
 import { CurrentUser, Roles } from '../common/decorators';
 import { AuthContext } from '../common/types';
@@ -25,6 +25,12 @@ export class OrganizationResolver {
   @Query(() => [OrgInvitationModel], { name: 'pendingInvitations' })
   pendingInvitations(@CurrentUser() user: AuthContext): Promise<OrgInvitationModel[]> {
     return this.org.pendingInvitations(user.tenantId);
+  }
+
+  @Roles(UserRole.OWNER, UserRole.ADMIN)
+  @Query(() => [OrgAuditLogModel], { name: 'auditLogs' })
+  auditLogs(@CurrentUser() user: AuthContext): Promise<OrgAuditLogModel[]> {
+    return this.org.auditLogs(user.tenantId);
   }
 
   @Roles(UserRole.OWNER, UserRole.ADMIN)

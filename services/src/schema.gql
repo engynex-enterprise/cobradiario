@@ -589,6 +589,16 @@ input OpenCashBoxInput {
   routeId: ID
 }
 
+type OrgAuditLog {
+  action: String!
+  createdAt: DateTime!
+  entity: String!
+  entityId: String
+  id: ID!
+  ip: String
+  userName: String
+}
+
 type OrgInvitation {
   createdAt: DateTime!
   email: String!
@@ -609,10 +619,27 @@ type OrgMember {
 }
 
 type Organization {
+  countryCode: String!
   createdAt: DateTime!
+  currency: String!
+  defaultFrequency: String
+  defaultInterestMethod: String
+  defaultInterestRate: Float
+  defaultLateFeeType: String
+  defaultLateFeeValue: Float
+  defaultTermCount: Int
   id: ID!
+  language: String!
+  legalId: String
   memberCount: Int!
   name: String!
+  notifyChannelEmail: Boolean!
+  notifyChannelPush: Boolean!
+  notifyDailySummary: Boolean!
+  notifyNewLoan: Boolean!
+  notifyOverdue: Boolean!
+  notifyPaymentReceived: Boolean!
+  timezone: String!
   type: String!
 }
 
@@ -653,6 +680,7 @@ enum PaymentStatus {
 }
 
 type Query {
+  auditLogs: [OrgAuditLog!]!
   balances: Balances!
   baseMovements(from: DateTime, to: DateTime): [BaseMovement!]!
   cashMovements(type: CashMovementType): [CashMovementFeedItem!]!
@@ -833,7 +861,24 @@ input UpdateMemberRoleInput {
 }
 
 input UpdateOrganizationInput {
-  name: String!
+  countryCode: String
+  currency: String
+  defaultFrequency: String
+  defaultInterestMethod: String
+  defaultInterestRate: Float
+  defaultLateFeeType: String
+  defaultLateFeeValue: Float
+  defaultTermCount: Int
+  language: String
+  legalId: String
+  name: String
+  notifyChannelEmail: Boolean
+  notifyChannelPush: Boolean
+  notifyDailySummary: Boolean
+  notifyNewLoan: Boolean
+  notifyOverdue: Boolean
+  notifyPaymentReceived: Boolean
+  timezone: String
 }
 
 input UpdateProfileInput {

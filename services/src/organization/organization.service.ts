@@ -3,8 +3,25 @@ import { UserRole } from '@prisma/client';
 import { createHash, randomBytes } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
-import { OrganizationModel, OrgMemberModel, OrgInvitationModel } from './organization.models';
+import { OrganizationModel, OrgMemberModel, OrgInvitationModel, OrgAuditLogModel } from './organization.models';
 import { InviteMemberInput, UpdateMemberRoleInput, UpdateOrganizationInput } from './organization.inputs';
+
+interface OrgSettings {
+  language?: string;
+  defaultInterestRate?: number;
+  defaultInterestMethod?: string;
+  defaultFrequency?: string;
+  defaultTermCount?: number;
+  defaultLateFeeType?: string;
+  defaultLateFeeValue?: number;
+  // Notificaciones
+  notifyPaymentReceived?: boolean;
+  notifyOverdue?: boolean;
+  notifyNewLoan?: boolean;
+  notifyDailySummary?: boolean;
+  notifyChannelEmail?: boolean;
+  notifyChannelPush?: boolean;
+}
 
 @Injectable()
 export class OrganizationService {
@@ -17,12 +34,76 @@ export class OrganizationService {
     const db = this.prisma.forTenant(tenantId);
     const tenant = await db.tenant.findFirstOrThrow({ where: { id: tenantId } });
     const memberCount = await db.membership.count({ where: { status: 'ACTIVE' } });
-    return { id: tenant.id, name: tenant.name, type: tenant.type, memberCount, createdAt: tenant.createdAt };
+    const s = (tenant.settings ?? {}) as OrgSettings;
+    return {
+      id: tenant.id,
+      name: tenant.name,
+      type: tenant.type,
+      legalId: tenant.legalId ?? undefined,
+      countryCode: tenant.countryCode,
+      currency: tenant.currency,
+      language: s.language ?? 'es',
+      timezone: tenant.timezone,
+      memberCount,
+      createdAt: tenant.createdAt,
+      defaultInterestRate: s.defaultInterestRate,
+      defaultInterestMethod: s.defaultInterestMethod,
+      defaultFrequency: s.defaultFrequency,
+      defaultTermCount: s.defaultTermCount,
+      defaultLateFeeType: s.defaultLateFeeType,
+      defaultLateFeeValue: s.defaultLateFeeValue,
+      notifyPaymentReceived: s.notifyPaymentReceived ?? true,
+      notifyOverdue: s.notifyOverdue ?? true,
+      notifyNewLoan: s.notifyNewLoan ?? false,
+      notifyDailySummary: s.notifyDailySummary ?? false,
+      notifyChannelEmail: s.notifyChannelEmail ?? false,
+      notifyChannelPush: s.notifyChannelPush ?? true,
+    };
   }
 
   async updateOrganization(tenantId: string, input: UpdateOrganizationInput): Promise<OrganizationModel> {
-    await this.prisma.forTenant(tenantId).tenant.update({ where: { id: tenantId }, data: { name: input.name.trim() } });
+    const db = this.prisma.forTenant(tenantId);
+    const tenant = await db.tenant.findFirstOrThrow({ where: { id: tenantId } });
+    const settings = { ...((tenant.settings ?? {}) as OrgSettings) };
+
+    // settings JSON: idioma + defaults de finanzas
+    for (const k of ['language', 'defaultInterestMethod', 'defaultFrequency', 'defaultLateFeeType'] as const) {
+      if (input[k] !== undefined) settings[k] = input[k];
+    }
+    for (const k of ['defaultInterestRate', 'defaultTermCount', 'defaultLateFeeValue'] as const) {
+      if (input[k] !== undefined) settings[k] = input[k];
+    }
+    for (const k of ['notifyPaymentReceived', 'notifyOverdue', 'notifyNewLoan', 'notifyDailySummary', 'notifyChannelEmail', 'notifyChannelPush'] as const) {
+      if (input[k] !== undefined) settings[k] = input[k];
+    }
+
+    // columnas del Tenant
+    const data: Record<string, unknown> = { settings };
+    if (input.name !== undefined) data.name = input.name.trim();
+    if (input.legalId !== undefined) data.legalId = input.legalId.trim() || null;
+    if (input.countryCode !== undefined) data.countryCode = input.countryCode.trim().toUpperCase();
+    if (input.currency !== undefined) data.currency = input.currency.trim().toUpperCase();
+    if (input.timezone !== undefined) data.timezone = input.timezone.trim();
+
+    await db.tenant.update({ where: { id: tenantId }, data });
     return this.organization(tenantId);
+  }
+
+  async auditLogs(tenantId: string): Promise<OrgAuditLogModel[]> {
+    const db = this.prisma.forTenant(tenantId);
+    const rows = await db.auditLog.findMany({ orderBy: { createdAt: 'desc' }, take: 100 });
+    const userIds = [...new Set(rows.map((r) => r.userId).filter((x): x is string => !!x))];
+    const users = userIds.length ? await db.user.findMany({ where: { id: { in: userIds } }, select: { id: true, fullName: true } }) : [];
+    const nameById = new Map(users.map((u) => [u.id, u.fullName]));
+    return rows.map((r) => ({
+      id: r.id,
+      action: r.action,
+      entity: r.entity,
+      entityId: r.entityId ?? undefined,
+      userName: r.userId ? nameById.get(r.userId) : undefined,
+      ip: r.ip ?? undefined,
+      createdAt: r.createdAt,
+    }));
   }
 
   async members(tenantId: string): Promise<OrgMemberModel[]> {

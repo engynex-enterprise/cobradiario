@@ -168,12 +168,21 @@ export function loginWithGoogle(insforgeAccessToken: string) {
 }
 
 // --- Organización ---
-export interface Organization { id: string; name: string; type: string; memberCount: number; createdAt: string }
+export interface Organization {
+  id: string; name: string; type: string; legalId?: string; countryCode: string; currency: string; language: string; timezone: string;
+  memberCount: number; createdAt: string;
+  defaultInterestRate?: number; defaultInterestMethod?: string; defaultFrequency?: string; defaultTermCount?: number; defaultLateFeeType?: string; defaultLateFeeValue?: number;
+  notifyPaymentReceived: boolean; notifyOverdue: boolean; notifyNewLoan: boolean; notifyDailySummary: boolean; notifyChannelEmail: boolean; notifyChannelPush: boolean;
+}
 export interface OrgMember { id: string; fullName: string; email: string; role: string; isActive: boolean; createdAt: string }
 export interface OrgInvitation { id: string; email: string; role: string; status: string; invitedByName?: string; expiresAt: string; createdAt: string }
+export interface OrgAuditLog { id: string; action: string; entity: string; entityId?: string; userName?: string; ip?: string; createdAt: string }
+export type OrgUpdate = Partial<Omit<Organization, 'id' | 'type' | 'memberCount' | 'createdAt'>>;
+
+const ORG_FIELDS = `id name type legalId countryCode currency language timezone memberCount createdAt defaultInterestRate defaultInterestMethod defaultFrequency defaultTermCount defaultLateFeeType defaultLateFeeValue notifyPaymentReceived notifyOverdue notifyNewLoan notifyDailySummary notifyChannelEmail notifyChannelPush`;
 
 export function fetchOrganization() {
-  return gql<{ organization: Organization }>(`{ organization { id name type memberCount createdAt } }`);
+  return gql<{ organization: Organization }>(`{ organization { ${ORG_FIELDS} } }`);
 }
 export function fetchOrgMembers() {
   return gql<{ organizationMembers: OrgMember[] }>(`{ organizationMembers { id fullName email role isActive createdAt } }`);
@@ -181,10 +190,13 @@ export function fetchOrgMembers() {
 export function fetchPendingInvitations() {
   return gql<{ pendingInvitations: OrgInvitation[] }>(`{ pendingInvitations { id email role status invitedByName expiresAt createdAt } }`);
 }
-export function updateOrganization(name: string) {
+export function fetchAuditLogs() {
+  return gql<{ auditLogs: OrgAuditLog[] }>(`{ auditLogs { id action entity entityId userName ip createdAt } }`);
+}
+export function updateOrganization(input: OrgUpdate) {
   return gql<{ updateOrganization: Organization }>(
-    `mutation($i: UpdateOrganizationInput!) { updateOrganization(input: $i) { id name type memberCount createdAt } }`,
-    { i: { name } },
+    `mutation($i: UpdateOrganizationInput!) { updateOrganization(input: $i) { ${ORG_FIELDS} } }`,
+    { i: input },
   );
 }
 export function inviteMember(email: string, role: string) {

@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import {
   Home, Users, HandCoins, Banknote, CalendarCheck, ArrowLeftRight, Receipt, Coins, Scale,
   Layers, Route, Network, Package, Tags, BellRing, Bell, MessageCircle, BarChart3, UserRound,
-  Landmark, LogOut, Wallet, Settings, ChevronDown, ChevronsUpDown, Search,
+  Landmark, LogOut, Wallet, ChevronDown, ChevronsUpDown, Search,
   PanelLeftClose, PanelLeftOpen, CreditCard, HelpCircle, Building2, type LucideIcon,
 } from 'lucide-react';
 
@@ -45,16 +45,7 @@ const NAV: NavNode[] = [
       { href: '/dashboard/reportes', label: 'Reportes' },
     ],
   },
-  {
-    kind: 'group', label: 'Configuración', icon: Settings,
-    children: [
-      { href: '/dashboard/rutas', label: 'Rutas' },
-      { href: '/dashboard/equipo', label: 'Equipo' },
-      { href: '/dashboard/productos', label: 'Productos' },
-      { href: '/dashboard/etiquetas', label: 'Etiquetas' },
-      { href: '/dashboard/planes', label: 'Planes y facturación' },
-    ],
-  },
+  // "Configuración" (Rutas, Equipo, Productos, Etiquetas, Planes) se movió a Organización.
 ];
 
 const ICON_BY_HREF: Record<string, LucideIcon> = {
