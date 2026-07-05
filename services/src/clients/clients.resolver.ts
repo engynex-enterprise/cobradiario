@@ -17,6 +17,14 @@ export class ClientsResolver {
     return this.clients.list(user.tenantId);
   }
 
+  @Query(() => ClientModel, { name: 'client' })
+  findOne(
+    @CurrentUser() user: AuthContext,
+    @Args('id', { type: () => ID }) id: string,
+  ): Promise<ClientModel> {
+    return this.clients.findOne(user.tenantId, id);
+  }
+
   @Roles(UserRole.OWNER, UserRole.ADMIN, UserRole.MANAGER, UserRole.COLLECTOR)
   @Mutation(() => ClientModel)
   createClient(

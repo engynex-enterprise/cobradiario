@@ -291,9 +291,13 @@ model Client {
   birthDate    DateTime?
   latitude     Float?
   longitude    Float?
-  photoUrl     String?
+  photoUrl         String? // foto de la persona
+  documentFrontUrl String? // foto del documento (frente)
+  documentBackUrl  String? // foto del documento (reverso)
+  selfieWithDocUrl String? // persona sosteniendo el documento junto a la cara
+  signatureUrl     String? // firma digital (PNG data URL)
   notes        String?
-  references   Json    @default("[]") // referencias personales
+  references   Json    @default("[]") // referencias personales [{fullName, phone, relationship, notes}]
   isBlacklisted Boolean @default(false)
 
   createdAt DateTime  @default(now())

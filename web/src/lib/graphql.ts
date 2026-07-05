@@ -31,6 +31,13 @@ export interface ClientGuarantor {
   notes?: string;
 }
 
+export interface ClientReference {
+  fullName: string;
+  phone?: string;
+  relationship?: string;
+  notes?: string;
+}
+
 export interface Client {
   id: string;
   fullName: string;
@@ -47,10 +54,22 @@ export interface Client {
   latitude?: number;
   longitude?: number;
   notes?: string;
+  isBlacklisted?: boolean;
   loansCount?: number;
   activeLoans?: number;
+  paidLoans?: number;
+  defaultedLoans?: number;
   totalBalance?: number;
+  creditScore?: number | null;
+  riskLevel?: string;
   guarantors?: ClientGuarantor[];
+  references?: ClientReference[];
+  // Solo presentes vía fetchClient(id) (imágenes KYC, data URLs):
+  photoUrl?: string;
+  documentFrontUrl?: string;
+  documentBackUrl?: string;
+  selfieWithDocUrl?: string;
+  signatureUrl?: string;
 }
 
 export interface ClientInput {
@@ -68,9 +87,16 @@ export interface ClientInput {
   latitude?: number;
   longitude?: number;
   notes?: string;
+  photoUrl?: string;
+  documentFrontUrl?: string;
+  documentBackUrl?: string;
+  selfieWithDocUrl?: string;
+  signatureUrl?: string;
+  references?: ClientReference[];
 }
 
-const CLIENT_FIELDS = `id fullName documentId documentType phone phone2 email address neighborhood city occupation birthDate latitude longitude notes loansCount activeLoans totalBalance guarantors { id fullName documentId phone address relationship notes }`;
+const CLIENT_FIELDS = `id fullName documentId documentType phone phone2 email address neighborhood city occupation birthDate latitude longitude notes isBlacklisted loansCount activeLoans paidLoans defaultedLoans totalBalance creditScore riskLevel guarantors { id fullName documentId phone address relationship notes } references { fullName phone relationship notes }`;
+const CLIENT_DETAIL_FIELDS = `${CLIENT_FIELDS} photoUrl documentFrontUrl documentBackUrl selfieWithDocUrl signatureUrl`;
 
 export interface Product {
   id: string;
@@ -105,6 +131,13 @@ export function fetchLoans(routeId?: string) {
 
 export function fetchClients() {
   return gql<{ clients: Client[] }>(`{ clients { ${CLIENT_FIELDS} } }`);
+}
+
+export function fetchClient(id: string) {
+  return gql<{ client: Client }>(
+    `query($id: ID!) { client(id: $id) { ${CLIENT_DETAIL_FIELDS} } }`,
+    { id },
+  );
 }
 
 export function createClient(input: ClientInput) {

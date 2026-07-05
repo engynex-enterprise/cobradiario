@@ -12,46 +12,59 @@ import { Label } from '@/components/ui/label';
 import { DataTable, type Column, type RowAction } from '@/components/ui/data-table';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { CreateLoanDialog } from '@/components/create-loan-dialog';
+import { ImageUpload } from '@/components/ui/image-upload';
+import { SignaturePad } from '@/components/ui/signature-pad';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import {
-  createClient, deleteClient, fetchClients, fetchLoans, updateClient,
+  createClient, deleteClient, fetchClient, fetchClients, fetchLoans, updateClient,
   addGuarantor, updateGuarantor, deleteGuarantor,
-  type Client, type ClientInput, type ClientGuarantor, type Loan,
+  type Client, type ClientInput, type ClientGuarantor, type ClientReference, type Loan,
 } from '@/lib/graphql';
-import { money } from '@/lib/utils';
+import { money, cn } from '@/lib/utils';
 import {
   Pencil, Plus, Trash2, UserRound, HandCoins, Eye, Phone, MessageCircle, Copy,
-  Users, Wallet, MapPin, Loader2, ShieldCheck, X,
+  Users, Wallet, MapPin, Loader2, ShieldCheck, X, Gauge, ShieldAlert, Contact,
 } from 'lucide-react';
 
 const DOC_TYPES = ['CC', 'CE', 'NIT', 'PASAPORTE'];
 
-/** Normaliza un teléfono colombiano para wa.me (solo dígitos, con indicativo 57). */
 function waNumber(phone: string) {
   const d = phone.replace(/\D/g, '');
   return d.startsWith('57') ? d : `57${d}`;
 }
 
+/** Color/etiqueta del score crediticio (estilo DataCrédito). */
+function riskStyle(risk?: string): { label: string; badge: 'success' | 'warning' | 'destructive' | 'secondary'; bar: string; text: string } {
+  switch (risk) {
+    case 'LOW': return { label: 'Bajo riesgo', badge: 'success', bar: 'bg-emerald-500', text: 'text-emerald-600' };
+    case 'MEDIUM': return { label: 'Riesgo medio', badge: 'warning', bar: 'bg-amber-500', text: 'text-amber-600' };
+    case 'HIGH': return { label: 'Alto riesgo', badge: 'destructive', bar: 'bg-red-500', text: 'text-red-600' };
+    default: return { label: 'Sin historial', badge: 'secondary', bar: 'bg-muted-foreground', text: 'text-muted-foreground' };
+  }
+}
+const SCORE_MIN = 150, SCORE_MAX = 950;
+const scorePct = (s: number) => Math.round(((s - SCORE_MIN) / (SCORE_MAX - SCORE_MIN)) * 100);
+
 const MODULE_INFO = {
-  summary: 'El directorio de tus deudores con su ficha completa (contacto, ubicación, perfil) y sus fiadores.',
+  summary: 'El directorio de tus deudores con ficha completa (contacto, ubicación, documentos, firma), fiadores, referencias y un score de riesgo estilo DataCrédito.',
   purpose:
-    'Centraliza a cada persona a la que le prestas: datos para contactarla, ubicarla en la ruta, y sus fiadores como respaldo del crédito.',
+    'Centraliza a cada cliente y te dice, con un puntaje de 150 a 950, qué tan probable es que pague, para decidir a quién prestarle y cuánto.',
   how: [
-    'Los KPIs resumen tu base: total de clientes, con crédito activo, saldo en la calle y ciudades.',
-    'Crea o edita un cliente con su ficha completa: identificación, contacto, ubicación, perfil y observaciones.',
-    'Desde el menú (⋮) → "Fiadores" agregas, editas o eliminas los fiadores/codeudores del cliente.',
-    'Filtra por ciudad o por estado de crédito, y busca por nombre, documento o teléfono.',
-    'El menú también permite crear un crédito, ver sus créditos, escribirle por WhatsApp o llamarlo.',
+    'Los KPIs resumen tu base y cuántos clientes son de alto riesgo.',
+    'La columna "Score" muestra el puntaje y el nivel de riesgo (verde/ámbar/rojo).',
+    'Crea/edita la ficha: identificación, contacto, ubicación, foto, foto del documento, selfie con documento y firma digital.',
+    'Registra referencias personales y, desde el menú (⋮) → Fiadores, sus codeudores.',
+    'Filtra por riesgo, ciudad o estado de crédito; busca por nombre, documento o teléfono.',
   ],
   technical:
-    'El Client trae agregados de cartera (loansCount, activeLoans, totalBalance) y su lista de Guarantor (tabla propia con RLS por tenant, relación 1:N). Los fiadores se administran con addGuarantor/updateGuarantor/deleteGuarantor (soft-delete).',
+    'El score (150–950) se calcula del comportamiento: parte de 700, suma por créditos pagados, penaliza fuerte los créditos en mora (DEFAULTED) y su proporción; la lista de bloqueados baja a 180. Riesgo: LOW ≥780, MEDIUM ≥620, HIGH <620. Las imágenes se guardan comprimidas como data URLs y solo se cargan al abrir la ficha (fetchClient).',
   plain:
-    'Es la carpeta de cada cliente: sus teléfonos, dónde vive, en qué trabaja, cuánto te debe y quién responde por él (el fiador). Si el cliente no paga, sabes a quién más acudir.',
+    'Es como el DataCrédito del barrio: a quien siempre paga le sube el puntaje y se pinta de verde; a quien se atrasa se le pone rojo. Además guardas su foto, la foto de la cédula y su firma para respaldar el préstamo.',
   tips: [
-    'Registra al menos un fiador en los créditos grandes: es tu respaldo.',
-    'Llena barrio y GPS para que el cobrador ubique rápido la casa.',
-    'Usa los filtros para trabajar una sola ciudad o solo los que tienen crédito activo.',
+    'Antes de prestar, mira el score: rojo = piénsalo dos veces o pide más fiadores.',
+    'Toma la foto del documento y la selfie con documento para evitar suplantaciones.',
+    'La firma digital queda como respaldo del acuerdo.',
   ],
 };
 
@@ -66,12 +79,12 @@ export default function ClientesPage() {
   const [guarantorsOf, setGuarantorsOf] = useState<Client | null>(null);
   const [cityFilter, setCityFilter] = useState('all');
   const [creditFilter, setCreditFilter] = useState<'all' | 'active' | 'none'>('all');
+  const [riskFilter, setRiskFilter] = useState('all');
 
   const load = useCallback(() => {
     fetchClients()
       .then((d) => {
         setClients(d.clients);
-        // mantener el drawer de fiadores sincronizado si está abierto
         setGuarantorsOf((g) => (g ? d.clients.find((c) => c.id === g.id) ?? null : g));
       })
       .catch((e) => toast.error(e.message));
@@ -81,8 +94,8 @@ export default function ClientesPage() {
   const kpis = useMemo(() => {
     const conActivo = clients.filter((c) => (c.activeLoans ?? 0) > 0).length;
     const saldo = clients.reduce((s, c) => s + (c.totalBalance ?? 0), 0);
-    const ciudades = new Set(clients.map((c) => c.city).filter(Boolean)).size;
-    return { total: clients.length, conActivo, saldo, ciudades };
+    const altoRiesgo = clients.filter((c) => c.riskLevel === 'HIGH').length;
+    return { total: clients.length, conActivo, saldo, altoRiesgo };
   }, [clients]);
 
   const cities = useMemo(
@@ -96,9 +109,10 @@ export default function ClientesPage() {
         if (cityFilter !== 'all' && c.city !== cityFilter) return false;
         if (creditFilter === 'active' && (c.activeLoans ?? 0) === 0) return false;
         if (creditFilter === 'none' && (c.loansCount ?? 0) > 0) return false;
+        if (riskFilter !== 'all' && c.riskLevel !== riskFilter) return false;
         return true;
       }),
-    [clients, cityFilter, creditFilter],
+    [clients, cityFilter, creditFilter, riskFilter],
   );
 
   const columns: Column<Client>[] = [
@@ -114,25 +128,12 @@ export default function ClientesPage() {
         </div>
       ),
     },
+    {
+      key: 'score', header: 'Score', sortable: true, sortValue: (c) => c.creditScore ?? -1,
+      render: (c) => <ScoreCell client={c} />,
+    },
     { key: 'phone', header: 'Teléfono', render: (c) => <span className="text-muted-foreground">{c.phone ?? '—'}</span> },
-    {
-      key: 'city', header: 'Ubicación', sortable: true, sortValue: (c) => c.city ?? '',
-      render: (c) => (
-        <div className="text-muted-foreground">
-          <p>{c.city ?? '—'}</p>
-          {c.neighborhood && <p className="text-xs">{c.neighborhood}</p>}
-        </div>
-      ),
-    },
-    {
-      key: 'guarantors', header: 'Fiadores', sortable: true, sortValue: (c) => c.guarantors?.length ?? 0,
-      render: (c) =>
-        (c.guarantors?.length ?? 0) === 0 ? (
-          <span className="text-xs text-muted-foreground">—</span>
-        ) : (
-          <Badge variant="secondary" className="gap-1"><ShieldCheck className="h-3 w-3" />{c.guarantors!.length}</Badge>
-        ),
-    },
+    { key: 'city', header: 'Ciudad', sortable: true, sortValue: (c) => c.city ?? '', render: (c) => <span className="text-muted-foreground">{c.city ?? '—'}</span> },
     {
       key: 'loans', header: 'Créditos', sortable: true, sortValue: (c) => c.activeLoans ?? 0,
       render: (c) =>
@@ -140,7 +141,7 @@ export default function ClientesPage() {
           <span className="text-xs text-muted-foreground">Sin créditos</span>
         ) : (
           <Badge variant={(c.activeLoans ?? 0) > 0 ? 'default' : 'secondary'}>
-            {c.activeLoans ?? 0} activo{(c.activeLoans ?? 0) === 1 ? '' : 's'} · {c.loansCount}
+            {c.activeLoans ?? 0} act · {c.loansCount}
           </Badge>
         ),
     },
@@ -174,7 +175,7 @@ export default function ClientesPage() {
     <div className="space-y-6 p-4 sm:p-6">
       <PageHeader
         title="Clientes"
-        description="Directorio de deudores con su ficha completa y fiadores. Sus datos se usan al crear créditos y en las rutas de cobro."
+        description="Directorio de deudores con ficha completa, fiadores, referencias y score de riesgo estilo DataCrédito."
         info={MODULE_INFO}
         actions={<ClientDrawer open={open} setOpen={setOpen} onSaved={load} />}
       />
@@ -183,7 +184,7 @@ export default function ClientesPage() {
         <Kpi icon={<Users className="h-5 w-5" />} label="Total clientes" value={String(kpis.total)} />
         <Kpi icon={<HandCoins className="h-5 w-5" />} label="Con crédito activo" value={String(kpis.conActivo)} tone="primary" />
         <Kpi icon={<Wallet className="h-5 w-5" />} label="Saldo en calle" value={money(kpis.saldo)} />
-        <Kpi icon={<MapPin className="h-5 w-5" />} label="Ciudades" value={String(kpis.ciudades)} />
+        <Kpi icon={<ShieldAlert className="h-5 w-5" />} label="Alto riesgo" value={String(kpis.altoRiesgo)} tone={kpis.altoRiesgo > 0 ? 'destructive' : undefined} />
       </section>
 
       <DataTable
@@ -195,8 +196,18 @@ export default function ClientesPage() {
         empty="No hay clientes con estos filtros."
         toolbar={
           <div className="flex flex-wrap items-center gap-2">
+            <Select value={riskFilter} onValueChange={setRiskFilter}>
+              <SelectTrigger className="h-11 w-36"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todo riesgo</SelectItem>
+                <SelectItem value="LOW">Bajo riesgo</SelectItem>
+                <SelectItem value="MEDIUM">Riesgo medio</SelectItem>
+                <SelectItem value="HIGH">Alto riesgo</SelectItem>
+                <SelectItem value="NONE">Sin historial</SelectItem>
+              </SelectContent>
+            </Select>
             <Select value={creditFilter} onValueChange={(v) => setCreditFilter(v as typeof creditFilter)}>
-              <SelectTrigger className="h-11 w-40"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-11 w-36"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos</SelectItem>
                 <SelectItem value="active">Con crédito activo</SelectItem>
@@ -204,7 +215,7 @@ export default function ClientesPage() {
               </SelectContent>
             </Select>
             <Select value={cityFilter} onValueChange={setCityFilter}>
-              <SelectTrigger className="h-11 w-40"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-11 w-36"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas las ciudades</SelectItem>
                 {cities.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
@@ -231,7 +242,6 @@ export default function ClientesPage() {
       />
 
       <ClientLoansDrawer client={loansOf} onClose={() => setLoansOf(null)} onOpenLoan={(id) => router.push(`/dashboard/loan/${id}`)} />
-
       <GuarantorsDrawer client={guarantorsOf} onClose={() => setGuarantorsOf(null)} onChanged={load} />
 
       <ConfirmDialog
@@ -245,8 +255,8 @@ export default function ClientesPage() {
   );
 }
 
-function Kpi({ icon, label, value, tone }: { icon: React.ReactNode; label: string; value: string; tone?: 'primary' }) {
-  const cls = tone === 'primary' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground';
+function Kpi({ icon, label, value, tone }: { icon: React.ReactNode; label: string; value: string; tone?: 'primary' | 'destructive' }) {
+  const cls = tone === 'destructive' ? 'bg-destructive/10 text-destructive' : tone === 'primary' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground';
   return (
     <Card>
       <CardContent className="flex items-center gap-3 p-5">
@@ -260,9 +270,27 @@ function Kpi({ icon, label, value, tone }: { icon: React.ReactNode; label: strin
   );
 }
 
+/** Celda de score: número + mini barra de color por riesgo. */
+function ScoreCell({ client }: { client: Client }) {
+  const st = riskStyle(client.riskLevel);
+  if (client.creditScore == null) return <span className="text-xs text-muted-foreground">Sin historial</span>;
+  return (
+    <div className="w-24">
+      <div className="flex items-baseline justify-between">
+        <span className={cn('text-sm font-extrabold', st.text)}>{client.creditScore}</span>
+        <span className="text-[10px] text-muted-foreground">{st.label}</span>
+      </div>
+      <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+        <div className={cn('h-full rounded-full', st.bar)} style={{ width: `${scorePct(client.creditScore)}%` }} />
+      </div>
+    </div>
+  );
+}
+
 const EMPTY_FORM: ClientInput = {
   fullName: '', documentType: 'CC', documentId: '', phone: '', phone2: '', email: '',
   address: '', neighborhood: '', city: '', occupation: '', birthDate: '', notes: '',
+  references: [],
 };
 
 function ClientDrawer({
@@ -273,47 +301,51 @@ function ClientDrawer({
   const isEdit = !!client;
   const [form, setForm] = useState<ClientInput>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+  const [loadingDetail, setLoadingDetail] = useState(false);
 
   useEffect(() => {
     if (!open) return;
-    if (client) {
-      setForm({
-        fullName: client.fullName ?? '',
-        documentType: client.documentType ?? 'CC',
-        documentId: client.documentId ?? '',
-        phone: client.phone ?? '',
-        phone2: client.phone2 ?? '',
-        email: client.email ?? '',
-        address: client.address ?? '',
-        neighborhood: client.neighborhood ?? '',
-        city: client.city ?? '',
-        occupation: client.occupation ?? '',
-        birthDate: client.birthDate ? client.birthDate.slice(0, 10) : '',
-        latitude: client.latitude,
-        longitude: client.longitude,
-        notes: client.notes ?? '',
-      });
-    } else {
-      setForm(EMPTY_FORM);
-    }
+    if (!client) { setForm(EMPTY_FORM); return; }
+    // Cargar ficha completa (incluye imágenes y referencias).
+    setLoadingDetail(true);
+    fetchClient(client.id)
+      .then(({ client: c }) => setForm(clientToForm(c)))
+      .catch(() => setForm(clientToForm(client)))
+      .finally(() => setLoadingDetail(false));
   }, [open, client]);
 
   const set = (k: keyof ClientInput) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
+  const setImg = (k: keyof ClientInput) => (v?: string) => setForm((f) => ({ ...f, [k]: v }));
+
+  // ---- referencias ----
+  const addRef = () => setForm((f) => ({ ...f, references: [...(f.references ?? []), { fullName: '' }] }));
+  const setRef = (i: number, k: keyof ClientReference, v: string) =>
+    setForm((f) => ({ ...f, references: (f.references ?? []).map((r, j) => (j === i ? { ...r, [k]: v } : r)) }));
+  const removeRef = (i: number) => setForm((f) => ({ ...f, references: (f.references ?? []).filter((_, j) => j !== i) }));
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
     try {
-      // limpiar strings vacíos → undefined
       const payload: ClientInput = { fullName: form.fullName };
-      (Object.keys(form) as (keyof ClientInput)[]).forEach((k) => {
-        const v = form[k];
-        if (k === 'fullName') return;
-        if (v === '' || v === undefined || v === null) return;
-        // @ts-expect-error asignación dinámica controlada
-        payload[k] = k === 'birthDate' ? new Date(v as string).toISOString() : v;
-      });
+      // texto/número: se omiten si están vacíos
+      (['documentType', 'documentId', 'phone', 'phone2', 'email', 'address', 'neighborhood', 'city', 'occupation', 'notes'] as const)
+        .forEach((k) => { if (form[k]) (payload as unknown as Record<string, unknown>)[k] = form[k]; });
+      if (form.birthDate) payload.birthDate = new Date(form.birthDate).toISOString();
+      if (form.latitude !== undefined) payload.latitude = form.latitude;
+      if (form.longitude !== undefined) payload.longitude = form.longitude;
+      // imágenes: se envían siempre (permite limpiar en edición)
+      payload.photoUrl = form.photoUrl ?? null as unknown as undefined;
+      payload.documentFrontUrl = form.documentFrontUrl ?? null as unknown as undefined;
+      payload.documentBackUrl = form.documentBackUrl ?? null as unknown as undefined;
+      payload.selfieWithDocUrl = form.selfieWithDocUrl ?? null as unknown as undefined;
+      payload.signatureUrl = form.signatureUrl ?? null as unknown as undefined;
+      // referencias válidas
+      payload.references = (form.references ?? [])
+        .filter((r) => r.fullName.trim())
+        .map((r) => ({ fullName: r.fullName.trim(), phone: r.phone || undefined, relationship: r.relationship || undefined, notes: r.notes || undefined }));
+
       if (isEdit) {
         await updateClient({ id: client!.id, ...payload });
         toast.success('Cliente actualizado');
@@ -343,104 +375,157 @@ function ClientDrawer({
             <UserRound className="h-5 w-5" /> {isEdit ? 'Editar cliente' : 'Nuevo cliente'}
           </SheetTitle>
         </SheetHeader>
-        <form onSubmit={submit} className="space-y-5">
-          <FormSection title="Identificación">
-            <div className="space-y-2">
-              <Label>Nombre completo *</Label>
-              <Input value={form.fullName} onChange={set('fullName')} required />
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              <div className="space-y-2">
-                <Label>Tipo</Label>
-                <Select value={form.documentType} onValueChange={(v) => setForm((f) => ({ ...f, documentType: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{DOC_TYPES.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-              <div className="col-span-2 space-y-2">
-                <Label>Documento</Label>
-                <Input value={form.documentId} onChange={set('documentId')} />
-              </div>
-            </div>
-          </FormSection>
 
-          <FormSection title="Contacto">
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-2">
-                <Label>Teléfono</Label>
-                <Input value={form.phone} onChange={set('phone')} inputMode="tel" />
-              </div>
-              <div className="space-y-2">
-                <Label>Teléfono alterno</Label>
-                <Input value={form.phone2} onChange={set('phone2')} inputMode="tel" />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Correo electrónico</Label>
-              <Input value={form.email} onChange={set('email')} type="email" />
-            </div>
-          </FormSection>
+        {loadingDetail ? (
+          <div className="flex items-center justify-center py-20 text-muted-foreground"><Loader2 className="h-6 w-6 animate-spin" /></div>
+        ) : (
+          <form onSubmit={submit} className="space-y-5">
+            {isEdit && client?.creditScore != null && <ScorePanel client={client} />}
 
-          <FormSection title="Ubicación">
-            <div className="space-y-2">
-              <Label>Dirección</Label>
-              <Input value={form.address} onChange={set('address')} />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
+            <FormSection title="Identificación">
               <div className="space-y-2">
-                <Label>Barrio</Label>
-                <Input value={form.neighborhood} onChange={set('neighborhood')} />
+                <Label>Nombre completo *</Label>
+                <Input value={form.fullName} onChange={set('fullName')} required />
               </div>
-              <div className="space-y-2">
-                <Label>Ciudad</Label>
-                <Input value={form.city} onChange={set('city')} />
+              <div className="grid grid-cols-3 gap-2">
+                <div className="space-y-2">
+                  <Label>Tipo</Label>
+                  <Select value={form.documentType} onValueChange={(v) => setForm((f) => ({ ...f, documentType: v }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{DOC_TYPES.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div className="col-span-2 space-y-2">
+                  <Label>Documento</Label>
+                  <Input value={form.documentId} onChange={set('documentId')} />
+                </div>
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-2">
-                <Label>Latitud (GPS)</Label>
-                <Input value={form.latitude ?? ''} onChange={(e) => setForm((f) => ({ ...f, latitude: e.target.value ? Number(e.target.value) : undefined }))} inputMode="decimal" placeholder="4.6097" />
-              </div>
-              <div className="space-y-2">
-                <Label>Longitud (GPS)</Label>
-                <Input value={form.longitude ?? ''} onChange={(e) => setForm((f) => ({ ...f, longitude: e.target.value ? Number(e.target.value) : undefined }))} inputMode="decimal" placeholder="-74.0817" />
-              </div>
-            </div>
-          </FormSection>
+            </FormSection>
 
-          <FormSection title="Perfil">
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-2">
-                <Label>Ocupación / negocio</Label>
-                <Input value={form.occupation} onChange={set('occupation')} />
+            <FormSection title="Contacto">
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-2"><Label>Teléfono</Label><Input value={form.phone} onChange={set('phone')} inputMode="tel" /></div>
+                <div className="space-y-2"><Label>Teléfono alterno</Label><Input value={form.phone2} onChange={set('phone2')} inputMode="tel" /></div>
               </div>
-              <div className="space-y-2">
-                <Label>Fecha de nacimiento</Label>
-                <Input type="date" value={form.birthDate} onChange={set('birthDate')} />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Observaciones</Label>
-              <textarea
-                value={form.notes} onChange={set('notes')} rows={2}
-                placeholder="Notas internas sobre el cliente"
-                className="w-full rounded-xl border-2 border-border bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-primary/40"
-              />
-            </div>
-          </FormSection>
+              <div className="space-y-2"><Label>Correo electrónico</Label><Input value={form.email} onChange={set('email')} type="email" /></div>
+            </FormSection>
 
-          <Button type="submit" className="w-full" disabled={saving || !form.fullName}>
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null} {isEdit ? 'Guardar cambios' : 'Crear cliente'}
-          </Button>
-          {isEdit && (
-            <p className="text-center text-xs text-muted-foreground">
-              Los fiadores se administran desde el menú (⋮) → Fiadores.
-            </p>
-          )}
-        </form>
+            <FormSection title="Ubicación">
+              <div className="space-y-2"><Label>Dirección</Label><Input value={form.address} onChange={set('address')} /></div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-2"><Label>Barrio</Label><Input value={form.neighborhood} onChange={set('neighborhood')} /></div>
+                <div className="space-y-2"><Label>Ciudad</Label><Input value={form.city} onChange={set('city')} /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-2"><Label>Latitud (GPS)</Label><Input value={form.latitude ?? ''} onChange={(e) => setForm((f) => ({ ...f, latitude: e.target.value ? Number(e.target.value) : undefined }))} inputMode="decimal" placeholder="4.6097" /></div>
+                <div className="space-y-2"><Label>Longitud (GPS)</Label><Input value={form.longitude ?? ''} onChange={(e) => setForm((f) => ({ ...f, longitude: e.target.value ? Number(e.target.value) : undefined }))} inputMode="decimal" placeholder="-74.0817" /></div>
+              </div>
+            </FormSection>
+
+            <FormSection title="Perfil">
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-2"><Label>Ocupación / negocio</Label><Input value={form.occupation} onChange={set('occupation')} /></div>
+                <div className="space-y-2"><Label>Fecha de nacimiento</Label><Input type="date" value={form.birthDate} onChange={set('birthDate')} /></div>
+              </div>
+              <div className="space-y-2">
+                <Label>Observaciones</Label>
+                <textarea value={form.notes} onChange={set('notes')} rows={2} placeholder="Notas internas" className="w-full rounded-xl border-2 border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary/40" />
+              </div>
+            </FormSection>
+
+            <FormSection title="Documentos y foto">
+              <div className="grid grid-cols-2 gap-3">
+                <ImageUpload label="Foto de la persona" value={form.photoUrl} onChange={setImg('photoUrl')} />
+                <ImageUpload label="Selfie con documento" value={form.selfieWithDocUrl} onChange={setImg('selfieWithDocUrl')} hint="Persona sosteniendo el documento junto a la cara" />
+                <ImageUpload label="Documento (frente)" value={form.documentFrontUrl} onChange={setImg('documentFrontUrl')} />
+                <ImageUpload label="Documento (reverso)" value={form.documentBackUrl} onChange={setImg('documentBackUrl')} />
+              </div>
+            </FormSection>
+
+            <FormSection title="Firma digital">
+              <SignaturePad value={form.signatureUrl} onChange={setImg('signatureUrl')} />
+            </FormSection>
+
+            <FormSection title="Referencias personales">
+              {(form.references ?? []).length === 0 && <p className="text-xs text-muted-foreground">Sin referencias. Agrega contactos que respondan por el cliente.</p>}
+              <div className="space-y-2">
+                {(form.references ?? []).map((r, i) => (
+                  <div key={i} className="rounded-xl border-2 border-border p-2.5">
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="text-xs font-bold text-muted-foreground">Referencia {i + 1}</span>
+                      <button type="button" onClick={() => removeRef(i)} className="text-destructive hover:opacity-70"><X className="h-4 w-4" /></button>
+                    </div>
+                    <div className="space-y-2">
+                      <Input value={r.fullName} onChange={(e) => setRef(i, 'fullName', e.target.value)} placeholder="Nombre completo" />
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input value={r.phone ?? ''} onChange={(e) => setRef(i, 'phone', e.target.value)} placeholder="Teléfono" inputMode="tel" />
+                        <Input value={r.relationship ?? ''} onChange={(e) => setRef(i, 'relationship', e.target.value)} placeholder="Parentesco" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <Button type="button" variant="outline" className="w-full" onClick={addRef}><Plus className="h-4 w-4" /> Agregar referencia</Button>
+            </FormSection>
+
+            <Button type="submit" className="w-full" disabled={saving || !form.fullName}>
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null} {isEdit ? 'Guardar cambios' : 'Crear cliente'}
+            </Button>
+            {isEdit && <p className="text-center text-xs text-muted-foreground">Los fiadores se administran desde el menú (⋮) → Fiadores.</p>}
+          </form>
+        )}
       </SheetContent>
     </Sheet>
   );
+}
+
+/** Panel de score dentro de la ficha (medidor tipo DataCrédito). */
+function ScorePanel({ client }: { client: Client }) {
+  const st = riskStyle(client.riskLevel);
+  const score = client.creditScore!;
+  return (
+    <div className="rounded-2xl border-2 border-border p-4">
+      <div className="mb-2 flex items-center justify-between">
+        <span className="flex items-center gap-2 text-sm font-extrabold"><Gauge className="h-5 w-5 text-primary" /> Score crediticio</span>
+        <Badge variant={st.badge}>{st.label}</Badge>
+      </div>
+      <div className="flex items-end gap-2">
+        <span className={cn('text-3xl font-extrabold', st.text)}>{score}</span>
+        <span className="pb-1 text-xs text-muted-foreground">/ {SCORE_MAX}</span>
+      </div>
+      <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-muted">
+        <div className={cn('h-full rounded-full', st.bar)} style={{ width: `${scorePct(score)}%` }} />
+      </div>
+      <p className="mt-2 text-xs text-muted-foreground">
+        {client.paidLoans ?? 0} pagados · {client.defaultedLoans ?? 0} en mora · {client.loansCount ?? 0} créditos
+      </p>
+    </div>
+  );
+}
+
+function clientToForm(c: Client): ClientInput {
+  return {
+    fullName: c.fullName ?? '',
+    documentType: c.documentType ?? 'CC',
+    documentId: c.documentId ?? '',
+    phone: c.phone ?? '',
+    phone2: c.phone2 ?? '',
+    email: c.email ?? '',
+    address: c.address ?? '',
+    neighborhood: c.neighborhood ?? '',
+    city: c.city ?? '',
+    occupation: c.occupation ?? '',
+    birthDate: c.birthDate ? c.birthDate.slice(0, 10) : '',
+    latitude: c.latitude,
+    longitude: c.longitude,
+    notes: c.notes ?? '',
+    photoUrl: c.photoUrl,
+    documentFrontUrl: c.documentFrontUrl,
+    documentBackUrl: c.documentBackUrl,
+    selfieWithDocUrl: c.selfieWithDocUrl,
+    signatureUrl: c.signatureUrl,
+    references: c.references ?? [],
+  };
 }
 
 function FormSection({ title, children }: { title: string; children: React.ReactNode }) {
@@ -452,16 +537,13 @@ function FormSection({ title, children }: { title: string; children: React.React
   );
 }
 
-/** Drawer que lista los créditos de un cliente. */
 function ClientLoansDrawer({ client, onClose, onOpenLoan }: { client: Client | null; onClose: () => void; onOpenLoan: (id: string) => void }) {
   const [loans, setLoans] = useState<Loan[] | null>(null);
 
   useEffect(() => {
     if (!client) { setLoans(null); return; }
     setLoans(null);
-    fetchLoans()
-      .then((d) => setLoans(d.loans.filter((l) => l.clientId === client.id)))
-      .catch((e) => toast.error(e.message));
+    fetchLoans().then((d) => setLoans(d.loans.filter((l) => l.clientId === client.id))).catch((e) => toast.error(e.message));
   }, [client]);
 
   const statusLabel: Record<string, string> = { ACTIVE: 'Activo', PAID: 'Pagado', DEFAULTED: 'En mora', PENDING_APPROVAL: 'Por aprobar', RENEWED: 'Renovado', CANCELLED: 'Cancelado' };
@@ -479,11 +561,7 @@ function ClientLoansDrawer({ client, onClose, onOpenLoan }: { client: Client | n
         ) : (
           <div className="space-y-2">
             {loans.map((l) => (
-              <button
-                key={l.id}
-                onClick={() => onOpenLoan(l.id)}
-                className="flex w-full items-center justify-between gap-3 rounded-xl border-2 border-border p-3 text-left transition-colors hover:border-primary/40 hover:bg-accent"
-              >
+              <button key={l.id} onClick={() => onOpenLoan(l.id)} className="flex w-full items-center justify-between gap-3 rounded-xl border-2 border-border p-3 text-left transition-colors hover:border-primary/40 hover:bg-accent">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <Badge variant={l.status === 'PAID' ? 'success' : l.status === 'DEFAULTED' ? 'destructive' : 'default'}>{statusLabel[l.status] ?? l.status}</Badge>
@@ -503,7 +581,6 @@ function ClientLoansDrawer({ client, onClose, onOpenLoan }: { client: Client | n
 
 const EMPTY_GUARANTOR = { fullName: '', documentId: '', phone: '', address: '', relationship: '', notes: '' };
 
-/** Drawer para administrar los fiadores de un cliente (agregar/editar/eliminar). */
 function GuarantorsDrawer({ client, onClose, onChanged }: { client: Client | null; onClose: () => void; onChanged: () => void }) {
   const [items, setItems] = useState<ClientGuarantor[]>([]);
   const [form, setForm] = useState(EMPTY_GUARANTOR);
@@ -519,7 +596,7 @@ function GuarantorsDrawer({ client, onClose, onChanged }: { client: Client | nul
     setForm(EMPTY_GUARANTOR);
   }, [client]);
 
-  const set = (k: keyof typeof EMPTY_GUARANTOR) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+  const set = (k: keyof typeof EMPTY_GUARANTOR) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
 
   function startAdd() { setEditingId(null); setForm(EMPTY_GUARANTOR); setShowForm(true); }
@@ -551,9 +628,7 @@ function GuarantorsDrawer({ client, onClose, onChanged }: { client: Client | nul
         setItems((xs) => [...xs, g]);
         toast.success('Fiador agregado');
       }
-      setShowForm(false);
-      setForm(EMPTY_GUARANTOR);
-      setEditingId(null);
+      setShowForm(false); setForm(EMPTY_GUARANTOR); setEditingId(null);
       onChanged();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Error');
@@ -592,26 +667,14 @@ function GuarantorsDrawer({ client, onClose, onChanged }: { client: Client | nul
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="font-semibold">{g.fullName}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {g.relationship ? `${g.relationship} · ` : ''}{g.documentId ?? 'Sin documento'}
-                      </p>
-                      {(g.phone || g.address) && (
-                        <p className="text-xs text-muted-foreground">{[g.phone, g.address].filter(Boolean).join(' · ')}</p>
-                      )}
+                      <p className="text-xs text-muted-foreground">{g.relationship ? `${g.relationship} · ` : ''}{g.documentId ?? 'Sin documento'}</p>
+                      {(g.phone || g.address) && <p className="text-xs text-muted-foreground">{[g.phone, g.address].filter(Boolean).join(' · ')}</p>}
                       {g.notes && <p className="mt-1 text-xs italic text-muted-foreground">{g.notes}</p>}
                     </div>
                     <div className="flex shrink-0 gap-1">
-                      {g.phone && (
-                        <button title="WhatsApp" onClick={() => window.open(`https://wa.me/${waNumber(g.phone!)}`, '_blank')} className="flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground">
-                          <MessageCircle className="h-4 w-4" />
-                        </button>
-                      )}
-                      <button title="Editar" onClick={() => startEdit(g)} className="flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground">
-                        <Pencil className="h-4 w-4" />
-                      </button>
-                      <button title="Eliminar" onClick={() => setToDelete(g)} className="flex size-8 items-center justify-center rounded-lg text-destructive hover:bg-destructive/10">
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      {g.phone && <button title="WhatsApp" onClick={() => window.open(`https://wa.me/${waNumber(g.phone!)}`, '_blank')} className="flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"><MessageCircle className="h-4 w-4" /></button>}
+                      <button title="Editar" onClick={() => startEdit(g)} className="flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"><Pencil className="h-4 w-4" /></button>
+                      <button title="Eliminar" onClick={() => setToDelete(g)} className="flex size-8 items-center justify-center rounded-lg text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></button>
                     </div>
                   </div>
                 </div>
@@ -625,38 +688,21 @@ function GuarantorsDrawer({ client, onClose, onChanged }: { client: Client | nul
                 <p className="text-sm font-extrabold">{editingId ? 'Editar fiador' : 'Nuevo fiador'}</p>
                 <button type="button" onClick={() => setShowForm(false)} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
               </div>
-              <div className="space-y-2">
-                <Label>Nombre completo *</Label>
-                <Input value={form.fullName} onChange={set('fullName')} required />
+              <div className="space-y-2"><Label>Nombre completo *</Label><Input value={form.fullName} onChange={set('fullName')} required /></div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-2"><Label>Documento</Label><Input value={form.documentId} onChange={set('documentId')} /></div>
+                <div className="space-y-2"><Label>Parentesco</Label><Input value={form.relationship} onChange={set('relationship')} placeholder="Esposo, hermano…" /></div>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-2">
-                  <Label>Documento</Label>
-                  <Input value={form.documentId} onChange={set('documentId')} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Parentesco</Label>
-                  <Input value={form.relationship} onChange={set('relationship')} placeholder="Esposo, hermano…" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-2">
-                  <Label>Teléfono</Label>
-                  <Input value={form.phone} onChange={set('phone')} inputMode="tel" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Dirección</Label>
-                  <Input value={form.address} onChange={set('address')} />
-                </div>
+                <div className="space-y-2"><Label>Teléfono</Label><Input value={form.phone} onChange={set('phone')} inputMode="tel" /></div>
+                <div className="space-y-2"><Label>Dirección</Label><Input value={form.address} onChange={set('address')} /></div>
               </div>
               <Button type="submit" className="w-full" disabled={saving || !form.fullName}>
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null} {editingId ? 'Guardar' : 'Agregar fiador'}
               </Button>
             </form>
           ) : (
-            <Button variant="outline" className="mt-4 w-full" onClick={startAdd}>
-              <Plus className="h-4 w-4" /> Agregar fiador
-            </Button>
+            <Button variant="outline" className="mt-4 w-full" onClick={startAdd}><Contact className="h-4 w-4" /> Agregar fiador</Button>
           )}
         </SheetContent>
       </Sheet>

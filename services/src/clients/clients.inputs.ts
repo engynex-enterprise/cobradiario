@@ -1,5 +1,31 @@
 import { Field, Float, ID, InputType } from '@nestjs/graphql';
-import { IsNumber, IsOptional, IsString, MaxLength } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsArray, IsNumber, IsOptional, IsString, MaxLength, ValidateNested } from 'class-validator';
+
+@InputType()
+export class ClientReferenceInput {
+  @Field()
+  @IsString()
+  @MaxLength(140)
+  fullName!: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  phone?: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  relationship?: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  notes?: string;
+}
+
 
 @InputType()
 export class CreateClientInput {
@@ -72,6 +98,38 @@ export class CreateClientInput {
   @IsString()
   @MaxLength(2000)
   notes?: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  photoUrl?: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  documentFrontUrl?: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  documentBackUrl?: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  selfieWithDocUrl?: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  signatureUrl?: string;
+
+  @Field(() => [ClientReferenceInput], { nullable: true })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ClientReferenceInput)
+  references?: ClientReferenceInput[];
 }
 
 @InputType()
@@ -150,6 +208,38 @@ export class UpdateClientInput {
   @IsString()
   @MaxLength(2000)
   notes?: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  photoUrl?: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  documentFrontUrl?: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  documentBackUrl?: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  selfieWithDocUrl?: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  signatureUrl?: string;
+
+  @Field(() => [ClientReferenceInput], { nullable: true })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ClientReferenceInput)
+  references?: ClientReferenceInput[];
 }
 
 @InputType()

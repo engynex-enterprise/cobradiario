@@ -96,20 +96,31 @@ type Client {
   birthDate: DateTime
   city: String
   createdAt: DateTime!
+  creditScore: Int
+  defaultedLoans: Int!
+  documentBackUrl: String
+  documentFrontUrl: String
   documentId: String
   documentType: String
   email: String
   fullName: String!
   guarantors: [ClientGuarantor!]!
   id: ID!
+  isBlacklisted: Boolean!
   latitude: Float
   loansCount: Int!
   longitude: Float
   neighborhood: String
   notes: String
   occupation: String
+  paidLoans: Int!
   phone: String
   phone2: String
+  photoUrl: String
+  references: [ClientReference!]!
+  riskLevel: String!
+  selfieWithDocUrl: String
+  signatureUrl: String
   totalBalance: Float!
 }
 
@@ -118,6 +129,20 @@ type ClientGuarantor {
   documentId: String
   fullName: String!
   id: ID!
+  notes: String
+  phone: String
+  relationship: String
+}
+
+type ClientReference {
+  fullName: String!
+  notes: String
+  phone: String
+  relationship: String
+}
+
+input ClientReferenceInput {
+  fullName: String!
   notes: String
   phone: String
   relationship: String
@@ -159,6 +184,8 @@ input CreateClientInput {
   address: String
   birthDate: DateTime
   city: String
+  documentBackUrl: String
+  documentFrontUrl: String
   documentId: String
   documentType: String
   email: String
@@ -170,6 +197,10 @@ input CreateClientInput {
   occupation: String
   phone: String
   phone2: String
+  photoUrl: String
+  references: [ClientReferenceInput!]
+  selfieWithDocUrl: String
+  signatureUrl: String
 }
 
 input CreateExpenseInput {
@@ -575,6 +606,7 @@ type Query {
   balances: Balances!
   baseMovements(from: DateTime, to: DateTime): [BaseMovement!]!
   cashMovements(type: CashMovementType): [CashMovementFeedItem!]!
+  client(id: ID!): Client!
   clients: [Client!]!
   creditProducts: [CreditProduct!]!
   dashboardStats: DashboardStats!
@@ -695,6 +727,8 @@ input UpdateClientInput {
   address: String
   birthDate: DateTime
   city: String
+  documentBackUrl: String
+  documentFrontUrl: String
   documentId: String
   documentType: String
   email: String
@@ -707,6 +741,10 @@ input UpdateClientInput {
   occupation: String
   phone: String
   phone2: String
+  photoUrl: String
+  references: [ClientReferenceInput!]
+  selfieWithDocUrl: String
+  signatureUrl: String
 }
 
 input UpdateGuarantorInput {
