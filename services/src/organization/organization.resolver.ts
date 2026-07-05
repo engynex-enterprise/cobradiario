@@ -1,8 +1,8 @@
 import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { UserRole } from '@prisma/client';
 import { OrganizationService } from './organization.service';
-import { OrganizationModel, OrgMemberModel, OrgInvitationModel, OrgAuditLogModel } from './organization.models';
-import { InviteMemberInput, UpdateMemberRoleInput, UpdateOrganizationInput } from './organization.inputs';
+import { OrganizationModel, OrgMemberModel, OrgInvitationModel, OrgAuditLogModel, OrgRoleModel } from './organization.models';
+import { InviteMemberInput, UpdateMemberRoleInput, UpdateOrganizationInput, CreateRoleInput, UpdateRoleInput } from './organization.inputs';
 import { CurrentUser, Roles } from '../common/decorators';
 import { AuthContext } from '../common/types';
 
@@ -31,6 +31,30 @@ export class OrganizationResolver {
   @Query(() => [OrgAuditLogModel], { name: 'auditLogs' })
   auditLogs(@CurrentUser() user: AuthContext): Promise<OrgAuditLogModel[]> {
     return this.org.auditLogs(user.tenantId);
+  }
+
+  @Roles(UserRole.OWNER, UserRole.ADMIN, UserRole.MANAGER)
+  @Query(() => [OrgRoleModel], { name: 'roles' })
+  roles(@CurrentUser() user: AuthContext): Promise<OrgRoleModel[]> {
+    return this.org.roles(user.tenantId);
+  }
+
+  @Roles(UserRole.OWNER, UserRole.ADMIN)
+  @Mutation(() => [OrgRoleModel])
+  createRole(@CurrentUser() user: AuthContext, @Args('input') input: CreateRoleInput): Promise<OrgRoleModel[]> {
+    return this.org.createRole(user.tenantId, input.name, input.permissions);
+  }
+
+  @Roles(UserRole.OWNER, UserRole.ADMIN)
+  @Mutation(() => [OrgRoleModel])
+  updateRole(@CurrentUser() user: AuthContext, @Args('input') input: UpdateRoleInput): Promise<OrgRoleModel[]> {
+    return this.org.updateRole(user.tenantId, input.id, input.name, input.permissions);
+  }
+
+  @Roles(UserRole.OWNER, UserRole.ADMIN)
+  @Mutation(() => [OrgRoleModel])
+  deleteRole(@CurrentUser() user: AuthContext, @Args('id', { type: () => ID }) id: string): Promise<OrgRoleModel[]> {
+    return this.org.deleteRole(user.tenantId, id);
   }
 
   @Roles(UserRole.OWNER, UserRole.ADMIN)

@@ -57,6 +57,15 @@ export class OrgInvitationModel {
   @Field() createdAt!: Date;
 }
 
+@ObjectType('OrgRole')
+export class OrgRoleModel {
+  @Field(() => ID) id!: string;
+  @Field() key!: string;
+  @Field() name!: string;
+  @Field(() => [String]) permissions!: string[];
+  @Field() isSystem!: boolean;
+}
+
 @ObjectType('OrgAuditLog')
 export class OrgAuditLogModel {
   @Field(() => ID) id!: string;

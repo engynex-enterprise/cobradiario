@@ -1,6 +1,6 @@
 import { Field, Float, ID, InputType, Int } from '@nestjs/graphql';
 import { UserRole } from '@prisma/client';
-import { IsBoolean, IsEmail, IsEnum, IsNumber, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { IsArray, IsBoolean, IsEmail, IsEnum, IsNumber, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 
 @InputType()
 export class UpdateOrganizationInput {
@@ -52,6 +52,38 @@ export class UpdateMemberRoleInput {
   @Field(() => UserRole)
   @IsEnum(UserRole)
   role!: UserRole;
+}
+
+@InputType()
+export class CreateRoleInput {
+  @Field()
+  @IsString()
+  @MaxLength(60)
+  name!: string;
+
+  @Field(() => [String])
+  @IsArray()
+  @IsString({ each: true })
+  permissions!: string[];
+}
+
+@InputType()
+export class UpdateRoleInput {
+  @Field(() => ID)
+  @IsString()
+  id!: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(60)
+  name?: string;
+
+  @Field(() => [String], { nullable: true })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  permissions?: string[];
 }
 
 @InputType()

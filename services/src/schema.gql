@@ -271,6 +271,11 @@ input CreateProductInput {
   termCount: Int! = 20
 }
 
+input CreateRoleInput {
+  name: String!
+  permissions: [String!]!
+}
+
 input CreateRouteInput {
   code: String
   name: String!
@@ -521,6 +526,7 @@ type Mutation {
   createExpense(input: CreateExpenseInput!): Expense!
   createLoan(input: CreateLoanInput!): Loan!
   createManagement(input: CreateManagementInput!): CollectionManagement!
+  createRole(input: CreateRoleInput!): [OrgRole!]!
   createRoute(input: CreateRouteInput!): Route!
   createTag(input: CreateTagInput!): Tag!
   createTeamMember(input: CreateTeamMemberInput!): TeamMember!
@@ -528,6 +534,7 @@ type Mutation {
   deleteClient(id: ID!): Client!
   deleteExpense(id: ID!): ID!
   deleteGuarantor(id: ID!): ID!
+  deleteRole(id: ID!): [OrgRole!]!
   deleteTag(id: ID!): Boolean!
   inviteMember(input: InviteMemberInput!): OrgInvitation!
   login(input: LoginInput!): AuthPayload!
@@ -550,6 +557,7 @@ type Mutation {
   updateMemberRole(input: UpdateMemberRoleInput!): [OrgMember!]!
   updateOrganization(input: UpdateOrganizationInput!): Organization!
   updateProfile(input: UpdateProfileInput!): AuthUser!
+  updateRole(input: UpdateRoleInput!): [OrgRole!]!
   updateTag(input: UpdateTagInput!): Tag
   uploadImage(dataUrl: String!, folder: String): UploadResult!
   verifyEmail(token: String!): SimpleResult!
@@ -616,6 +624,14 @@ type OrgMember {
   id: ID!
   isActive: Boolean!
   role: UserRole!
+}
+
+type OrgRole {
+  id: ID!
+  isSystem: Boolean!
+  key: String!
+  name: String!
+  permissions: [String!]!
 }
 
 type Organization {
@@ -710,6 +726,7 @@ type Query {
   pendingInvitations: [OrgInvitation!]!
   recentPayments: [PaymentFeedItem!]!
   reminders: [ReminderItem!]!
+  roles: [OrgRole!]!
   routes: [Route!]!
   tags: [Tag!]!
   teamMembers: [TeamMember!]!
@@ -896,6 +913,12 @@ input UpdateOrganizationInput {
 input UpdateProfileInput {
   fullName: String
   phone: String
+}
+
+input UpdateRoleInput {
+  id: ID!
+  name: String
+  permissions: [String!]
 }
 
 input UpdateTagInput {

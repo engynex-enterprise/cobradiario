@@ -18,10 +18,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import {
   fetchOrganization, fetchOrgMembers, fetchPendingInvitations, fetchAuditLogs, updateOrganization, fetchProducts,
   inviteMember, cancelInvitation, updateMemberRole, removeMember,
-  type Organization, type OrgMember, type OrgInvitation, type OrgAuditLog, type OrgUpdate, type Product,
+  fetchRoles, createRole, updateRole, deleteRole,
+  type Organization, type OrgMember, type OrgInvitation, type OrgAuditLog, type OrgUpdate, type Product, type OrgRole,
 } from '@/lib/graphql';
 import { formatDate, cn } from '@/lib/utils';
-import { MailPlus, Trash2, Loader2, UserPlus, X, Check } from 'lucide-react';
+import { MailPlus, Trash2, Loader2, UserPlus, X, Check, Plus, Shield, Lock } from 'lucide-react';
 
 const ROLES = [
   { value: 'OWNER', label: 'Dueño' }, { value: 'ADMIN', label: 'Administrador' },
@@ -113,7 +114,7 @@ function OrgSettings() {
             {tab === 'general' && <GeneralTab org={org} canManage={canManage} onSave={save} />}
             {tab === 'politicas' && <FinanzasTab org={org} canManage={canManage} onSave={save} />}
             {tab === 'notificaciones' && <NotificacionesTab org={org} canManage={canManage} onSave={save} />}
-            {tab === 'roles' && <RolesTab />}
+            {tab === 'roles' && <RolesTab canManage={canManage} />}
             {tab === 'auditoria' && (canManage ? <AuditoriaTab logs={logs} /> : <NoPerm />)}
             {tab === 'miembros' && (
               <MiembrosTab
@@ -267,43 +268,191 @@ function NotificacionesTab({ org, canManage, onSave }: { org: Organization; canM
 }
 
 // ---------- Roles y permisos (matriz) ----------
-function RolesTab() {
-  const caps: { label: string; roles: string[] }[] = [
-    { label: 'Ver cartera y cobros', roles: ['OWNER', 'ADMIN', 'MANAGER', 'COLLECTOR', 'VIEWER'] },
-    { label: 'Registrar abonos', roles: ['OWNER', 'ADMIN', 'MANAGER', 'COLLECTOR'] },
-    { label: 'Crear/editar créditos', roles: ['OWNER', 'ADMIN', 'MANAGER', 'COLLECTOR'] },
-    { label: 'Gestionar clientes', roles: ['OWNER', 'ADMIN', 'MANAGER', 'COLLECTOR'] },
-    { label: 'Gestionar rutas y productos', roles: ['OWNER', 'ADMIN', 'MANAGER'] },
-    { label: 'Ver finanzas y reportes', roles: ['OWNER', 'ADMIN', 'MANAGER'] },
-    { label: 'Gestionar miembros e invitar', roles: ['OWNER', 'ADMIN'] },
-    { label: 'Ajustes de la organización', roles: ['OWNER', 'ADMIN'] },
-    { label: 'Eliminar miembros', roles: ['OWNER', 'ADMIN'] },
-  ];
+// Catálogo de permisos (las claves deben coincidir con PERMISSIONS del backend).
+const PERMISSION_CATALOG: { key: string; label: string; desc: string }[] = [
+  { key: 'view_portfolio', label: 'Ver cartera y cobros', desc: 'Consultar créditos, cuotas y estado de cartera.' },
+  { key: 'register_payments', label: 'Registrar abonos', desc: 'Recibir y registrar pagos de los clientes.' },
+  { key: 'manage_loans', label: 'Gestionar créditos', desc: 'Crear y editar créditos.' },
+  { key: 'manage_clients', label: 'Gestionar clientes', desc: 'Crear y editar clientes, fiadores y referencias.' },
+  { key: 'manage_routes', label: 'Gestionar rutas y productos', desc: 'Administrar rutas, productos y etiquetas.' },
+  { key: 'view_finance', label: 'Ver finanzas y reportes', desc: 'Acceder a finanzas, caja y reportes.' },
+  { key: 'manage_members', label: 'Gestionar miembros', desc: 'Invitar miembros y cambiar sus roles.' },
+  { key: 'org_settings', label: 'Ajustes de la organización', desc: 'Editar la configuración de la empresa.' },
+  { key: 'delete_members', label: 'Eliminar miembros', desc: 'Dar de baja a miembros del equipo.' },
+];
+
+function RolesTab({ canManage }: { canManage: boolean }) {
+  const [roles, setRoles] = useState<OrgRole[] | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [draft, setDraft] = useState<{ name: string; permissions: string[] } | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [toDelete, setToDelete] = useState<OrgRole | null>(null);
+
+  useEffect(() => {
+    fetchRoles().then((d) => {
+      setRoles(d.roles);
+      if (d.roles.length) setSelectedId((cur) => cur ?? d.roles[0].id);
+    }).catch((e) => toast.error(e instanceof Error ? e.message : 'Error'));
+  }, []);
+
+  const selected = roles?.find((r) => r.id === selectedId) ?? null;
+  // Vista efectiva: draft si estoy editando/creando, si no el rol seleccionado.
+  const view = creating ? draft : (draft ?? (selected ? { name: selected.name, permissions: selected.permissions } : null));
+  const editing = creating || draft !== null;
+
+  function startCreate() {
+    setCreating(true); setSelectedId(null);
+    setDraft({ name: '', permissions: ['view_portfolio'] });
+  }
+  function startEdit() {
+    if (!selected) return;
+    setDraft({ name: selected.name, permissions: [...selected.permissions] });
+  }
+  function cancel() { setCreating(false); setDraft(null); }
+  function togglePerm(key: string) {
+    setDraft((d) => d ? { ...d, permissions: d.permissions.includes(key) ? d.permissions.filter((p) => p !== key) : [...d.permissions, key] } : d);
+  }
+
+  async function save() {
+    if (!draft) return;
+    if (!draft.name.trim()) { toast.error('Escribe un nombre para el rol.'); return; }
+    setSaving(true);
+    try {
+      if (creating) {
+        const { createRole: rows } = await createRole(draft.name.trim(), draft.permissions);
+        setRoles(rows);
+        const created = rows.find((r) => r.name === draft.name.trim());
+        setSelectedId(created?.id ?? rows[rows.length - 1]?.id ?? null);
+        toast.success('Rol creado');
+      } else if (selected) {
+        const patch = selected.isSystem ? { permissions: draft.permissions } : { name: draft.name.trim(), permissions: draft.permissions };
+        const { updateRole: rows } = await updateRole(selected.id, patch);
+        setRoles(rows);
+        toast.success('Rol actualizado');
+      }
+      setCreating(false); setDraft(null);
+    } catch (e) { toast.error(e instanceof Error ? e.message : 'Error'); }
+    finally { setSaving(false); }
+  }
+
+  async function confirmDelete() {
+    if (!toDelete) return;
+    try {
+      const { deleteRole: rows } = await deleteRole(toDelete.id);
+      setRoles(rows);
+      if (selectedId === toDelete.id) setSelectedId(rows[0]?.id ?? null);
+      toast.success('Rol eliminado');
+    } catch (e) { toast.error(e instanceof Error ? e.message : 'Error'); throw e; }
+  }
+
+  if (roles === null) return <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">Cargando roles…</CardContent></Card>;
+
   return (
-    <Card><CardContent className="p-5">
-      <p className="mb-1 font-extrabold">Roles y permisos</p>
-      <p className="mb-4 text-sm text-muted-foreground">Qué puede hacer cada rol en la organización.</p>
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse text-sm">
-          <thead><tr className="border-b-2 border-border">
-            <th className="p-2 text-left font-bold">Permiso</th>
-            {ROLES.map((r) => <th key={r.value} className="p-2 text-center font-bold">{r.label}</th>)}
-          </tr></thead>
-          <tbody>
-            {caps.map((c) => (
-              <tr key={c.label} className="border-b border-border">
-                <td className="p-2 font-medium">{c.label}</td>
-                {ROLES.map((r) => (
-                  <td key={r.value} className="p-2 text-center">
-                    {c.roles.includes(r.value) ? <Check className="mx-auto size-4 text-primary" /> : <span className="text-muted-foreground/40">—</span>}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </CardContent></Card>
+    <div className="grid gap-4 lg:grid-cols-[16rem_1fr]">
+      {/* Lista de roles */}
+      <Card><CardContent className="p-3">
+        <div className="mb-2 flex items-center justify-between px-1">
+          <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Roles</p>
+          {canManage && <Button size="sm" variant="ghost" className="h-7 px-2" onClick={startCreate}><Plus className="size-4" /></Button>}
+        </div>
+        <ul className="space-y-1">
+          {roles.map((r) => (
+            <li key={r.id}>
+              <button
+                type="button"
+                onClick={() => { setSelectedId(r.id); cancel(); }}
+                className={cn('flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-semibold transition',
+                  selectedId === r.id && !creating ? 'bg-accent text-accent-foreground' : 'hover:bg-muted')}
+              >
+                {r.isSystem ? <Lock className="size-3.5 shrink-0 text-muted-foreground" /> : <Shield className="size-3.5 shrink-0 text-primary" />}
+                <span className="min-w-0 flex-1 truncate">{r.name}</span>
+                <span className="shrink-0 text-xs font-normal text-muted-foreground">{r.permissions.length}</span>
+              </button>
+            </li>
+          ))}
+          {creating && (
+            <li className="flex items-center gap-2 rounded-xl bg-accent px-3 py-2 text-sm font-semibold text-accent-foreground">
+              <Shield className="size-3.5 shrink-0 text-primary" /><span className="italic">Nuevo rol…</span>
+            </li>
+          )}
+        </ul>
+      </CardContent></Card>
+
+      {/* Detalle / editor */}
+      <Card><CardContent className="space-y-4 p-5">
+        {!view ? (
+          <p className="py-8 text-center text-sm text-muted-foreground">Selecciona un rol o crea uno nuevo.</p>
+        ) : (
+          <>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                {editing ? (
+                  <>
+                    <Label className="mb-1 block">Nombre del rol</Label>
+                    <Input
+                      value={view.name}
+                      disabled={!creating && selected?.isSystem}
+                      onChange={(e) => setDraft((d) => d ? { ...d, name: e.target.value } : d)}
+                      placeholder="Ej. Supervisor de zona"
+                    />
+                    {!creating && selected?.isSystem && <p className="mt-1 text-xs text-muted-foreground">Los roles del sistema no se pueden renombrar, pero sí ajustar sus permisos.</p>}
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <p className="font-extrabold">{selected?.name}</p>
+                      {selected?.isSystem && <Badge variant="secondary" className="gap-1"><Lock className="size-3" /> Sistema</Badge>}
+                    </div>
+                    <p className="text-sm text-muted-foreground">{selected?.permissions.length ?? 0} permisos habilitados</p>
+                  </>
+                )}
+              </div>
+              {canManage && !editing && (
+                <div className="flex shrink-0 gap-2">
+                  <Button size="sm" variant="outline" onClick={startEdit}>Editar permisos</Button>
+                  {!selected?.isSystem && <Button size="sm" variant="ghost" className="text-destructive" onClick={() => selected && setToDelete(selected)}><Trash2 className="size-4" /></Button>}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              {PERMISSION_CATALOG.map((p) => {
+                const on = view.permissions.includes(p.key);
+                return (
+                  <button
+                    key={p.key}
+                    type="button"
+                    disabled={!editing}
+                    onClick={() => togglePerm(p.key)}
+                    className={cn('flex w-full items-start gap-3 rounded-xl border px-3 py-2.5 text-left transition',
+                      on ? 'border-primary/40 bg-primary/5' : 'border-border',
+                      editing ? 'cursor-pointer hover:border-primary/60' : 'cursor-default')}
+                  >
+                    <span className={cn('mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md border', on ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground/30')}>
+                      {on && <Check className="size-3.5" />}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-sm font-semibold">{p.label}</span>
+                      <span className="block text-xs text-muted-foreground">{p.desc}</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {editing && (
+              <div className="flex justify-end gap-2 border-t border-border pt-3">
+                <Button variant="ghost" onClick={cancel} disabled={saving}>Cancelar</Button>
+                <Button onClick={save} disabled={saving}>{saving ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />} Guardar</Button>
+              </div>
+            )}
+          </>
+        )}
+      </CardContent></Card>
+
+      <ConfirmDialog open={toDelete !== null} onOpenChange={(v) => !v && setToDelete(null)} title="Eliminar rol" description={`Se eliminará el rol "${toDelete?.name ?? ''}".`} onConfirm={confirmDelete} />
+    </div>
   );
 }
 

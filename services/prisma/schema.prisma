@@ -179,6 +179,7 @@ model Tenant {
   clients        Client[]
   guarantors     Guarantor[]
   invitations    Invitation[]
+  roles          Role[]
   routes         Route[]
   creditProducts CreditProduct[]
   loans          Loan[]
@@ -318,6 +319,24 @@ model Client {
   @@unique([tenantId, documentId])
   @@index([tenantId, fullName])
   @@map("clients")
+}
+
+// Roles personalizados de la organización con permisos configurables.
+model Role {
+  id          String   @id @default(cuid())
+  tenantId    String
+  key         String   // slug único por tenant (p. ej. "supervisor-caja")
+  name        String
+  permissions Json     @default("[]") // lista de claves de permiso
+  isSystem    Boolean  @default(false) // roles base (no se eliminan)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, key])
+  @@index([tenantId])
+  @@map("roles")
 }
 
 // Invitaciones a la organización (empresa/tenant): invitar empleados por correo.

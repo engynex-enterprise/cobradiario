@@ -178,6 +178,7 @@ export interface Organization {
 export interface OrgMember { id: string; fullName: string; email: string; role: string; isActive: boolean; createdAt: string }
 export interface OrgInvitation { id: string; email: string; role: string; status: string; invitedByName?: string; expiresAt: string; createdAt: string }
 export interface OrgAuditLog { id: string; action: string; entity: string; entityId?: string; userName?: string; ip?: string; createdAt: string }
+export interface OrgRole { id: string; key: string; name: string; permissions: string[]; isSystem: boolean }
 export type OrgUpdate = Partial<Omit<Organization, 'id' | 'type' | 'memberCount' | 'createdAt'>>;
 
 const ORG_FIELDS = `id name type legalId countryCode currency language timezone memberCount createdAt defaultProductId graceDays installmentRounding minLoanAmount maxLoanAmount moraRunHour reminderRunHour requireBaseOnCashOpen collectorCanCreateLoan collectorCanEditInstallment collectorCanDiscount collectorCanWaiveLateFee notifyPaymentReceived notifyOverdue notifyNewLoan notifyDailySummary notifyChannelEmail notifyChannelPush`;
@@ -221,6 +222,29 @@ export function removeMember(userId: string) {
     { id: userId },
   );
 }
+const ROLE_FIELDS = `id key name permissions isSystem`;
+export function fetchRoles() {
+  return gql<{ roles: OrgRole[] }>(`{ roles { ${ROLE_FIELDS} } }`);
+}
+export function createRole(name: string, permissions: string[]) {
+  return gql<{ createRole: OrgRole[] }>(
+    `mutation($i: CreateRoleInput!) { createRole(input: $i) { ${ROLE_FIELDS} } }`,
+    { i: { name, permissions } },
+  );
+}
+export function updateRole(id: string, patch: { name?: string; permissions?: string[] }) {
+  return gql<{ updateRole: OrgRole[] }>(
+    `mutation($i: UpdateRoleInput!) { updateRole(input: $i) { ${ROLE_FIELDS} } }`,
+    { i: { id, ...patch } },
+  );
+}
+export function deleteRole(id: string) {
+  return gql<{ deleteRole: OrgRole[] }>(
+    `mutation($id: ID!) { deleteRole(id: $id) { ${ROLE_FIELDS} } }`,
+    { id },
+  );
+}
+
 export function acceptInvitation(input: { token: string; fullName: string; password: string }) {
   return gql<{ acceptInvitation: { accessToken: string; refreshToken: string; user: AuthUser } }>(
     `mutation($i: AcceptInvitationInput!) {
