@@ -28,6 +28,9 @@ export interface Client {
   phone?: string;
   address?: string;
   city?: string;
+  loansCount?: number;
+  activeLoans?: number;
+  totalBalance?: number;
 }
 
 export interface Product {
@@ -62,7 +65,9 @@ export function fetchLoans(routeId?: string) {
 }
 
 export function fetchClients() {
-  return gql<{ clients: Client[] }>(`{ clients { id fullName documentId phone address city } }`);
+  return gql<{ clients: Client[] }>(
+    `{ clients { id fullName documentId phone address city loansCount activeLoans totalBalance } }`,
+  );
 }
 
 export function createClient(input: {

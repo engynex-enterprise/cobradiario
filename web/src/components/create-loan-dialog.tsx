@@ -36,8 +36,22 @@ function durationLabel(termCount: number, freq: Freq): string {
   return parts.join(' · ');
 }
 
-export function CreateLoanDialog({ onCreated, clientId: fixedClient }: { onCreated: () => void; clientId?: string }) {
-  const [open, setOpen] = useState(false);
+export function CreateLoanDialog({
+  onCreated,
+  clientId: fixedClient,
+  open: controlledOpen,
+  onOpenChange,
+  hideTrigger,
+}: {
+  onCreated: () => void;
+  clientId?: string;
+  open?: boolean;
+  onOpenChange?: (v: boolean) => void;
+  hideTrigger?: boolean;
+}) {
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const open = controlledOpen ?? uncontrolledOpen;
+  const setOpen = onOpenChange ?? setUncontrolledOpen;
   const [clients, setClients] = useState<Client[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [routes, setRoutes] = useState<Route[]>([]);
@@ -155,11 +169,13 @@ export function CreateLoanDialog({ onCreated, clientId: fixedClient }: { onCreat
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        <Button>
-          <Plus className="h-4 w-4" /> Nuevo crédito
-        </Button>
-      </SheetTrigger>
+      {!hideTrigger && (
+        <SheetTrigger asChild>
+          <Button>
+            <Plus className="h-4 w-4" /> Nuevo crédito
+          </Button>
+        </SheetTrigger>
+      )}
       <SheetContent className="overflow-y-auto">
         <SheetHeader>
           <SheetTitle>Nuevo crédito</SheetTitle>

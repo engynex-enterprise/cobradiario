@@ -1,4 +1,4 @@
-import { Field, ID, ObjectType } from '@nestjs/graphql';
+import { Field, Float, ID, Int, ObjectType } from '@nestjs/graphql';
 
 @ObjectType('Client')
 export class ClientModel {
@@ -9,4 +9,7 @@ export class ClientModel {
   @Field({ nullable: true }) address?: string;
   @Field({ nullable: true }) city?: string;
   @Field() createdAt!: Date;
+  @Field(() => Int, { defaultValue: 0 }) loansCount!: number;
+  @Field(() => Int, { defaultValue: 0 }) activeLoans!: number;
+  @Field(() => Float, { defaultValue: 0 }) totalBalance!: number;
 }

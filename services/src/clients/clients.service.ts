@@ -9,12 +9,37 @@ export class ClientsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async list(tenantId: string): Promise<ClientModel[]> {
-    const rows = await this.prisma.forTenant(tenantId).client.findMany({
+    const db = this.prisma.forTenant(tenantId);
+    const rows = await db.client.findMany({
       where: { deletedAt: null },
       orderBy: { fullName: 'asc' },
       take: 100,
     });
-    return rows.map(toClientModel);
+
+    // Agregados de cartera por cliente (créditos, activos y saldo pendiente).
+    const [byClient, activeByClient] = await Promise.all([
+      db.loan.groupBy({
+        by: ['clientId'],
+        where: { deletedAt: null },
+        _count: true,
+        _sum: { balance: true },
+      }),
+      db.loan.groupBy({
+        by: ['clientId'],
+        where: { deletedAt: null, status: { in: ['ACTIVE', 'DEFAULTED'] } },
+        _count: true,
+      }),
+    ]);
+    const totals = new Map(byClient.map((g) => [g.clientId, { count: g._count, balance: Number(g._sum.balance ?? 0) }]));
+    const actives = new Map(activeByClient.map((g) => [g.clientId, g._count]));
+
+    return rows.map((c) =>
+      toClientModel(c, {
+        loansCount: totals.get(c.id)?.count ?? 0,
+        activeLoans: actives.get(c.id) ?? 0,
+        totalBalance: round2(totals.get(c.id)?.balance ?? 0),
+      }),
+    );
   }
 
   async create(tenantId: string, input: CreateClientInput): Promise<ClientModel> {
@@ -46,7 +71,10 @@ export class ClientsService {
   }
 }
 
-function toClientModel(c: Prisma.ClientGetPayload<object>): ClientModel {
+function toClientModel(
+  c: Prisma.ClientGetPayload<object>,
+  stats?: { loansCount: number; activeLoans: number; totalBalance: number },
+): ClientModel {
   return {
     id: c.id,
     fullName: c.fullName,
@@ -55,5 +83,12 @@ function toClientModel(c: Prisma.ClientGetPayload<object>): ClientModel {
     address: c.address ?? undefined,
     city: c.city ?? undefined,
     createdAt: c.createdAt,
+    loansCount: stats?.loansCount ?? 0,
+    activeLoans: stats?.activeLoans ?? 0,
+    totalBalance: stats?.totalBalance ?? 0,
   };
+}
+
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
 }

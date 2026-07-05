@@ -91,13 +91,16 @@ enum CashMovementType {
 }
 
 type Client {
+  activeLoans: Int!
   address: String
   city: String
   createdAt: DateTime!
   documentId: String
   fullName: String!
   id: ID!
+  loansCount: Int!
   phone: String
+  totalBalance: Float!
 }
 
 input CloseCashBoxInput {
