@@ -299,6 +299,8 @@ model Client {
   notes        String?
   references   Json    @default("[]") // referencias personales [{fullName, phone, relationship, notes}]
   isBlacklisted Boolean @default(false)
+  createdById   String? // usuario (cobrador/admin) que registró al cliente
+  createdByName String? // nombre denormalizado del creador
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt

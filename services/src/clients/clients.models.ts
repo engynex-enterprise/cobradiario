@@ -42,6 +42,8 @@ export class ClientModel {
   @Field({ nullable: true }) selfieWithDocUrl?: string;
   @Field({ nullable: true }) signatureUrl?: string;
   @Field({ defaultValue: false }) isBlacklisted!: boolean;
+  @Field({ nullable: true }) createdById?: string;
+  @Field({ nullable: true }) createdByName?: string;
   @Field() createdAt!: Date;
   @Field(() => Int, { defaultValue: 0 }) loansCount!: number;
   @Field(() => Int, { defaultValue: 0 }) activeLoans!: number;

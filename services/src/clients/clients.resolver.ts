@@ -31,7 +31,7 @@ export class ClientsResolver {
     @CurrentUser() user: AuthContext,
     @Args('input') input: CreateClientInput,
   ): Promise<ClientModel> {
-    return this.clients.create(user.tenantId, input);
+    return this.clients.create(user.tenantId, user.userId, user.email, input);
   }
 
   @Roles(UserRole.OWNER, UserRole.ADMIN, UserRole.MANAGER, UserRole.COLLECTOR)

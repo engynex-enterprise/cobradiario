@@ -77,10 +77,18 @@ export class ClientsService {
     return s;
   }
 
-  async create(tenantId: string, input: CreateClientInput): Promise<ClientModel> {
+  async create(tenantId: string, userId: string, userEmail: string, input: CreateClientInput): Promise<ClientModel> {
     const { references, ...rest } = input;
-    const created = await this.prisma.forTenant(tenantId).client.create({
-      data: { tenantId, ...rest, references: refsToJson(references) },
+    const db = this.prisma.forTenant(tenantId);
+    const author = await db.user.findFirst({ where: { id: userId }, select: { fullName: true } });
+    const created = await db.client.create({
+      data: {
+        tenantId,
+        ...rest,
+        references: refsToJson(references),
+        createdById: userId,
+        createdByName: author?.fullName ?? userEmail,
+      },
       include: { guarantors: true },
     });
     return toClientModel(created, emptyStats());
@@ -217,6 +225,8 @@ function toClientModel(
     latitude: c.latitude ?? undefined,
     longitude: c.longitude ?? undefined,
     notes: c.notes ?? undefined,
+    createdById: c.createdById ?? undefined,
+    createdByName: c.createdByName ?? undefined,
     photoUrl: c.photoUrl ?? undefined,
     documentFrontUrl: c.documentFrontUrl ?? undefined,
     documentBackUrl: c.documentBackUrl ?? undefined,

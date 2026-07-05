@@ -14,6 +14,8 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { CreateLoanDialog } from '@/components/create-loan-dialog';
 import { ImageUpload } from '@/components/ui/image-upload';
 import { SignaturePad } from '@/components/ui/signature-pad';
+import { Combobox } from '@/components/ui/combobox';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import {
@@ -22,6 +24,7 @@ import {
   type Client, type ClientInput, type ClientGuarantor, type ClientReference, type Loan,
 } from '@/lib/graphql';
 import { money, cn } from '@/lib/utils';
+import { CITIES, RELATIONSHIPS, formatPhoneCO, titleCase, normalizeEmail, digitsOnly } from '@/lib/co-data';
 import {
   Pencil, Plus, Trash2, UserRound, HandCoins, Eye, Phone, MessageCircle, Copy,
   Users, Wallet, MapPin, Loader2, ShieldCheck, X, Gauge, ShieldAlert, Contact,
@@ -80,6 +83,7 @@ export default function ClientesPage() {
   const [cityFilter, setCityFilter] = useState('all');
   const [creditFilter, setCreditFilter] = useState<'all' | 'active' | 'none'>('all');
   const [riskFilter, setRiskFilter] = useState('all');
+  const [creatorFilter, setCreatorFilter] = useState('all');
 
   const load = useCallback(() => {
     fetchClients()
@@ -102,6 +106,19 @@ export default function ClientesPage() {
     () => Array.from(new Set(clients.map((c) => c.city).filter(Boolean))).sort() as string[],
     [clients],
   );
+  const creators = useMemo(
+    () => Array.from(new Set(clients.map((c) => c.createdByName).filter(Boolean))).sort() as string[],
+    [clients],
+  );
+  // Barrios ya usados por ciudad (para el combobox dependiente).
+  const barriosByCity = useMemo(() => {
+    const m: Record<string, Set<string>> = {};
+    for (const c of clients) {
+      if (c.city && c.neighborhood) (m[c.city] ??= new Set()).add(c.neighborhood);
+    }
+    return Object.fromEntries(Object.entries(m).map(([k, v]) => [k, Array.from(v).sort()]));
+  }, [clients]);
+  const cityOptions = useMemo(() => Array.from(new Set([...CITIES, ...cities])).sort(), [cities]);
 
   const rows = useMemo(
     () =>
@@ -110,9 +127,10 @@ export default function ClientesPage() {
         if (creditFilter === 'active' && (c.activeLoans ?? 0) === 0) return false;
         if (creditFilter === 'none' && (c.loansCount ?? 0) > 0) return false;
         if (riskFilter !== 'all' && c.riskLevel !== riskFilter) return false;
+        if (creatorFilter !== 'all' && c.createdByName !== creatorFilter) return false;
         return true;
       }),
-    [clients, cityFilter, creditFilter, riskFilter],
+    [clients, cityFilter, creditFilter, riskFilter, creatorFilter],
   );
 
   const columns: Column<Client>[] = [
@@ -145,6 +163,7 @@ export default function ClientesPage() {
           </Badge>
         ),
     },
+    { key: 'createdByName', header: 'Creado por', sortable: true, sortValue: (c) => c.createdByName ?? '', render: (c) => <span className="text-muted-foreground">{c.createdByName ?? '—'}</span> },
     { key: 'totalBalance', header: 'Saldo', className: 'text-right', sortable: true, sortValue: (c) => c.totalBalance ?? 0, render: (c) => <span className="font-bold">{money(c.totalBalance ?? 0)}</span> },
   ];
 
@@ -177,7 +196,7 @@ export default function ClientesPage() {
         title="Clientes"
         description="Directorio de deudores con ficha completa, fiadores, referencias y score de riesgo estilo DataCrédito."
         info={MODULE_INFO}
-        actions={<ClientDrawer open={open} setOpen={setOpen} onSaved={load} />}
+        actions={<ClientDrawer open={open} setOpen={setOpen} onSaved={load} cityOptions={cityOptions} barriosByCity={barriosByCity} />}
       />
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -221,6 +240,15 @@ export default function ClientesPage() {
                 {cities.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
               </SelectContent>
             </Select>
+            {creators.length > 0 && (
+              <Select value={creatorFilter} onValueChange={setCreatorFilter}>
+                <SelectTrigger className="h-11 w-44"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los cobradores</SelectItem>
+                  {creators.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            )}
           </div>
         }
       />
@@ -230,6 +258,8 @@ export default function ClientesPage() {
         setOpen={(v) => !v && setEditing(null)}
         client={editing ?? undefined}
         onSaved={load}
+        cityOptions={cityOptions}
+        barriosByCity={barriosByCity}
         hideTrigger
       />
 
@@ -294,14 +324,16 @@ const EMPTY_FORM: ClientInput = {
 };
 
 function ClientDrawer({
-  open, setOpen, onSaved, client, hideTrigger,
+  open, setOpen, onSaved, client, hideTrigger, cityOptions, barriosByCity,
 }: {
   open: boolean; setOpen: (v: boolean) => void; onSaved: () => void; client?: Client; hideTrigger?: boolean;
+  cityOptions: string[]; barriosByCity: Record<string, string[]>;
 }) {
   const isEdit = !!client;
   const [form, setForm] = useState<ClientInput>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const barrioOptions = form.city ? barriosByCity[form.city] ?? [] : [];
 
   useEffect(() => {
     if (!open) return;
@@ -385,7 +417,7 @@ function ClientDrawer({
             <FormSection title="Identificación">
               <div className="space-y-2">
                 <Label>Nombre completo *</Label>
-                <Input value={form.fullName} onChange={set('fullName')} required />
+                <Input value={form.fullName} onChange={set('fullName')} onBlur={(e) => setForm((f) => ({ ...f, fullName: titleCase(e.target.value) }))} required />
               </div>
               <div className="grid grid-cols-3 gap-2">
                 <div className="space-y-2">
@@ -397,24 +429,30 @@ function ClientDrawer({
                 </div>
                 <div className="col-span-2 space-y-2">
                   <Label>Documento</Label>
-                  <Input value={form.documentId} onChange={set('documentId')} />
+                  <Input value={form.documentId} onChange={(e) => setForm((f) => ({ ...f, documentId: digitsOnly(e.target.value) }))} inputMode="numeric" />
                 </div>
               </div>
             </FormSection>
 
             <FormSection title="Contacto">
               <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-2"><Label>Teléfono</Label><Input value={form.phone} onChange={set('phone')} inputMode="tel" /></div>
-                <div className="space-y-2"><Label>Teléfono alterno</Label><Input value={form.phone2} onChange={set('phone2')} inputMode="tel" /></div>
+                <div className="space-y-2"><Label>Teléfono</Label><Input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: formatPhoneCO(e.target.value) }))} inputMode="tel" placeholder="300 123 4567" /></div>
+                <div className="space-y-2"><Label>Teléfono alterno</Label><Input value={form.phone2} onChange={(e) => setForm((f) => ({ ...f, phone2: formatPhoneCO(e.target.value) }))} inputMode="tel" placeholder="300 123 4567" /></div>
               </div>
-              <div className="space-y-2"><Label>Correo electrónico</Label><Input value={form.email} onChange={set('email')} type="email" /></div>
+              <div className="space-y-2"><Label>Correo electrónico</Label><Input value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: normalizeEmail(e.target.value) }))} type="email" placeholder="correo@ejemplo.com" /></div>
             </FormSection>
 
             <FormSection title="Ubicación">
-              <div className="space-y-2"><Label>Dirección</Label><Input value={form.address} onChange={set('address')} /></div>
+              <div className="space-y-2"><Label>Dirección</Label><Input value={form.address} onChange={set('address')} onBlur={(e) => setForm((f) => ({ ...f, address: titleCase(e.target.value) }))} placeholder="Calle 10 # 5-20" /></div>
               <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-2"><Label>Barrio</Label><Input value={form.neighborhood} onChange={set('neighborhood')} /></div>
-                <div className="space-y-2"><Label>Ciudad</Label><Input value={form.city} onChange={set('city')} /></div>
+                <div className="space-y-2">
+                  <Label>Ciudad</Label>
+                  <Combobox value={form.city} onChange={(v) => setForm((f) => ({ ...f, city: titleCase(v), neighborhood: '' }))} options={cityOptions} placeholder="Elegir ciudad" searchPlaceholder="Buscar ciudad…" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Barrio</Label>
+                  <Combobox value={form.neighborhood} onChange={(v) => setForm((f) => ({ ...f, neighborhood: titleCase(v) }))} options={barrioOptions} placeholder="Elegir barrio" searchPlaceholder="Buscar barrio…" disabled={!form.city} disabledHint="Elige primero la ciudad" emptyText="Escribe para agregar" />
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-2"><Label>Latitud (GPS)</Label><Input value={form.latitude ?? ''} onChange={(e) => setForm((f) => ({ ...f, latitude: e.target.value ? Number(e.target.value) : undefined }))} inputMode="decimal" placeholder="4.6097" /></div>
@@ -424,8 +462,8 @@ function ClientDrawer({
 
             <FormSection title="Perfil">
               <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-2"><Label>Ocupación / negocio</Label><Input value={form.occupation} onChange={set('occupation')} /></div>
-                <div className="space-y-2"><Label>Fecha de nacimiento</Label><Input type="date" value={form.birthDate} onChange={set('birthDate')} /></div>
+                <div className="space-y-2"><Label>Ocupación / negocio</Label><Input value={form.occupation} onChange={set('occupation')} onBlur={(e) => setForm((f) => ({ ...f, occupation: titleCase(e.target.value) }))} /></div>
+                <div className="space-y-2"><Label>Fecha de nacimiento</Label><DatePicker value={form.birthDate} onChange={(v) => setForm((f) => ({ ...f, birthDate: v }))} disableFuture placeholder="Elegir fecha" /></div>
               </div>
               <div className="space-y-2">
                 <Label>Observaciones</Label>
@@ -456,10 +494,10 @@ function ClientDrawer({
                       <button type="button" onClick={() => removeRef(i)} className="text-destructive hover:opacity-70"><X className="h-4 w-4" /></button>
                     </div>
                     <div className="space-y-2">
-                      <Input value={r.fullName} onChange={(e) => setRef(i, 'fullName', e.target.value)} placeholder="Nombre completo" />
+                      <Input value={r.fullName} onChange={(e) => setRef(i, 'fullName', e.target.value)} onBlur={(e) => setRef(i, 'fullName', titleCase(e.target.value))} placeholder="Nombre completo" />
                       <div className="grid grid-cols-2 gap-2">
-                        <Input value={r.phone ?? ''} onChange={(e) => setRef(i, 'phone', e.target.value)} placeholder="Teléfono" inputMode="tel" />
-                        <Input value={r.relationship ?? ''} onChange={(e) => setRef(i, 'relationship', e.target.value)} placeholder="Parentesco" />
+                        <Input value={r.phone ?? ''} onChange={(e) => setRef(i, 'phone', formatPhoneCO(e.target.value))} placeholder="Teléfono" inputMode="tel" />
+                        <Combobox value={r.relationship ?? ''} onChange={(v) => setRef(i, 'relationship', v)} options={RELATIONSHIPS} placeholder="Parentesco" searchPlaceholder="Buscar…" />
                       </div>
                     </div>
                   </div>
@@ -688,13 +726,13 @@ function GuarantorsDrawer({ client, onClose, onChanged }: { client: Client | nul
                 <p className="text-sm font-extrabold">{editingId ? 'Editar fiador' : 'Nuevo fiador'}</p>
                 <button type="button" onClick={() => setShowForm(false)} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
               </div>
-              <div className="space-y-2"><Label>Nombre completo *</Label><Input value={form.fullName} onChange={set('fullName')} required /></div>
+              <div className="space-y-2"><Label>Nombre completo *</Label><Input value={form.fullName} onChange={set('fullName')} onBlur={(e) => setForm((f) => ({ ...f, fullName: titleCase(e.target.value) }))} required /></div>
               <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-2"><Label>Documento</Label><Input value={form.documentId} onChange={set('documentId')} /></div>
-                <div className="space-y-2"><Label>Parentesco</Label><Input value={form.relationship} onChange={set('relationship')} placeholder="Esposo, hermano…" /></div>
+                <div className="space-y-2"><Label>Documento</Label><Input value={form.documentId} onChange={(e) => setForm((f) => ({ ...f, documentId: digitsOnly(e.target.value) }))} inputMode="numeric" /></div>
+                <div className="space-y-2"><Label>Parentesco</Label><Combobox value={form.relationship} onChange={(v) => setForm((f) => ({ ...f, relationship: v }))} options={RELATIONSHIPS} placeholder="Parentesco" searchPlaceholder="Buscar…" /></div>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-2"><Label>Teléfono</Label><Input value={form.phone} onChange={set('phone')} inputMode="tel" /></div>
+                <div className="space-y-2"><Label>Teléfono</Label><Input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: formatPhoneCO(e.target.value) }))} inputMode="tel" /></div>
                 <div className="space-y-2"><Label>Dirección</Label><Input value={form.address} onChange={set('address')} /></div>
               </div>
               <Button type="submit" className="w-full" disabled={saving || !form.fullName}>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Table,
   TableBody,
@@ -194,10 +195,10 @@ export function DataTable<T>({
   );
 }
 
-/** Botón ⋮ con menú contextual en posición fixed (no lo recorta el overflow de la tabla). */
+/** Botón ⋮ con menú contextual en posición fixed que se auto-ubica (arriba/abajo, izq/der). */
 function RowActionsMenu<T>({ actions, row }: { actions: RowAction<T>[]; row: T }) {
   const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState<{ top: number; right: number }>({ top: 0, right: 0 });
+  const [pos, setPos] = useState<React.CSSProperties>({});
   const btnRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -218,7 +219,25 @@ function RowActionsMenu<T>({ actions, row }: { actions: RowAction<T>[]; row: T }
 
   const openMenu = () => {
     const r = btnRef.current?.getBoundingClientRect();
-    if (r) setPos({ top: r.bottom + 6, right: Math.max(8, window.innerWidth - r.right) });
+    if (!r) { setOpen(true); return; }
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const menuH = actions.length * 40 + 12; // alto estimado del menú
+    const menuW = 192; // w-48
+    const style: React.CSSProperties = {};
+    // Vertical: abre hacia abajo salvo que no quepa y arriba haya más espacio.
+    if (vh - r.bottom < menuH + 8 && r.top > vh - r.bottom) {
+      style.bottom = Math.max(8, vh - r.top + 6);
+    } else {
+      style.top = Math.min(vh - menuH - 8, r.bottom + 6);
+    }
+    // Horizontal: alinea el borde derecho al botón; si no cabe, alinea a la izquierda.
+    if (r.right - menuW < 8) {
+      style.left = Math.max(8, r.left);
+    } else {
+      style.right = Math.max(8, vw - r.right);
+    }
+    setPos(style);
     setOpen(true);
   };
 
@@ -232,12 +251,12 @@ function RowActionsMenu<T>({ actions, row }: { actions: RowAction<T>[]; row: T }
       >
         <MoreVertical className="h-4 w-4" />
       </button>
-      {open && (
+      {open && typeof document !== 'undefined' && createPortal(
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="fixed inset-0 z-[60]" onClick={() => setOpen(false)} />
           <div
-            className="fixed z-50 w-48 overflow-hidden rounded-xl border-2 border-border bg-popover p-1 text-popover-foreground shadow-soft-lg"
-            style={{ top: pos.top, right: pos.right }}
+            className="fixed z-[61] w-48 overflow-hidden rounded-xl border-2 border-border bg-popover p-1 text-popover-foreground shadow-soft-lg"
+            style={pos}
           >
             {actions.map((a) => {
               const Icon = a.icon;
@@ -256,7 +275,8 @@ function RowActionsMenu<T>({ actions, row }: { actions: RowAction<T>[]; row: T }
               );
             })}
           </div>
-        </>
+        </>,
+        document.body,
       )}
     </>
   );

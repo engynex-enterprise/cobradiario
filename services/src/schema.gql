@@ -96,6 +96,8 @@ type Client {
   birthDate: DateTime
   city: String
   createdAt: DateTime!
+  createdById: String
+  createdByName: String
   creditScore: Int
   defaultedLoans: Int!
   documentBackUrl: String

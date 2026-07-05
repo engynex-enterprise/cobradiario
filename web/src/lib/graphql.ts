@@ -55,6 +55,8 @@ export interface Client {
   longitude?: number;
   notes?: string;
   isBlacklisted?: boolean;
+  createdById?: string;
+  createdByName?: string;
   loansCount?: number;
   activeLoans?: number;
   paidLoans?: number;
@@ -95,7 +97,7 @@ export interface ClientInput {
   references?: ClientReference[];
 }
 
-const CLIENT_FIELDS = `id fullName documentId documentType phone phone2 email address neighborhood city occupation birthDate latitude longitude notes isBlacklisted loansCount activeLoans paidLoans defaultedLoans totalBalance creditScore riskLevel guarantors { id fullName documentId phone address relationship notes } references { fullName phone relationship notes }`;
+const CLIENT_FIELDS = `id fullName documentId documentType phone phone2 email address neighborhood city occupation birthDate latitude longitude notes isBlacklisted createdById createdByName loansCount activeLoans paidLoans defaultedLoans totalBalance creditScore riskLevel guarantors { id fullName documentId phone address relationship notes } references { fullName phone relationship notes }`;
 const CLIENT_DETAIL_FIELDS = `${CLIENT_FIELDS} photoUrl documentFrontUrl documentBackUrl selfieWithDocUrl signatureUrl`;
 
 export interface Product {
