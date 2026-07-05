@@ -8,12 +8,19 @@ import { InviteMemberInput, UpdateMemberRoleInput, UpdateOrganizationInput } fro
 
 interface OrgSettings {
   language?: string;
-  defaultInterestRate?: number;
-  defaultInterestMethod?: string;
-  defaultFrequency?: string;
-  defaultTermCount?: number;
-  defaultLateFeeType?: string;
-  defaultLateFeeValue?: number;
+  // Políticas de crédito y caja
+  defaultProductId?: string;
+  graceDays?: number;
+  installmentRounding?: number;
+  minLoanAmount?: number;
+  maxLoanAmount?: number;
+  moraRunHour?: number;
+  reminderRunHour?: number;
+  requireBaseOnCashOpen?: boolean;
+  collectorCanCreateLoan?: boolean;
+  collectorCanEditInstallment?: boolean;
+  collectorCanDiscount?: boolean;
+  collectorCanWaiveLateFee?: boolean;
   // Notificaciones
   notifyPaymentReceived?: boolean;
   notifyOverdue?: boolean;
@@ -46,12 +53,18 @@ export class OrganizationService {
       timezone: tenant.timezone,
       memberCount,
       createdAt: tenant.createdAt,
-      defaultInterestRate: s.defaultInterestRate,
-      defaultInterestMethod: s.defaultInterestMethod,
-      defaultFrequency: s.defaultFrequency,
-      defaultTermCount: s.defaultTermCount,
-      defaultLateFeeType: s.defaultLateFeeType,
-      defaultLateFeeValue: s.defaultLateFeeValue,
+      defaultProductId: s.defaultProductId,
+      graceDays: s.graceDays ?? 0,
+      installmentRounding: s.installmentRounding ?? 0,
+      minLoanAmount: s.minLoanAmount,
+      maxLoanAmount: s.maxLoanAmount,
+      moraRunHour: s.moraRunHour ?? 2,
+      reminderRunHour: s.reminderRunHour ?? 7,
+      requireBaseOnCashOpen: s.requireBaseOnCashOpen ?? false,
+      collectorCanCreateLoan: s.collectorCanCreateLoan ?? true,
+      collectorCanEditInstallment: s.collectorCanEditInstallment ?? false,
+      collectorCanDiscount: s.collectorCanDiscount ?? false,
+      collectorCanWaiveLateFee: s.collectorCanWaiveLateFee ?? false,
       notifyPaymentReceived: s.notifyPaymentReceived ?? true,
       notifyOverdue: s.notifyOverdue ?? true,
       notifyNewLoan: s.notifyNewLoan ?? false,
@@ -66,14 +79,14 @@ export class OrganizationService {
     const tenant = await db.tenant.findFirstOrThrow({ where: { id: tenantId } });
     const settings = { ...((tenant.settings ?? {}) as OrgSettings) };
 
-    // settings JSON: idioma + defaults de finanzas
-    for (const k of ['language', 'defaultInterestMethod', 'defaultFrequency', 'defaultLateFeeType'] as const) {
+    // settings JSON: idioma, políticas, permisos y notificaciones
+    for (const k of ['language', 'defaultProductId'] as const) {
       if (input[k] !== undefined) settings[k] = input[k];
     }
-    for (const k of ['defaultInterestRate', 'defaultTermCount', 'defaultLateFeeValue'] as const) {
+    for (const k of ['graceDays', 'installmentRounding', 'minLoanAmount', 'maxLoanAmount', 'moraRunHour', 'reminderRunHour'] as const) {
       if (input[k] !== undefined) settings[k] = input[k];
     }
-    for (const k of ['notifyPaymentReceived', 'notifyOverdue', 'notifyNewLoan', 'notifyDailySummary', 'notifyChannelEmail', 'notifyChannelPush'] as const) {
+    for (const k of ['requireBaseOnCashOpen', 'collectorCanCreateLoan', 'collectorCanEditInstallment', 'collectorCanDiscount', 'collectorCanWaiveLateFee', 'notifyPaymentReceived', 'notifyOverdue', 'notifyNewLoan', 'notifyDailySummary', 'notifyChannelEmail', 'notifyChannelPush'] as const) {
       if (input[k] !== undefined) settings[k] = input[k];
     }
 

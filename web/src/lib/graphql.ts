@@ -171,7 +171,8 @@ export function loginWithGoogle(insforgeAccessToken: string) {
 export interface Organization {
   id: string; name: string; type: string; legalId?: string; countryCode: string; currency: string; language: string; timezone: string;
   memberCount: number; createdAt: string;
-  defaultInterestRate?: number; defaultInterestMethod?: string; defaultFrequency?: string; defaultTermCount?: number; defaultLateFeeType?: string; defaultLateFeeValue?: number;
+  defaultProductId?: string; graceDays: number; installmentRounding: number; minLoanAmount?: number; maxLoanAmount?: number; moraRunHour: number; reminderRunHour: number;
+  requireBaseOnCashOpen: boolean; collectorCanCreateLoan: boolean; collectorCanEditInstallment: boolean; collectorCanDiscount: boolean; collectorCanWaiveLateFee: boolean;
   notifyPaymentReceived: boolean; notifyOverdue: boolean; notifyNewLoan: boolean; notifyDailySummary: boolean; notifyChannelEmail: boolean; notifyChannelPush: boolean;
 }
 export interface OrgMember { id: string; fullName: string; email: string; role: string; isActive: boolean; createdAt: string }
@@ -179,7 +180,7 @@ export interface OrgInvitation { id: string; email: string; role: string; status
 export interface OrgAuditLog { id: string; action: string; entity: string; entityId?: string; userName?: string; ip?: string; createdAt: string }
 export type OrgUpdate = Partial<Omit<Organization, 'id' | 'type' | 'memberCount' | 'createdAt'>>;
 
-const ORG_FIELDS = `id name type legalId countryCode currency language timezone memberCount createdAt defaultInterestRate defaultInterestMethod defaultFrequency defaultTermCount defaultLateFeeType defaultLateFeeValue notifyPaymentReceived notifyOverdue notifyNewLoan notifyDailySummary notifyChannelEmail notifyChannelPush`;
+const ORG_FIELDS = `id name type legalId countryCode currency language timezone memberCount createdAt defaultProductId graceDays installmentRounding minLoanAmount maxLoanAmount moraRunHour reminderRunHour requireBaseOnCashOpen collectorCanCreateLoan collectorCanEditInstallment collectorCanDiscount collectorCanWaiveLateFee notifyPaymentReceived notifyOverdue notifyNewLoan notifyDailySummary notifyChannelEmail notifyChannelPush`;
 
 export function fetchOrganization() {
   return gql<{ organization: Organization }>(`{ organization { ${ORG_FIELDS} } }`);

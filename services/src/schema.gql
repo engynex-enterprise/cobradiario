@@ -619,19 +619,23 @@ type OrgMember {
 }
 
 type Organization {
+  collectorCanCreateLoan: Boolean!
+  collectorCanDiscount: Boolean!
+  collectorCanEditInstallment: Boolean!
+  collectorCanWaiveLateFee: Boolean!
   countryCode: String!
   createdAt: DateTime!
   currency: String!
-  defaultFrequency: String
-  defaultInterestMethod: String
-  defaultInterestRate: Float
-  defaultLateFeeType: String
-  defaultLateFeeValue: Float
-  defaultTermCount: Int
+  defaultProductId: String
+  graceDays: Int!
   id: ID!
+  installmentRounding: Int!
   language: String!
   legalId: String
+  maxLoanAmount: Float
   memberCount: Int!
+  minLoanAmount: Float
+  moraRunHour: Int!
   name: String!
   notifyChannelEmail: Boolean!
   notifyChannelPush: Boolean!
@@ -639,6 +643,8 @@ type Organization {
   notifyNewLoan: Boolean!
   notifyOverdue: Boolean!
   notifyPaymentReceived: Boolean!
+  reminderRunHour: Int!
+  requireBaseOnCashOpen: Boolean!
   timezone: String!
   type: String!
 }
@@ -861,16 +867,20 @@ input UpdateMemberRoleInput {
 }
 
 input UpdateOrganizationInput {
+  collectorCanCreateLoan: Boolean
+  collectorCanDiscount: Boolean
+  collectorCanEditInstallment: Boolean
+  collectorCanWaiveLateFee: Boolean
   countryCode: String
   currency: String
-  defaultFrequency: String
-  defaultInterestMethod: String
-  defaultInterestRate: Float
-  defaultLateFeeType: String
-  defaultLateFeeValue: Float
-  defaultTermCount: Int
+  defaultProductId: String
+  graceDays: Int
+  installmentRounding: Int
   language: String
   legalId: String
+  maxLoanAmount: Float
+  minLoanAmount: Float
+  moraRunHour: Int
   name: String
   notifyChannelEmail: Boolean
   notifyChannelPush: Boolean
@@ -878,6 +888,8 @@ input UpdateOrganizationInput {
   notifyNewLoan: Boolean
   notifyOverdue: Boolean
   notifyPaymentReceived: Boolean
+  reminderRunHour: Int
+  requireBaseOnCashOpen: Boolean
   timezone: String
 }
 

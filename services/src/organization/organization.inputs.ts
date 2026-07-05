@@ -10,13 +10,19 @@ export class UpdateOrganizationInput {
   @Field({ nullable: true }) @IsOptional() @IsString() @MaxLength(3) currency?: string;
   @Field({ nullable: true }) @IsOptional() @IsString() @MaxLength(5) language?: string;
   @Field({ nullable: true }) @IsOptional() @IsString() @MaxLength(60) timezone?: string;
-  // Defaults de finanzas
-  @Field(() => Float, { nullable: true }) @IsOptional() @IsNumber() defaultInterestRate?: number;
-  @Field({ nullable: true }) @IsOptional() @IsString() defaultInterestMethod?: string;
-  @Field({ nullable: true }) @IsOptional() @IsString() defaultFrequency?: string;
-  @Field(() => Int, { nullable: true }) @IsOptional() @IsNumber() defaultTermCount?: number;
-  @Field({ nullable: true }) @IsOptional() @IsString() defaultLateFeeType?: string;
-  @Field(() => Float, { nullable: true }) @IsOptional() @IsNumber() defaultLateFeeValue?: number;
+  // Políticas de crédito y caja
+  @Field({ nullable: true }) @IsOptional() @IsString() defaultProductId?: string;
+  @Field(() => Int, { nullable: true }) @IsOptional() @IsNumber() graceDays?: number;
+  @Field(() => Int, { nullable: true }) @IsOptional() @IsNumber() installmentRounding?: number;
+  @Field(() => Float, { nullable: true }) @IsOptional() @IsNumber() minLoanAmount?: number;
+  @Field(() => Float, { nullable: true }) @IsOptional() @IsNumber() maxLoanAmount?: number;
+  @Field(() => Int, { nullable: true }) @IsOptional() @IsNumber() moraRunHour?: number;
+  @Field(() => Int, { nullable: true }) @IsOptional() @IsNumber() reminderRunHour?: number;
+  @Field({ nullable: true }) @IsOptional() @IsBoolean() requireBaseOnCashOpen?: boolean;
+  @Field({ nullable: true }) @IsOptional() @IsBoolean() collectorCanCreateLoan?: boolean;
+  @Field({ nullable: true }) @IsOptional() @IsBoolean() collectorCanEditInstallment?: boolean;
+  @Field({ nullable: true }) @IsOptional() @IsBoolean() collectorCanDiscount?: boolean;
+  @Field({ nullable: true }) @IsOptional() @IsBoolean() collectorCanWaiveLateFee?: boolean;
   // Notificaciones
   @Field({ nullable: true }) @IsOptional() @IsBoolean() notifyPaymentReceived?: boolean;
   @Field({ nullable: true }) @IsOptional() @IsBoolean() notifyOverdue?: boolean;

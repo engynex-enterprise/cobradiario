@@ -13,13 +13,20 @@ export class OrganizationModel {
   @Field() timezone!: string;
   @Field(() => Int, { defaultValue: 0 }) memberCount!: number;
   @Field() createdAt!: Date;
-  // Defaults de finanzas / intereses (para nuevos créditos)
-  @Field(() => Float, { nullable: true }) defaultInterestRate?: number;
-  @Field({ nullable: true }) defaultInterestMethod?: string;
-  @Field({ nullable: true }) defaultFrequency?: string;
-  @Field(() => Int, { nullable: true }) defaultTermCount?: number;
-  @Field({ nullable: true }) defaultLateFeeType?: string;
-  @Field(() => Float, { nullable: true }) defaultLateFeeValue?: number;
+  // Políticas de crédito y caja (distinto de Productos, que son plantillas)
+  @Field({ nullable: true }) defaultProductId?: string;   // producto preseleccionado al crear crédito
+  @Field(() => Int, { defaultValue: 0 }) graceDays!: number;          // días de gracia antes de mora
+  @Field(() => Int, { defaultValue: 0 }) installmentRounding!: number; // redondear cuota al múltiplo (0 = sin)
+  @Field(() => Float, { nullable: true }) minLoanAmount?: number;
+  @Field(() => Float, { nullable: true }) maxLoanAmount?: number;
+  @Field(() => Int, { defaultValue: 2 }) moraRunHour!: number;         // hora del job de mora (0-23)
+  @Field(() => Int, { defaultValue: 7 }) reminderRunHour!: number;     // hora de recordatorios (0-23)
+  @Field({ defaultValue: false }) requireBaseOnCashOpen!: boolean;
+  // Permisos de cobradores
+  @Field({ defaultValue: true }) collectorCanCreateLoan!: boolean;
+  @Field({ defaultValue: false }) collectorCanEditInstallment!: boolean;
+  @Field({ defaultValue: false }) collectorCanDiscount!: boolean;
+  @Field({ defaultValue: false }) collectorCanWaiveLateFee!: boolean;
   // Notificaciones
   @Field({ defaultValue: true }) notifyPaymentReceived!: boolean;
   @Field({ defaultValue: true }) notifyOverdue!: boolean;

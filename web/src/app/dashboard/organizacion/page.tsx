@@ -15,14 +15,14 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
-  fetchOrganization, fetchOrgMembers, fetchPendingInvitations, fetchAuditLogs, updateOrganization,
+  fetchOrganization, fetchOrgMembers, fetchPendingInvitations, fetchAuditLogs, updateOrganization, fetchProducts,
   inviteMember, cancelInvitation, updateMemberRole, removeMember,
-  type Organization, type OrgMember, type OrgInvitation, type OrgAuditLog, type OrgUpdate,
+  type Organization, type OrgMember, type OrgInvitation, type OrgAuditLog, type OrgUpdate, type Product,
 } from '@/lib/graphql';
 import { formatDate, cn } from '@/lib/utils';
 import {
   Building2, Users, MailPlus, Trash2, Loader2, Shield, UserPlus, X, Check,
-  SlidersHorizontal, Coins, Bell, ScrollText, Route, Package, Tags, CreditCard, ChevronRight,
+  SlidersHorizontal, Coins, Bell, ScrollText, Route, Package, Tags, CreditCard,
 } from 'lucide-react';
 
 const ROLES = [
@@ -33,19 +33,23 @@ const roleLabel = (r: string) => ROLES.find((x) => x.value === r)?.label ?? r;
 const CURRENCIES = ['COP', 'USD', 'MXN', 'PEN', 'CLP', 'ARS', 'EUR'];
 const LANGUAGES = [{ v: 'es', l: 'Español' }, { v: 'en', l: 'English' }];
 const TIMEZONES = ['America/Bogota', 'America/Mexico_City', 'America/Lima', 'America/Santiago', 'America/Argentina/Buenos_Aires', 'America/New_York'];
-const METHODS = [{ v: 'FLAT', l: 'Fijo (flat)' }, { v: 'DECLINING_BALANCE', l: 'Saldo decreciente' }, { v: 'GERMAN', l: 'Alemán' }, { v: 'INTEREST_ONLY', l: 'Solo interés' }];
-const FREQS = [{ v: 'DAILY', l: 'Diario' }, { v: 'WEEKLY', l: 'Semanal' }, { v: 'BIWEEKLY', l: 'Quincenal' }, { v: 'MONTHLY', l: 'Mensual' }];
-const LATE_TYPES = [{ v: 'NONE', l: 'Sin mora' }, { v: 'FIXED', l: 'Monto fijo' }, { v: 'PERCENT', l: 'Porcentaje' }];
 
-type Tab = 'general' | 'finanzas' | 'notificaciones' | 'miembros' | 'roles' | 'auditoria' | 'modulos';
+// Módulos que se enlazan desde el sub-sidebar de ajustes.
+const MODULES = [
+  { href: '/dashboard/rutas', icon: Route, label: 'Rutas' },
+  { href: '/dashboard/productos', icon: Package, label: 'Productos' },
+  { href: '/dashboard/etiquetas', icon: Tags, label: 'Etiquetas' },
+  { href: '/dashboard/planes', icon: CreditCard, label: 'Planes y facturación' },
+];
+
+type Tab = 'general' | 'finanzas' | 'notificaciones' | 'miembros' | 'roles' | 'auditoria';
 const TABS: { key: Tab; label: string; icon: typeof Users; admin?: boolean }[] = [
   { key: 'general', label: 'General', icon: SlidersHorizontal },
-  { key: 'finanzas', label: 'Finanzas', icon: Coins },
+  { key: 'finanzas', label: 'Políticas', icon: Coins },
   { key: 'notificaciones', label: 'Notificaciones', icon: Bell },
   { key: 'miembros', label: 'Miembros', icon: Users },
   { key: 'roles', label: 'Roles y permisos', icon: Shield },
   { key: 'auditoria', label: 'Auditoría', icon: ScrollText, admin: true },
-  { key: 'modulos', label: 'Módulos', icon: Package },
 ];
 
 const MODULE_INFO = {
@@ -122,6 +126,13 @@ export default function OrganizacionPage() {
               <span className="flex-1 text-left">{t.label}</span>
             </button>
           ))}
+          <p className="px-3 pb-1 pt-4 text-[10px] font-extrabold uppercase tracking-wide text-muted-foreground">Módulos</p>
+          {MODULES.map((m) => (
+            <Link key={m.href} href={m.href} className="flex w-full items-center gap-3 rounded-xl border-2 border-transparent px-3 py-2.5 text-[13px] font-bold text-foreground/70 transition-colors hover:bg-muted hover:text-foreground">
+              <m.icon className="size-5 shrink-0" />
+              <span className="flex-1 text-left">{m.label}</span>
+            </Link>
+          ))}
         </nav>
       </aside>
 
@@ -131,6 +142,9 @@ export default function OrganizacionPage() {
         <nav className="flex gap-1 overflow-x-auto border-b-2 border-border bg-card px-2 py-2 md:hidden">
           {visibleTabs.map((t) => (
             <button key={t.key} onClick={() => setTab(t.key)} className={cn('whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-bold uppercase', tab === t.key ? 'bg-accent text-accent-foreground' : 'text-muted-foreground')}>{t.label}</button>
+          ))}
+          {MODULES.map((m) => (
+            <Link key={m.href} href={m.href} className="whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-bold uppercase text-muted-foreground">{m.label}</Link>
           ))}
         </nav>
 
@@ -155,7 +169,6 @@ export default function OrganizacionPage() {
               {tab === 'notificaciones' && <NotificacionesTab org={org} canManage={canManage} onSave={save} />}
               {tab === 'roles' && <RolesTab />}
               {tab === 'auditoria' && canManage && <AuditoriaTab logs={logs} />}
-              {tab === 'modulos' && <ModulosTab />}
               {tab === 'miembros' && (
                 <MiembrosTab
                   org={org} members={members} invites={invites} canManage={canManage} currentUserId={user?.id}
@@ -207,36 +220,67 @@ function GeneralTab({ org, canManage, onSave }: { org: Organization; canManage: 
   );
 }
 
-// ---------- Finanzas ----------
+// ---------- Políticas de crédito y caja ----------
 function FinanzasTab({ org, canManage, onSave }: { org: Organization; canManage: boolean; onSave: (p: OrgUpdate) => void }) {
+  const [products, setProducts] = useState<Product[]>([]);
   const [f, setF] = useState({
-    defaultInterestRate: org.defaultInterestRate ?? 20, defaultInterestMethod: org.defaultInterestMethod ?? 'FLAT',
-    defaultFrequency: org.defaultFrequency ?? 'DAILY', defaultTermCount: org.defaultTermCount ?? 20,
-    defaultLateFeeType: org.defaultLateFeeType ?? 'NONE', defaultLateFeeValue: org.defaultLateFeeValue ?? 0,
+    defaultProductId: org.defaultProductId ?? '', graceDays: org.graceDays, installmentRounding: org.installmentRounding,
+    minLoanAmount: org.minLoanAmount ?? 0, maxLoanAmount: org.maxLoanAmount ?? 0,
+    moraRunHour: org.moraRunHour, reminderRunHour: org.reminderRunHour, requireBaseOnCashOpen: org.requireBaseOnCashOpen,
+    collectorCanCreateLoan: org.collectorCanCreateLoan, collectorCanEditInstallment: org.collectorCanEditInstallment,
+    collectorCanDiscount: org.collectorCanDiscount, collectorCanWaiveLateFee: org.collectorCanWaiveLateFee,
   });
+  useEffect(() => { fetchProducts().then((d) => setProducts(d.creditProducts)).catch(() => {}); }, []);
+
+  const Toggle = ({ k, label, desc }: { k: keyof typeof f; label: string; desc: string }) => (
+    <button type="button" disabled={!canManage} onClick={() => setF({ ...f, [k]: !f[k] })} className="flex w-full items-center justify-between gap-3 rounded-xl border-2 border-border p-3 text-left disabled:opacity-70">
+      <div><p className="font-semibold">{label}</p><p className="text-xs text-muted-foreground">{desc}</p></div>
+      <span className={cn('flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition-colors', f[k] ? 'bg-primary' : 'bg-muted')}><span className={cn('size-5 rounded-full bg-white shadow transition-transform', f[k] && 'translate-x-5')} /></span>
+    </button>
+  );
+
   return (
-    <Card><CardContent className="space-y-4 p-5">
-      <div><p className="font-extrabold">Finanzas e intereses</p><p className="text-sm text-muted-foreground">Valores por defecto al crear nuevos créditos.</p></div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Interés por defecto (%)"><Input type="number" value={f.defaultInterestRate} onChange={(e) => setF({ ...f, defaultInterestRate: Number(e.target.value) })} disabled={!canManage} /></Field>
-        <Field label="Método de amortización">
-          <Select value={f.defaultInterestMethod} onValueChange={(v) => setF({ ...f, defaultInterestMethod: v })} disabled={!canManage}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{METHODS.map((m) => <SelectItem key={m.v} value={m.v}>{m.l}</SelectItem>)}</SelectContent></Select>
-        </Field>
-        <Field label="Frecuencia">
-          <Select value={f.defaultFrequency} onValueChange={(v) => setF({ ...f, defaultFrequency: v })} disabled={!canManage}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{FREQS.map((m) => <SelectItem key={m.v} value={m.v}>{m.l}</SelectItem>)}</SelectContent></Select>
-        </Field>
-        <Field label="Número de cuotas"><Input type="number" value={f.defaultTermCount} onChange={(e) => setF({ ...f, defaultTermCount: Number(e.target.value) })} disabled={!canManage} /></Field>
-        <Field label="Tipo de mora">
-          <Select value={f.defaultLateFeeType} onValueChange={(v) => setF({ ...f, defaultLateFeeType: v })} disabled={!canManage}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{LATE_TYPES.map((m) => <SelectItem key={m.v} value={m.v}>{m.l}</SelectItem>)}</SelectContent></Select>
-        </Field>
-        <Field label={f.defaultLateFeeType === 'PERCENT' ? 'Mora (%)' : 'Mora (monto)'}>
-          {f.defaultLateFeeType === 'PERCENT'
-            ? <Input type="number" value={f.defaultLateFeeValue} onChange={(e) => setF({ ...f, defaultLateFeeValue: Number(e.target.value) })} disabled={!canManage} />
-            : <CurrencyInput value={f.defaultLateFeeValue} onValueChange={(v) => setF({ ...f, defaultLateFeeValue: v })} />}
-        </Field>
+    <div className="space-y-4">
+      <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-3 text-sm text-muted-foreground">
+        Los <b>intereses, cuotas y frecuencia</b> se definen en <b>Módulos → Productos</b> (plantillas de crédito). Aquí configuras las <b>políticas</b> de la organización.
       </div>
-      {canManage && <Button onClick={() => onSave(f)}>Guardar finanzas</Button>}
-    </CardContent></Card>
+
+      <Card><CardContent className="space-y-4 p-5">
+        <p className="font-extrabold">Crédito</p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Producto por defecto">
+            <Select value={f.defaultProductId || 'none'} onValueChange={(v) => setF({ ...f, defaultProductId: v === 'none' ? '' : v })} disabled={!canManage}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent><SelectItem value="none">Ninguno</SelectItem>{products.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
+            </Select>
+          </Field>
+          <Field label="Días de gracia antes de mora"><Input type="number" value={f.graceDays} onChange={(e) => setF({ ...f, graceDays: Number(e.target.value) })} disabled={!canManage} /></Field>
+          <Field label="Redondear cuota al múltiplo de"><Input type="number" value={f.installmentRounding} onChange={(e) => setF({ ...f, installmentRounding: Number(e.target.value) })} disabled={!canManage} placeholder="0 = sin redondeo" /></Field>
+          <div />
+          <Field label="Monto mínimo de crédito"><CurrencyInput value={f.minLoanAmount} onValueChange={(v) => setF({ ...f, minLoanAmount: v })} /></Field>
+          <Field label="Monto máximo de crédito"><CurrencyInput value={f.maxLoanAmount} onValueChange={(v) => setF({ ...f, maxLoanAmount: v })} /></Field>
+        </div>
+      </CardContent></Card>
+
+      <Card><CardContent className="space-y-4 p-5">
+        <p className="font-extrabold">Caja y automatización</p>
+        <Toggle k="requireBaseOnCashOpen" label="Exigir base al abrir caja" desc="El cobrador debe registrar su base inicial." />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Hora de marcado de mora (0-23)"><Input type="number" min={0} max={23} value={f.moraRunHour} onChange={(e) => setF({ ...f, moraRunHour: Number(e.target.value) })} disabled={!canManage} /></Field>
+          <Field label="Hora de recordatorios (0-23)"><Input type="number" min={0} max={23} value={f.reminderRunHour} onChange={(e) => setF({ ...f, reminderRunHour: Number(e.target.value) })} disabled={!canManage} /></Field>
+        </div>
+      </CardContent></Card>
+
+      <Card><CardContent className="space-y-3 p-5">
+        <p className="font-extrabold">Permisos de cobradores</p>
+        <Toggle k="collectorCanCreateLoan" label="Crear créditos" desc="Permitir que los cobradores otorguen créditos." />
+        <Toggle k="collectorCanEditInstallment" label="Editar cuotas" desc="Modificar valor o fecha de cuotas." />
+        <Toggle k="collectorCanDiscount" label="Aplicar descuentos" desc="Descontar en el abono." />
+        <Toggle k="collectorCanWaiveLateFee" label="Condonar mora" desc="Perdonar la mora de una cuota." />
+      </CardContent></Card>
+
+      {canManage && <Button onClick={() => onSave({ ...f, minLoanAmount: f.minLoanAmount || undefined, maxLoanAmount: f.maxLoanAmount || undefined, defaultProductId: f.defaultProductId || undefined })}>Guardar políticas</Button>}
+    </div>
   );
 }
 
@@ -335,29 +379,6 @@ function AuditoriaTab({ logs }: { logs: OrgAuditLog[] }) {
         </ul>
       )}
     </CardContent></Card>
-  );
-}
-
-// ---------- Módulos (config movida) ----------
-function ModulosTab() {
-  const mods = [
-    { href: '/dashboard/rutas', icon: Route, label: 'Rutas', desc: 'Rutas de cobro y cobradores asignados' },
-    { href: '/dashboard/productos', icon: Package, label: 'Productos', desc: 'Planes de crédito predefinidos' },
-    { href: '/dashboard/etiquetas', icon: Tags, label: 'Etiquetas', desc: 'Clasificación de clientes/créditos' },
-    { href: '/dashboard/planes', icon: CreditCard, label: 'Planes y facturación', desc: 'Suscripción y consumo' },
-  ];
-  return (
-    <div className="grid gap-4 sm:grid-cols-2">
-      {mods.map((m) => (
-        <Link key={m.href} href={m.href}>
-          <Card className="transition-colors hover:bg-accent"><CardContent className="flex items-center gap-3 p-5">
-            <div className="flex size-11 items-center justify-center rounded-2xl bg-primary/10 text-primary"><m.icon className="h-5 w-5" /></div>
-            <div className="min-w-0 flex-1"><p className="font-extrabold leading-tight">{m.label}</p><p className="text-xs text-muted-foreground">{m.desc}</p></div>
-            <ChevronRight className="size-5 text-muted-foreground" />
-          </CardContent></Card>
-        </Link>
-      ))}
-    </div>
   );
 }
 
