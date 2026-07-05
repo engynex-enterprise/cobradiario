@@ -131,6 +131,16 @@ export function fetchLoans(routeId?: string) {
   );
 }
 
+/** Registro: crea tenant + usuario OWNER y devuelve la sesión. */
+export function register(input: { tenantName: string; fullName: string; email: string; password: string; phone?: string }) {
+  return gql<{ register: { accessToken: string; refreshToken: string; user: AuthUser } }>(
+    `mutation($i: RegisterInput!) {
+      register(input: $i) { accessToken refreshToken user { id email fullName role tenantId } }
+    }`,
+    { i: { ...input, tenantType: 'INDIVIDUAL' } },
+  );
+}
+
 /** Login híbrido con Google: valida el token de InsForge en el backend y emite nuestros JWT. */
 export function loginWithGoogle(insforgeAccessToken: string) {
   return gql<{ loginWithGoogle: { accessToken: string; refreshToken: string; user: AuthUser } }>(

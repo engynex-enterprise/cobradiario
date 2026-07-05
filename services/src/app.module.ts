@@ -28,6 +28,7 @@ import { ManagementsModule } from './managements/managements.module';
 import { ExpensesModule } from './expenses/expenses.module';
 import { BasesModule } from './bases/bases.module';
 import { StorageModule } from './storage/storage.module';
+import { AppController } from './app.controller';
 import { GqlAuthGuard } from './common/guards/gql-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { GqlThrottlerGuard } from './common/guards/gql-throttler.guard';
@@ -98,6 +99,7 @@ import { GqlThrottlerGuard } from './common/guards/gql-throttler.guard';
     BasesModule,
     StorageModule,
   ],
+  controllers: [AppController],
   providers: [
     // Orden importa: autenticación → autorización por rol → rate limit.
     { provide: APP_GUARD, useClass: GqlAuthGuard },

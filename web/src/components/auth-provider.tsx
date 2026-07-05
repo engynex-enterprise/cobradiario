@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { tokens } from '@/lib/api';
-import { login as apiLogin, loginWithGoogle as apiLoginWithGoogle, type AuthUser } from '@/lib/graphql';
+import { login as apiLogin, loginWithGoogle as apiLoginWithGoogle, register as apiRegister, type AuthUser } from '@/lib/graphql';
 import { disconnectSocket } from '@/lib/socket';
 
 interface AuthCtx {
@@ -11,6 +11,7 @@ interface AuthCtx {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signInWithGoogle: (insforgeAccessToken: string) => Promise<void>;
+  signUp: (input: { tenantName: string; fullName: string; email: string; password: string; phone?: string }) => Promise<void>;
   signOut: () => void;
 }
 
@@ -56,6 +57,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     router.push('/dashboard');
   }
 
+  async function signUp(input: { tenantName: string; fullName: string; email: string; password: string; phone?: string }) {
+    const { register } = await apiRegister(input);
+    tokens.set(register.accessToken, register.refreshToken);
+    localStorage.setItem(USER_KEY, JSON.stringify(register.user));
+    setUser(register.user);
+    router.push('/dashboard');
+  }
+
   function signOut() {
     tokens.clear();
     localStorage.removeItem(USER_KEY);
@@ -64,7 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     router.push('/login');
   }
 
-  return <Ctx.Provider value={{ user, loading, signIn, signInWithGoogle, signOut }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ user, loading, signIn, signInWithGoogle, signUp, signOut }}>{children}</Ctx.Provider>;
 }
 
 export function useAuth() {

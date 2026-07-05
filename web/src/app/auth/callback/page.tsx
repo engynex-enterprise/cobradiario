@@ -21,11 +21,12 @@ export default function GoogleCallbackPage() {
     ran.current = true;
     (async () => {
       try {
-        // Espera a que el SDK rehidrate/canjee la sesión (auto tras el redirect).
-        const { data } = await insforge.auth.getCurrentUser();
-        // getAccessToken existe en runtime; el tipo público no lo expone.
-        const token = (insforge.auth as unknown as { getAccessToken(): string | null }).getAccessToken();
-        if (!data?.user || !token) throw new Error('No se recibió la sesión de Google');
+        const code = new URLSearchParams(window.location.search).get('insforge_code');
+        if (!code) throw new Error('Falta el código de autorización de Google');
+        // Canje manual del código → sesión con accessToken.
+        const { data, error } = await insforge.auth.exchangeOAuthCode(code);
+        const token = data?.accessToken;
+        if (error || !token) throw new Error(error?.message ?? 'No se recibió la sesión de Google');
         await signInWithGoogle(token); // emite nuestros tokens y redirige a /dashboard
       } catch (e) {
         setError(e instanceof Error ? e.message : 'No se pudo iniciar sesión con Google');
