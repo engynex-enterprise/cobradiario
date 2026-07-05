@@ -1,6 +1,7 @@
 import { Args, Context, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { AuthService } from './auth.service';
 import { LoginInput, RefreshInput, RegisterInput, UpdateProfileInput } from './dto/auth.inputs';
+import { AcceptInvitationInput } from '../organization/organization.inputs';
 import { AuthPayload, AuthUser, RegisterResponse, SimpleResult } from './dto/auth.models';
 import { CurrentUser, Public } from '../common/decorators';
 import { AuthContext } from '../common/types';
@@ -25,6 +26,12 @@ export class AuthResolver {
   @Mutation(() => SimpleResult)
   resendVerification(@Args('email') email: string): Promise<SimpleResult> {
     return this.auth.resendVerification(email);
+  }
+
+  @Public()
+  @Mutation(() => AuthPayload)
+  acceptInvitation(@Args('input') input: AcceptInvitationInput, @Context() ctx: any): Promise<AuthPayload> {
+    return this.auth.acceptInvitation(input, metaFrom(ctx));
   }
 
   @Public()

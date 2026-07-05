@@ -29,6 +29,7 @@ import { ExpensesModule } from './expenses/expenses.module';
 import { BasesModule } from './bases/bases.module';
 import { StorageModule } from './storage/storage.module';
 import { MailModule } from './mail/mail.module';
+import { OrganizationModule } from './organization/organization.module';
 import { AppController } from './app.controller';
 import { GqlAuthGuard } from './common/guards/gql-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
@@ -100,6 +101,7 @@ import { GqlThrottlerGuard } from './common/guards/gql-throttler.guard';
     BasesModule,
     StorageModule,
     MailModule,
+    OrganizationModule,
   ],
   controllers: [AppController],
   providers: [

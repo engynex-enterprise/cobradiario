@@ -8,6 +8,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
 import { AccessTokenPayload } from '../common/types';
 import { LoginInput, RegisterInput } from './dto/auth.inputs';
+import { AcceptInvitationInput } from '../organization/organization.inputs';
 import { AuthPayload, RegisterResponse, SimpleResult } from './dto/auth.models';
 
 @Injectable()
@@ -96,6 +97,49 @@ export class AuthService {
       data: { emailVerifiedAt: new Date(), emailVerifyTokenHash: null, emailVerifyExpiresAt: null },
     });
     return { ok: true, message: '¡Cuenta confirmada! Ya puedes iniciar sesión.' };
+  }
+
+  /** Acepta una invitación a una organización: crea el usuario (confirmado) + membresía y devuelve sesión. */
+  async acceptInvitation(input: AcceptInvitationInput, meta?: TokenMeta): Promise<AuthPayload> {
+    const invitation = await this.prisma.system().invitation.findFirst({
+      where: { tokenHash: this.hashToken(input.token), status: 'PENDING' },
+    });
+    if (!invitation || invitation.expiresAt < new Date()) {
+      throw new BadRequestException('La invitación es inválida o expiró.');
+    }
+    const rounds = this.config.get<number>('jwt.bcryptRounds')!;
+    const passwordHash = await bcrypt.hash(input.password, rounds);
+
+    const user = await this.prisma
+      .$transaction(async (tx) => {
+        await tx.$executeRaw`SELECT set_config('app.bypass_rls', 'on', true)`;
+        const created = await tx.user.create({
+          data: {
+            tenantId: invitation.tenantId,
+            email: invitation.email,
+            fullName: input.fullName,
+            passwordHash,
+            emailVerifiedAt: new Date(), // llegó desde el correo de invitación
+          },
+        });
+        await tx.membership.create({
+          data: { tenantId: invitation.tenantId, userId: created.id, role: invitation.role },
+        });
+        await tx.invitation.update({ where: { id: invitation.id }, data: { status: 'ACCEPTED' } });
+        return created;
+      })
+      .catch((e) => {
+        if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+          throw new ConflictException('Ya existe una cuenta con ese correo.');
+        }
+        throw e;
+      });
+
+    return this.issueTokens(
+      { id: user.id, tenantId: user.tenantId, email: user.email, fullName: user.fullName },
+      invitation.role,
+      meta,
+    );
   }
 
   private async sendVerification(email: string, fullName: string, rawToken: string): Promise<void> {

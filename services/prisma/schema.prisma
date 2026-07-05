@@ -178,6 +178,7 @@ model Tenant {
   memberships    Membership[]
   clients        Client[]
   guarantors     Guarantor[]
+  invitations    Invitation[]
   routes         Route[]
   creditProducts CreditProduct[]
   loans          Loan[]
@@ -317,6 +318,25 @@ model Client {
   @@unique([tenantId, documentId])
   @@index([tenantId, fullName])
   @@map("clients")
+}
+
+// Invitaciones a la organización (empresa/tenant): invitar empleados por correo.
+model Invitation {
+  id            String   @id @default(cuid())
+  tenantId      String
+  email         String
+  role          UserRole @default(COLLECTOR)
+  tokenHash     String
+  status        String   @default("PENDING") // PENDING | ACCEPTED | CANCELLED
+  invitedByName String?
+  expiresAt     DateTime
+  createdAt     DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, status])
+  @@index([tokenHash])
+  @@map("invitations")
 }
 
 // Fiadores / codeudores de un cliente (varios por cliente).

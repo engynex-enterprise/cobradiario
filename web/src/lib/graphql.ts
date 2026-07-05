@@ -167,6 +167,56 @@ export function loginWithGoogle(insforgeAccessToken: string) {
   );
 }
 
+// --- Organización ---
+export interface Organization { id: string; name: string; type: string; memberCount: number; createdAt: string }
+export interface OrgMember { id: string; fullName: string; email: string; role: string; isActive: boolean; createdAt: string }
+export interface OrgInvitation { id: string; email: string; role: string; status: string; invitedByName?: string; expiresAt: string; createdAt: string }
+
+export function fetchOrganization() {
+  return gql<{ organization: Organization }>(`{ organization { id name type memberCount createdAt } }`);
+}
+export function fetchOrgMembers() {
+  return gql<{ organizationMembers: OrgMember[] }>(`{ organizationMembers { id fullName email role isActive createdAt } }`);
+}
+export function fetchPendingInvitations() {
+  return gql<{ pendingInvitations: OrgInvitation[] }>(`{ pendingInvitations { id email role status invitedByName expiresAt createdAt } }`);
+}
+export function updateOrganization(name: string) {
+  return gql<{ updateOrganization: Organization }>(
+    `mutation($i: UpdateOrganizationInput!) { updateOrganization(input: $i) { id name type memberCount createdAt } }`,
+    { i: { name } },
+  );
+}
+export function inviteMember(email: string, role: string) {
+  return gql<{ inviteMember: OrgInvitation }>(
+    `mutation($i: InviteMemberInput!) { inviteMember(input: $i) { id email role status } }`,
+    { i: { email, role } },
+  );
+}
+export function cancelInvitation(id: string) {
+  return gql<{ cancelInvitation: boolean }>(`mutation($id: ID!) { cancelInvitation(id: $id) }`, { id });
+}
+export function updateMemberRole(userId: string, role: string) {
+  return gql<{ updateMemberRole: OrgMember[] }>(
+    `mutation($i: UpdateMemberRoleInput!) { updateMemberRole(input: $i) { id fullName email role isActive createdAt } }`,
+    { i: { userId, role } },
+  );
+}
+export function removeMember(userId: string) {
+  return gql<{ removeMember: OrgMember[] }>(
+    `mutation($id: ID!) { removeMember(userId: $id) { id fullName email role isActive createdAt } }`,
+    { id: userId },
+  );
+}
+export function acceptInvitation(input: { token: string; fullName: string; password: string }) {
+  return gql<{ acceptInvitation: { accessToken: string; refreshToken: string; user: AuthUser } }>(
+    `mutation($i: AcceptInvitationInput!) {
+      acceptInvitation(input: $i) { accessToken refreshToken user { id email fullName role tenantId } }
+    }`,
+    { i: input },
+  );
+}
+
 export function fetchClients() {
   return gql<{ clients: Client[] }>(`{ clients { ${CLIENT_FIELDS} } }`);
 }

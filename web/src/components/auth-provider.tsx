@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { tokens } from '@/lib/api';
-import { login as apiLogin, loginWithGoogle as apiLoginWithGoogle, register as apiRegister, type AuthUser } from '@/lib/graphql';
+import { login as apiLogin, loginWithGoogle as apiLoginWithGoogle, register as apiRegister, acceptInvitation as apiAcceptInvitation, type AuthUser } from '@/lib/graphql';
 import { disconnectSocket } from '@/lib/socket';
 
 interface AuthCtx {
@@ -12,6 +12,7 @@ interface AuthCtx {
   signIn: (email: string, password: string) => Promise<void>;
   signInWithGoogle: (insforgeAccessToken: string) => Promise<void>;
   signUp: (input: { tenantName: string; fullName: string; email: string; password: string; phone?: string }) => Promise<{ email: string; message: string }>;
+  acceptInvite: (input: { token: string; fullName: string; password: string }) => Promise<void>;
   signOut: () => void;
 }
 
@@ -63,6 +64,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { email: register.email, message: register.message };
   }
 
+  async function acceptInvite(input: { token: string; fullName: string; password: string }) {
+    const { acceptInvitation } = await apiAcceptInvitation(input);
+    tokens.set(acceptInvitation.accessToken, acceptInvitation.refreshToken);
+    localStorage.setItem(USER_KEY, JSON.stringify(acceptInvitation.user));
+    setUser(acceptInvitation.user);
+    router.push('/dashboard');
+  }
+
   function signOut() {
     tokens.clear();
     localStorage.removeItem(USER_KEY);
@@ -71,7 +80,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     router.push('/login');
   }
 
-  return <Ctx.Provider value={{ user, loading, signIn, signInWithGoogle, signUp, signOut }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ user, loading, signIn, signInWithGoogle, signUp, acceptInvite, signOut }}>{children}</Ctx.Provider>;
 }
 
 export function useAuth() {

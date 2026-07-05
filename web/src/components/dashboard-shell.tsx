@@ -10,7 +10,7 @@ import {
   Home, Users, HandCoins, Banknote, CalendarCheck, ArrowLeftRight, Receipt, Coins, Scale,
   Layers, Route, Network, Package, Tags, BellRing, Bell, MessageCircle, BarChart3, UserRound,
   Landmark, LogOut, Wallet, Settings, ChevronDown, ChevronsUpDown, Search,
-  PanelLeftClose, PanelLeftOpen, CreditCard, HelpCircle, type LucideIcon,
+  PanelLeftClose, PanelLeftOpen, CreditCard, HelpCircle, Building2, type LucideIcon,
 } from 'lucide-react';
 
 type NavLink = { kind: 'link'; href: string; label: string; icon: LucideIcon; keywords?: string };
@@ -253,6 +253,9 @@ function UserMenu({ name, email, role, collapsed, onLogout }: { name: string; em
           <div className="p-1.5">
             <Link href="/dashboard/perfil" onClick={() => setOpen(false)} className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-bold transition-colors hover:bg-accent hover:text-accent-foreground">
               <UserRound className="size-4" /> Mi perfil
+            </Link>
+            <Link href="/dashboard/organizacion" onClick={() => setOpen(false)} className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-bold transition-colors hover:bg-accent hover:text-accent-foreground">
+              <Building2 className="size-4" /> Organización
             </Link>
             <Link href="/dashboard/reportes" onClick={() => setOpen(false)} className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-bold transition-colors hover:bg-accent hover:text-accent-foreground">
               <BarChart3 className="size-4" /> Reportes

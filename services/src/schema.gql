@@ -2,6 +2,12 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+input AcceptInvitationInput {
+  fullName: String!
+  password: String!
+  token: String!
+}
+
 input AddCashMovementInput {
   amount: Float!
   note: String
@@ -416,6 +422,11 @@ enum InterestMethod {
   INTEREST_ONLY
 }
 
+input InviteMemberInput {
+  email: String!
+  role: UserRole!
+}
+
 enum LateFeeType {
   DAILY_PERCENT
   FIXED
@@ -498,9 +509,11 @@ type MethodAmount {
 }
 
 type Mutation {
+  acceptInvitation(input: AcceptInvitationInput!): AuthPayload!
   addCashMovement(input: AddCashMovementInput!): CashBox!
   addGuarantor(input: CreateGuarantorInput!): ClientGuarantor!
   assignCollector(input: AssignCollectorInput!): Route!
+  cancelInvitation(id: ID!): Boolean!
   closeCashBox(input: CloseCashBoxInput!): CashBox!
   createBaseMovement(input: CreateBaseMovementInput!): BaseMovement!
   createClient(input: CreateClientInput!): Client!
@@ -516,6 +529,7 @@ type Mutation {
   deleteExpense(id: ID!): ID!
   deleteGuarantor(id: ID!): ID!
   deleteTag(id: ID!): Boolean!
+  inviteMember(input: InviteMemberInput!): OrgInvitation!
   login(input: LoginInput!): AuthPayload!
   loginWithGoogle(insforgeAccessToken: String!): AuthPayload!
   logout(input: RefreshInput!): Boolean!
@@ -525,6 +539,7 @@ type Mutation {
   register(input: RegisterInput!): RegisterResponse!
   registerDeviceToken(platform: String!, token: String!): Boolean!
   registerPayment(input: RegisterPaymentInput!): RegisterPaymentResult!
+  removeMember(userId: ID!): [OrgMember!]!
   resendVerification(email: String!): SimpleResult!
   runDueReminders(withinDays: Int! = 1): EnqueuedJob!
   runOverdueSweep: EnqueuedJob!
@@ -532,6 +547,8 @@ type Mutation {
   updateClient(input: UpdateClientInput!): Client!
   updateGuarantor(input: UpdateGuarantorInput!): ClientGuarantor!
   updateInstallment(input: UpdateInstallmentInput!): Loan!
+  updateMemberRole(input: UpdateMemberRoleInput!): [OrgMember!]!
+  updateOrganization(input: UpdateOrganizationInput!): Organization!
   updateProfile(input: UpdateProfileInput!): AuthUser!
   updateTag(input: UpdateTagInput!): Tag
   uploadImage(dataUrl: String!, folder: String): UploadResult!
@@ -570,6 +587,33 @@ enum NotificationType {
 input OpenCashBoxInput {
   openingBalance: Float!
   routeId: ID
+}
+
+type OrgInvitation {
+  createdAt: DateTime!
+  email: String!
+  expiresAt: DateTime!
+  id: ID!
+  invitedByName: String
+  role: UserRole!
+  status: String!
+}
+
+type OrgMember {
+  createdAt: DateTime!
+  email: String!
+  fullName: String!
+  id: ID!
+  isActive: Boolean!
+  role: UserRole!
+}
+
+type Organization {
+  createdAt: DateTime!
+  id: ID!
+  memberCount: Int!
+  name: String!
+  type: String!
 }
 
 type Payment {
@@ -626,7 +670,10 @@ type Query {
   messages(query: MessagesQueryInput): [Message!]!
   myNotifications: [Notification!]!
   myOpenCashBox: CashBox
+  organization: Organization!
+  organizationMembers: [OrgMember!]!
   payments(loanId: ID!): [Payment!]!
+  pendingInvitations: [OrgInvitation!]!
   recentPayments: [PaymentFeedItem!]!
   reminders: [ReminderItem!]!
   routes: [Route!]!
@@ -778,6 +825,15 @@ input UpdateInstallmentInput {
   amount: Float
   dueDate: DateTime
   id: ID!
+}
+
+input UpdateMemberRoleInput {
+  role: UserRole!
+  userId: ID!
+}
+
+input UpdateOrganizationInput {
+  name: String!
 }
 
 input UpdateProfileInput {
